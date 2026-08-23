@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase1b_planner_reviewed_pending_github_ci` — C++17 数据契约校验器（`hy3_algotrace validate`）已实现并通过本地功能验证（MSVC，56/56 测试通过），Phase 1B-R2.1 已通过 codex_planner 技术验收，当前等待 GitHub CI 验证 canonical CMake/CTest 与 Windows/Linux。** 数据集（数据契约 0.3.0，3 题 × 3 轨迹 = 9 条模型生成样本）已通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed，2026-08-23）；此复核仅代表规划方技术验收，不等同于人工（human_reviewed）或专家（expert-reviewed）审查背书。校验器**仅做数据结构与契约一致性校验**（schema / manifest / 外键 / 诊断规则 / 计数重算），**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码。构建方面：CMake 配置（canonical、跨平台）已就绪但本机无 CMake 未实际运行；本地功能验证使用现有 MSVC `cl.exe`（详见 `docs/journal/phase-01b.md`，`cmake_ctest_status = unverified_tool_unavailable`，`cross_platform_status = unverified`）。
+**当前状态：`phase1b_complete_ci_verified` — C++17 数据契约校验器（`hy3_algotrace validate`）已实现并通过本地功能验证（MSVC，56/56 测试通过），Phase 1B-R2.1 已通过 codex_planner 技术验收；GitHub CI 在 `windows-latest` 与 `ubuntu-latest` 上完成了 CMake configure → build → CTest（56 项测试）→ CLI `validate data` 的 canonical 流程，两个平台全部通过，Phase 1B 已完成，尚未进入 Phase 2。** 数据集（数据契约 0.3.0，3 题 × 3 轨迹 = 9 条模型生成样本）已通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed，2026-08-23）；此复核仅代表规划方技术验收，不等同于人工（human_reviewed）或专家（expert-reviewed）审查背书。校验器**仅做数据结构与契约一致性校验**（schema / manifest / 外键 / 诊断规则 / 计数重算），**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码。构建方面：本地机器未安装 CMake，故本地未运行 canonical CMake；但 GitHub CI 已在 Windows/Linux 实际运行成功（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`，详见 `docs/journal/phase-01b.md` 与 [CI run 32656643095](https://github.com/Smily2333/hy3-algotrace/actions/runs/32656643095)）。本地功能验证使用现有 MSVC `cl.exe`。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -111,18 +111,16 @@ hy3-algotrace/
 计数等。它**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码，也**不**实现
 `ProcessEvaluator` / `CandidateRunner`（这些属于 Phase 2+）。
 
-### 8.2 CMake（canonical，跨平台，未在本机运行）
+### 8.2 CMake（canonical，跨平台，GitHub CI 已实际验证）
 
 ```bash
 cmake -S . -B build
 cmake --build build
-ctest --test-dir build        # 运行 validator_tests
+ctest --test-dir build        # 运行 validator_tests（56 项）
 ./build/hy3_algotrace validate data
 ```
 
-> ⚠️ 本机无 CMake，`CMakeLists.txt` 未经实际执行验证；标记
-> `cmake_ctest_status = unverified_tool_unavailable`。上述命令为 canonical 用法，
-> 待规划方在具备 CMake 的环境 / GitHub CI 中补做验证。
+> 本地机器未安装 CMake，故本机未运行上述 canonical 流程；但 GitHub CI 已在 `windows-latest` 与 `ubuntu-latest` 实际运行成功（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`）。完整 CI 结果见 [run 32656643095](https://github.com/Smily2333/hy3-algotrace/actions/runs/32656643095)：两个平台的 Configure / Build / CTest / Run CLI 均 success。macOS 尚未验证。
 
 ### 8.3 本地 MSVC 直接编译（已验证，无 CMake）
 

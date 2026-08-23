@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。当前处于 **Phase 1B**，R2.1 已通过规划方技术验收，等待 GitHub CI。
+> 宏观阶段规划。当前处于 **Phase 1B（已完成）**，R2.1 已通过 codex_planner 技术验收，GitHub CI 已在 Windows/Linux 实际验证 canonical CMake/CTest，状态 `phase1b_complete_ci_verified`。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -19,12 +19,17 @@
 - **主要产物**：`data/manifest.json` + 3 题 × 3 轨迹 = 9 条样本；通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed）；journal/phase-01a。
 - **状态**：已完成。
 
-### Phase 1B — C++17 数据契约校验器（规划方验收通过，等待 GitHub CI）
+### Phase 1B — C++17 数据契约校验器（已完成，CI 已验证）
 
 - **目标**：实现纯 C++17 命令行工具 `hy3_algotrace validate`，加载并校验数据集对照 0.3.0 契约。
 - **主要产物**：`include/hy3_algotrace/*`、`src/*`、`tests/validator_tests.cpp`（56 项测试全过）、`third_party/nlohmann/json.hpp`（v3.12.0，SHA-256 校验）、`CMakeLists.txt`（canonical，含 `hy3_algotrace_core` 静态库 + SYSTEM PUBLIC third_party）、`docs/journal/phase-01b.md`。
-- **状态**：`phase1b_planner_reviewed_pending_github_ci`（codex_planner 技术验收已通过，等待 GitHub CI 补齐 canonical CMake/CTest 与跨平台验证）。CMake/CTest 未实际运行（`cmake_ctest_status = unverified_tool_unavailable`）；跨平台未验证（`cross_platform_status = unverified`）；未提交 / 未推送 / 未进入 Phase 2。
-- **进入下一阶段条件（Phase 2）**：规划方复核通过并推送 GitHub（目标分支 `main`）；在具备 CMake 的环境 / CI 中补做 canonical CMake/CTest 验证。
+- **状态**：`phase1b_complete_ci_verified`。codex_planner 技术验收已通过（**不等同**人工 human_reviewed 或专家 expert-reviewed 审查）；实现 commit `8145b4f1b894101a8cbb1a302c6028b4fe8b3a01` 已推送 GitHub main；GitHub CI run 32656643095 在 `windows-latest` 与 `ubuntu-latest` 上 Configure / Build / CTest / Run CLI 全部 success（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`；macOS 未验证）。本地 MSVC 56/56 保持通过。
+- **进入下一阶段条件（Phase 2）**：
+  - 规划方技术验收：已完成（codex_planner，2026-08-24）。
+  - main 推送：已完成（commit `8145b4f…`）。
+  - canonical CMake/CTest：已完成（GitHub CI 验证）。
+  - Windows/Linux CI：已完成（run 32656643095，双平台 success）。
+  - Phase 2 尚未开始，等待规划方对 Phase 1B 的最终确认与 Phase 2 启动授权。
 
 ## Phase 2 — C++17 基础评测管线
 

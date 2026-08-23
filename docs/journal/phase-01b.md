@@ -2,7 +2,7 @@
 
 - **日期**：2026-08-23
 - **目标分支**：`main`（尚未提交/推送，待规划方推送）
-- **状态**：`phase1b_planner_reviewed_pending_github_ci`
+- **状态**：`phase1b_complete_ci_verified`
   - R2.1 schema conformance 微修（规划方独立确认 40/40 + 4 类契约漏洞）已完成：区分三层校验（存在性→声明类型→阶段语义），补齐 diagnosis.primary_category、confidence 三字段类型+未校准双报、trace/manifest 的 reviewer/reviewed_at、manifest 必填字段类型、array<string> 元素类型、verification_result 字段校验；测试由 40 增至 56。再次等待规划方复核。
   - `cmake_ctest_status = unverified_tool_unavailable`（本机无 CMake）
   - `cross_platform_status = unverified`（仅在本机 MSVC/x64 验证，未做 GCC/Clang 交叉验证）
@@ -238,6 +238,7 @@ build-msvc/            # 本地 MSVC 编译产物（git 忽略，非 CMake 产�
 - `cmake_ctest_status = unverified_tool_unavailable`（本机无 CMake，未执行）。
 - `cross_platform_status = unverified`（仅本机 MSVC/x64）。
 - 未提交 / 未打 tag / 未推送 / 未进入 Phase 2；目标分支 `main`。状态：`phase1b_r2_1_schema_verified_with_msvc_pending_planner_review`。
+- *（注：上述 `unverified` 为 R2.1 当时本机状态；后续已由 GitHub CI 在 Windows/Linux 实际验证推翻，见 §11。）*
 
 ## 10. Phase 1B 发布前 CI 准备（2026-08-24）
 
@@ -277,3 +278,31 @@ build-msvc/            # 本地 MSVC 编译产物（git 忽略，非 CMake 产�
 1. 规划方独立复核通过后，将代码推送 GitHub（目标分支 `main`）。
 2. 在具备 CMake 的环境 / GitHub CI 中执行 `cmake -S . -B build && cmake --build build && ctest --test-dir build`，补做 canonical 验证。
 3. 验证通过后进入 **Phase 2**（C++17 基础评测管线：Ingest → ProcessEvaluator → Reporter 最小管线）。
+
+> 注：§11 为早期规划视角；实际推进见 §12——Phase 1B 已于 2026-08-24 完成实现提交、推送与 GitHub CI 验证。
+
+## 12. Phase 1B 最终验收与 CI 验证记录（2026-08-24）
+
+### 12.1 规划方独立确认
+
+- **规划方**：`codex_planner`（技术验收，非人工 human_reviewed、非专家 expert-reviewed）。
+- **实现 commit**：`8145b4f1b894101a8cbb1a302c6028b4fe8b3a01`（已成功推送至 `origin/main`）。
+- **GitHub Actions workflow**：`CI`（`.github/workflows/ci.yml`）。
+- **run ID**：`32656643095`；**event**：`push`；**conclusion**：`success`。
+- **Windows job（`windows-latest`）**：Configure / Build / CTest / Run CLI 全部 `success`。
+- **Ubuntu job（`ubuntu-latest`）**：Configure / Build / CTest / Run CLI 全部 `success`。
+- 两个平台均完成 canonical CMake configure → build → CTest（56 项测试）→ CLI `validate data` 输出 PASS。
+- CI 链接：<https://github.com/Smily2333/hy3-algotrace/actions/runs/32656643095>
+
+### 12.2 统一最终状态
+
+- `cmake_ctest_status = verified_github_ci`（canonical CMake/CTest 已由真实 GitHub CI 在 Windows/Linux 验证；本地机器无 CMake，本地未运行，但不再总体标记为 unverified）。
+- `cross_platform_status = verified_windows_linux`（Windows + Linux 已验证；**macOS 未验证，不得声称 macOS 已验证**）。
+- Phase 1B 最终状态：**`phase1b_complete_ci_verified`**。
+
+### 12.3 边界与声明
+
+- `codex_planner` 技术验收仅代表规划方技术层面的契约与构建确认，**不等同于人工（human_reviewed）或专家（expert-reviewed）审查背书**。
+- 本地 MSVC 56/56 测试保持通过；4 个数据文件 SHA-256 与 Phase 1A 基线逐字节一致（data 未改动）。
+- **未进入 Phase 2**；**未创建 tag**（等待 GitHub CI 绿灯后由规划方决定）。
+- 后续进入 Phase 2 须由规划方另行授权与启动。
