@@ -1,0 +1,35 @@
+{
+  "schema_version": "0.3.0",
+  "taxonomy_version": "1.0.0",
+  "dataset_version": "phase1a-pilot-001",
+  "problem_count": 3,
+  "trace_count": 9,
+  "problem_ids": ["cf_160A", "cf_545D", "cf_1398B"],
+  "category_counts": {
+    "problem_misunderstanding": 1,
+    "wrong_greedy_choice": 2,
+    "missing_greedy_proof": 1,
+    "invalid_greedy_proof": 1,
+    "complexity_error": 1,
+    "boundary_omission": 1,
+    "implementation_mismatch": 1
+  },
+  "status_counts": {
+    "correct": 3,
+    "incorrect": 6,
+    "undetermined": 0
+  },
+  "test_origin_counts": {
+    "official_sample": 3,
+    "manually_designed": 3,
+    "counterexample": 3,
+    "generated": 0
+  },
+  "review_status": "planner_reviewed",
+  "reviewer": "codex_planner",
+  "reviewed_at": "2026-08-23",
+  "generated_by": "hy3",
+  "annotator": "hy3_draft",
+  "created_at": "2026-08-23",
+  "notes": "Phase 1A pilot：3 道 Codeforces 贪心题（160A Twins / 545D Queue / 1398B Substring Removal Game），每题 3 条模型生成推理轨迹，共 9 条。已于 2026-08-23 通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed）；此复核不等同于 human_reviewed 或 expert-reviewed，仅为规划方技术验收，尚未经过人工或专家审查。未执行候选代码（verification_results 全为空），未使用 Python，未实现 C++ 解析器，未连接 OJ 提交。candidate_solution 仅 cf_160A_t3 附带一份未运行解法（execution_status=not_run）。"
+}

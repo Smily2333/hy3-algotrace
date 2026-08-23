@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "schema_version": "0.3.0",
+    "taxonomy_version": "1.0.0",
+    "source_reference": "Codeforces 160A (Twins) — https://codeforces.com/problemset/problem/160/A",
+    "dataset_version": "phase1a-pilot-001",
+    "created_at": "2026-08-23"
+  },
+  "problem": {
+    "id": "cf_160A",
+    "source": "codeforces",
+    "title": "Twins",
+    "statement": "有 n 枚硬币，面值 a1..an。选出一个子集使『所选硬币面值之和严格大于剩余硬币面值之和』，且所选硬币数量最少。题面、约束与官方样例见 https://codeforces.com/problemset/problem/160/A （输入：第 1 行 n，第 2 行 n 个整数；输出：单个整数，最少硬币数）。",
+    "constraints": { "n_max": 100, "a_i_min": 1, "a_i_max": 100 },
+    "algorithm_type": "greedy",
+    "reference_tags": ["sorting", "greedy"],
+    "notes": "关键语义是『严格大于』(>)，不是『大于等于』(>=)。"
+  },
+  "reference_verdict": {
+    "problem_id": "cf_160A",
+    "expected_choice": "将硬币按面值从大到小排序；从大到小依次取币，直到『已取之和 > 剩余之和』成立；此时所取硬币个数即为答案。",
+    "expected_proof": "交换论证：假设存在更优方案用更少硬币使 my > rem（my=已取和，rem=剩余和）。该方案若漏掉某个大面值硬币而取了小面值硬币，用大面值替换小面值只会让 my 更大或不变，从而在更少步数内满足条件，与『更优』矛盾。因此每次取当前最大面值最优，降序贪心得最少硬币数。",
+    "expected_complexity": "时间 O(n log n)（排序主导），空间 O(n) 存硬币。",
+    "expected_boundaries": [
+      "n=1：唯一硬币必取，my=该值 > 0 成立，输出 1。",
+      "所有硬币等值时，需取到总和刚好超过一半；因要求严格大于，『刚好一半』时仍需多取一枚（如两枚等值硬币需取 2 枚而非 1 枚）。"
+    ],
+    "common_wrong_strategy_counterexample": "误把『严格大于』当成『大于等于』：输入两枚等值硬币 [5,5]（见 cf_160A_c3）时，正确需取 2 枚（5 > 5 不成立，须取到 10 > 0），若用 >= 则只取 1 枚即误判。"
+  },
+  "test_cases": [
+    {
+      "id": "cf_160A_c1",
+      "problem_id": "cf_160A",
+      "input": "3\n2 1 2\n",
+      "expected_output": "2\n",
+      "origin": "official_sample",
+      "purpose": "normal",
+      "notes": "官方样例（逐字复制自题面）。官方链接：https://codeforces.com/problemset/problem/160/A"
+    },
+    {
+      "id": "cf_160A_c2",
+      "problem_id": "cf_160A",
+      "input": "1\n5\n",
+      "expected_output": "1\n",
+      "origin": "manually_designed",
+      "purpose": "boundary",
+      "notes": "边界 n=1：唯一硬币必取，my=5 > 0 成立，输出 1。基于公开题面自行构造，非官方样例。"
+    },
+    {
+      "id": "cf_160A_c3",
+      "problem_id": "cf_160A",
+      "input": "2\n5 5\n",
+      "expected_output": "2\n",
+      "origin": "counterexample",
+      "purpose": "counterexample",
+      "notes": "击破 cf_160A_t2（problem_misunderstanding，把 > 误读为 >=）以及 cf_160A_t3（implementation_mismatch，代码用 >=）。两枚等值硬币：正确需取 2 枚（5 > 5 不成立，须取到 10 > 0 才满足严格大于）；若按 >= 只需取 1 枚即误判。基于公开题面自行构造的反例，非官方样例。"
+    }
+  ],
+  "reasoning_traces": [
+    {
+      "id": "cf_160A_t1",
+      "problem_id": "cf_160A",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "题面要求：从 n 枚硬币中选出一个子集，使所选硬币面值之和严格大于（>）剩余硬币面值之和，且所选硬币数量最少。注意是『严格大于』，不是『大于等于』。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "贪心策略：将硬币按面值从大到小排序；依次取最大的硬币，直到『已取之和 > 剩余之和』成立；此时已取硬币数即为答案。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "交换论证：假设存在更优方案用更少硬币达到 my > rem。该方案若漏掉某个大面值硬币而取了小面值硬币，用大面值替换小面值只会让 my 更大或不变，从而在更少步数内满足条件，与『更优』矛盾。故每次取当前最大面值最优。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "排序 O(n log n)，贪心扫描 O(n)，总 O(n log n)；空间 O(n) 存硬币。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "n=1：唯一硬币必取，my > 0 成立，输出 1。所有硬币等值时需取到和刚好超过一半——因要求严格大于，『刚好一半』时仍需多取一枚（如两枚等值硬币需取 2 枚）。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "最少硬币数使已取和严格大于剩余和。"
+    },
+    {
+      "id": "cf_160A_t2",
+      "problem_id": "cf_160A",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "误解：题目要求所选硬币面值之和『大于等于』剩余之和即可（把 strictly larger than 理解为 >=）。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "贪心策略：将硬币降序排序，依次取最大硬币，直到『已取之和 >= 剩余之和』成立即停止。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "论证（基于错误前提）：只要自己拿到的不小于对方，就满足『平分』目标，因此取到 >= 即可停止。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "排序 O(n log n)，扫描 O(n)，总 O(n log n)；空间 O(n)。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "认为等值硬币情形没有问题，因为 >= 已经涵盖。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "误以为最少硬币数使已取和 >= 剩余和。"
+    },
+    {
+      "id": "cf_160A_t3",
+      "problem_id": "cf_160A",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "题面：选子集使已取和严格大于（>）剩余和，且数量最少。明确是『严格大于』。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "正确思路：降序排序后依次取最大硬币，直到 my_sum > total - my_sum（已取和严格大于剩余和）。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "交换论证同上（与正确轨迹一致）：每次取当前最大面值最优，降序贪心得最少硬币数。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "排序 O(n log n)，扫描 O(n)，总 O(n log n)。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "提到等值硬币需严格大于，知道刚好一半时要多取一枚。", "relies_on": ["problem_understanding"] },
+        { "stage": "implementation_consistency", "text": "文字思路明确要求 my_sum > total - my_sum（严格大于），但所附 C++17 代码在停止条件处写成了 >=（见 cf_160A_sol1），二者不一致。", "relies_on": ["greedy_choice", "greedy_proof"] }
+      ],
+      "intended_outcome": "最少硬币数使已取和严格大于剩余和（含附带解法）。"
+    }
+  ],
+  "candidate_solutions": [
+    {
+      "id": "cf_160A_sol1",
+      "trace_id": "cf_160A_t3",
+      "language": "cpp",
+      "standard": "c++17",
+      "source_code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <numeric>\n\nusing namespace std;\n\nint main() {\n    int n;\n    if (!(cin >> n)) return 0;\n    vector<long long> a(n);\n    for (int i = 0; i < n; i++) cin >> a[i];\n    sort(a.rbegin(), a.rend()); // 降序\n    long long total = 0;\n    for (long long x : a) total += x;\n    long long my_sum = 0;\n    int taken = 0;\n    for (long long x : a) {\n        my_sum += x;\n        taken++;\n        // BUG: 应为严格大于 my_sum > total - my_sum，此处误用 >= \n        if (my_sum >= total - my_sum) break;\n    }\n    cout << taken << \"\\n\";\n    return 0;\n}\n",
+      "execution_status": "not_run"
+    }
+  ],
+  "diagnoses": [
+    {
+      "id": "cf_160A_t1_d",
+      "trace_id": "cf_160A_t1",
+      "status": "correct",
+      "primary_category": null,
+      "findings": [],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    },
+    {
+      "id": "cf_160A_t2_d",
+      "trace_id": "cf_160A_t2",
+      "status": "incorrect",
+      "primary_category": "problem_misunderstanding",
+      "findings": [
+        {
+          "stage": "problem_understanding",
+          "category": "problem_misunderstanding",
+          "locating": "第一步题意理解",
+          "evidence": "题面明确要求『strictly larger than』即严格大于 (>)，轨迹误读为『大于等于』(>=)。二者在存在使两边相等（如两枚等值硬币）的情形下结论不同。可构造反例 cf_160A_c3（两枚 5）：正确需取 2 枚（5 > 5 不成立，须取到 10 > 0），误读下只取 1 枚即判错。",
+          "suggestion": "按题面严格采用 > 作为停止条件，并重读『strictly larger than』的表述。"
+        }
+      ],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    },
+    {
+      "id": "cf_160A_t3_d",
+      "trace_id": "cf_160A_t3",
+      "status": "incorrect",
+      "primary_category": "implementation_mismatch",
+      "findings": [
+        {
+          "stage": "implementation_consistency",
+          "category": "implementation_mismatch",
+          "locating": "实现停止条件（cf_160A_sol1）",
+          "evidence": "文字思路明确要求 my_sum > total - my_sum（严格大于），但 cf_160A_sol1 在循环内使用 if (my_sum >= total - my_sum) break; 即使用了 >=。在两边恰好相等（如两枚等值硬币）时，代码会提前停止，导致输出比正确值少 1。代码尚未编译/运行（execution_status=not_run），此处仅依据源码与思路比对判定不一致。",
+          "suggestion": "将停止条件改为严格大于 (my_sum > total - my_sum)。"
+        }
+      ],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    }
+  ],
+  "verification_results": []
+}

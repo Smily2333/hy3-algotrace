@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "schema_version": "0.3.0",
+    "taxonomy_version": "1.0.0",
+    "source_reference": "Codeforces 545D (Queue) — https://codeforces.com/problemset/problem/545/D",
+    "dataset_version": "phase1a-pilot-001",
+    "created_at": "2026-08-23"
+  },
+  "problem": {
+    "id": "cf_545D",
+    "source": "codeforces",
+    "title": "Queue",
+    "statement": "有 n 人排队，每人服务需 t_i 分钟。若某人等待时间（排在其前面所有人服务时间之和）超过其 t_i，则其失望。可重排队列，求最多不失望人数。题面、约束与官方样例见 https://codeforces.com/problemset/problem/545/D （输入：第 1 行 n，第 2 行 n 个整数；输出：单个整数，最多不失望人数）。",
+    "constraints": { "n_max": 100000, "t_i_min": 1, "t_i_max": 1000000000 },
+    "algorithm_type": "greedy",
+    "reference_tags": ["sorting", "greedy"],
+    "notes": "关键：应按 t_i 升序重排，而非保持原顺序。"
+  },
+  "reference_verdict": {
+    "problem_id": "cf_545D",
+    "expected_choice": "将所有人按服务所需时间 t_i 升序排序；依次尝试让每人入队：维护已服务累计时间 running_total；若 running_total <= t_i（其等待时间不超过自身可容忍时间），则让其被服务（running_total += t_i，计数 +1），否则跳过该人；最终计数为最多不失望人数。",
+    "expected_proof": "（a）最优结构：设某最优安排使 k 人不失望。若一个失望者 X 排在某个不失望者 Y 之前，把 Y 前移到 X 之前：Y 的等待时间只可能变小（移除了 X 的服务期）而仍不失望；排在 Y 与 X 之间、原本就在前面的人等待时间不变；X 后移仍失望。因此不减少不失望人数。反复此操作可得一个最优排列，使所有不失望者位于队首、构成一个『不失望前缀』。（b）于是只需选出一个尽可能长的可行前缀：对前缀中第 i 个人，其前面累计服务时间 ≤ t_i。（c）贪心构造：将 t_i 升序排序为 t_(1)≤…≤t_(n)，扫描维护已选累计 S（初始 0）；若 S ≤ t_i 则接纳（S += t_i，计数 +1），否则留到队尾。（d）不变量归纳：扫描到当前时，贪心在『保持当前接纳人数』的前提下使累计 S 最小。归纳：开始时 S=0 最小；若在扫描完 j 人后，所有能接纳 m 人的大小为 m 的可行选择中贪心 S 最小，则下一轮要么接纳当前最小可用 t_(j+1)（其等待恰为 S，条件 S ≤ t_(j+1)），得到仍最小的 S'；要么 S > t_(j+1) 而跳过。关键在于：若当前最小的可用 t 都不满足 S ≤ t，则没有更小的 t 可替换（已升序），而插入任何人都会先将其服务时间加到 S 上使其后每个人的等待更大，故不存在能把当前接纳人数再增加 1 的可行方案——贪心已达该扫描阶段下的最大接纳人数。（e）综上：贪心给出的不失望前缀长度即最大可行接纳人数，升序排序最优。本证明未依赖『交换后 a 更难被服务但整体自然不减』这类未经论证的说法。",
+    "expected_complexity": "时间 O(n log n)（排序主导），空间 O(n) 或原地 O(1)。",
+    "expected_boundaries": [
+      "n=1：该人等待 0 <= t_i 必被服务，输出 1。",
+      "t_i 可达 1e9，累计时间需用 64 位整数（long long）避免溢出。",
+      "原输入顺序未必最优，必须重排。"
+    ],
+    "common_wrong_strategy_counterexample": "保持原输入顺序（不排序）：输入 [5,1]（见 cf_545D_c3）时，原顺序下第 1 人等待 0<=5 被服务（累计 5），第 2 人等待 5>1 失望，只服务 1 人；但重排为 [1,5] 可服务 2 人。"
+  },
+  "test_cases": [
+    {
+      "id": "cf_545D_c1",
+      "problem_id": "cf_545D",
+      "input": "5\n15 2 1 5 3\n",
+      "expected_output": "4\n",
+      "origin": "official_sample",
+      "purpose": "normal",
+      "notes": "官方样例（逐字复制自题面）。官方链接：https://codeforces.com/problemset/problem/545/D"
+    },
+    {
+      "id": "cf_545D_c2",
+      "problem_id": "cf_545D",
+      "input": "1\n10\n",
+      "expected_output": "1\n",
+      "origin": "manually_designed",
+      "purpose": "boundary",
+      "notes": "边界 n=1：等待 0 <= 10，该人必被服务，输出 1。基于公开题面自行构造，非官方样例。"
+    },
+    {
+      "id": "cf_545D_c3",
+      "problem_id": "cf_545D",
+      "input": "2\n5 1\n",
+      "expected_output": "2\n",
+      "origin": "counterexample",
+      "purpose": "counterexample",
+      "notes": "击破 cf_545D_t2（wrong_greedy_choice，保持原顺序）。原顺序 [5,1]：第 1 人等待 0<=5 服务（累计 5），第 2 人等待 5>1 失望，只服务 1 人；正确重排为 [1,5] 可服务 2 人。基于公开题面自行构造的反例，非官方样例。"
+    }
+  ],
+  "reasoning_traces": [
+    {
+      "id": "cf_545D_t1",
+      "problem_id": "cf_545D",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "有 n 人排队，每人服务需 t_i 分钟；若某人等待时间（排在其前面所有人服务时间之和）超过其 t_i，则其失望。可重排队列，求最多不失望人数。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "按 t_i 升序排序；依次尝试让每人入队：维护 running_total（已服务累计时间），若 running_total <= t_i（其等待时间不超过容忍），则服务该人（running_total += t_i，计数 +1），否则跳过。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "最优结构：把最优排列调整为一个『不失望前缀』——若失望者 X 排在不失望者 Y 之前，将 Y 前移只让 Y 等待变小（仍不失望）且不减少总数；故只需选最长可行前缀。贪心构造：t_i 升序扫描维护累计 S，S ≤ t_i 则接纳。不变量归纳：贪心在保持当前接纳人数下使累计 S 最小；若剩余最小可用 t 都不满足 S ≤ t，则无法再多接纳 1 人（插入任何人都先增大其后等待），故贪心得最大不失望人数，升序最优。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "排序 O(n log n)，扫描 O(n)，总 O(n log n)；空间 O(n)。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "n=1 时等待 0 <= t_i 必服务，输出 1；t_i 可达 1e9，累计需用 long long 防溢出。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "最多不失望人数（升序贪心）。"
+    },
+    {
+      "id": "cf_545D_t2",
+      "problem_id": "cf_545D",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "正确理解题意：可重排队列使最多不失望人数最大。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "错误策略：保持题目给定输入顺序，不重排，依次判断每人是否被服务（running_total <= t_i 则服务并累加）。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "错误论证：认为『原顺序就是最优顺序』，因为输入顺序反映了某种自然次序。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "不排序，仅 O(n) 扫描。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "未考虑原顺序可能使后面小 t_i 的人因前面累计过大而失望。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "原顺序下的最多不失望人数（错误策略）。"
+    },
+    {
+      "id": "cf_545D_t3",
+      "problem_id": "cf_545D",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "正确理解题意：可重排使最多不失望人数最大。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "正确策略：按 t_i 升序排序后贪心服务（running_total <= t_i 则计数并累加）。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "正确结构论证（同正确轨迹）：可把最优排列调整为不失望者位于队首的可行前缀；升序扫描维护 S，S ≤ t_i 时接纳；归纳不变量是贪心在保持当前人数下累计 S 最小，若最小可选 t 都不满足 S ≤ t，则无法再增 1 人；故升序贪心得最大不失望人数。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "错误：声称总复杂度是 O(n)，忽略排序开销（实际由排序主导为 O(n log n)）。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "正确：n=1 输出 1；t_i 用 long long 防溢出。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "升序贪心得最多不失望人数（复杂度分析错误）。"
+    }
+  ],
+  "candidate_solutions": [],
+  "diagnoses": [
+    {
+      "id": "cf_545D_t1_d",
+      "trace_id": "cf_545D_t1",
+      "status": "correct",
+      "primary_category": null,
+      "findings": [],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    },
+    {
+      "id": "cf_545D_t2_d",
+      "trace_id": "cf_545D_t2",
+      "status": "incorrect",
+      "primary_category": "wrong_greedy_choice",
+      "findings": [
+        {
+          "stage": "greedy_choice",
+          "category": "wrong_greedy_choice",
+          "locating": "第二步策略",
+          "evidence": "保持原输入顺序并非最优。反例 cf_545D_c3（输入 [5,1]）：原顺序下第 1 人等待 0<=5 被服务（累计 5），第 2 人等待 5>1 失望，只服务 1 人；但重排为 [1,5] 可服务 2 人。原顺序可被反例推翻，缺少最优子结构依据。",
+          "suggestion": "改为按 t_i 升序排序后再贪心服务。"
+        }
+      ],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    },
+    {
+      "id": "cf_545D_t3_d",
+      "trace_id": "cf_545D_t3",
+      "status": "incorrect",
+      "primary_category": "complexity_error",
+      "findings": [
+        {
+          "stage": "complexity",
+          "category": "complexity_error",
+          "locating": "第四步复杂度",
+          "evidence": "策略与正确性论证均正确，但将总复杂度说成 O(n)，忽略了按 t_i 升序排序这一步；排序主导复杂度为 O(n log n)，故正确总复杂度应为 O(n log n)。声称 O(n) 数量级错误。",
+          "suggestion": "将复杂度修正为 O(n log n)（排序主导），扫描为 O(n)。"
+        }
+      ],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    }
+  ],
+  "verification_results": []
+}

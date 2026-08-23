@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "schema_version": "0.3.0",
+    "taxonomy_version": "1.0.0",
+    "source_reference": "Codeforces 1398B (Substring Removal Game) — https://codeforces.com/problemset/problem/1398/B",
+    "dataset_version": "phase1a-pilot-001",
+    "created_at": "2026-08-23"
+  },
+  "problem": {
+    "id": "cf_1398B",
+    "source": "codeforces",
+    "title": "Substring Removal Game",
+    "statement": "Alice 与 Bob 轮流操作，每回合可删除一个由相同字符组成的非空连续子串（连续 0 或连续 1 均可）；得分是自己删除的字符 1 的个数；双方均采取最优策略，求 Alice 最大得分。题面、约束与官方样例见 https://codeforces.com/problemset/problem/1398/B （输入：第 1 行 T，随后 T 行每行一个 01 串；输出：T 行，每行 Alice 得分）。",
+    "constraints": { "T_max": 500, "s_len_max": 100 },
+    "algorithm_type": "greedy",
+    "reference_tags": ["sorting", "greedy", "game"],
+    "notes": "得分只来自删除 1；最优下每回合取当前最长的 1 段。"
+  },
+  "reference_verdict": {
+    "problem_id": "cf_1398B",
+    "expected_choice": "统计字符串中每段连续 1 的长度，得到各段长；将这些长度降序排序；Alice 取排序后第 1、3、5……（奇数位，1-indexed）段，Bob 取第 2、4、6…… 段；Alice 得分即为这些奇数位段长之和。",
+    "expected_proof": "（a）为何不删纯 0 段：只要串中还存在字符 1，删除一个纯 0 子串得分恒为 0，且它只会让被删 0 段两侧的 1 段保持或合并成更长的 1 段，等于把更大的得分机会交给对手，因此删 0 段绝不是更优选择，可忽略。（b）为何取完整 1 段：考虑删除某段 1 的一部分而留一段 1 给对手——删除整段该 1 段可得全部长度得分，且把该段剩余 1 全部清空、不让对手捡漏；只删一部分得分更少且残留 1 可能归对手。故『删一部分』被『删整段』严格支配，最优下每回合应删除一个完整的 1 段。（c）归约：最优过程等价于双方轮流从『当前所有连续 1 段长度的集合』中取走一个完整段，被取段长计入取者得分。（d）每回合取最大段（交换论证）：若轮到当前玩家时其取了一个较短段 s，而把最长段 L（L ≥ s）留给对手，交换二者（当前玩家改取 L、对手得 s）后当前玩家得分不减（L ≥ s），故任何不取最大段的策略都不优于『每回合取最大段』。（e）最终策略：将所有 1 段长度降序排序，Alice（先手）取第 1、3、5……（奇数位）项，Bob 取第 2、4、6…… 项，Alice 得分为奇数位段长之和。",
+    "expected_complexity": "时间 O(n + k log k)（k 为 1 段数，k<=n），即 O(n log n)；空间 O(n)。",
+    "expected_boundaries": [
+      "全 0 串：无任何 1 段，Alice 得 0。",
+      "单段全 1 串：Alice 取走整段。",
+      "T 组测试，每组独立计算。"
+    ],
+    "common_wrong_strategy_counterexample": "按 1 段在原串『出现顺序』而非长度取：对字符串 1011111010101（见 cf_1398B_c3），出现顺序段长 [1,5,1,1,1]，按出现顺序 Alice 取第 1、3、5 段共 3；但正确按长度降序 [5,1,1,1,1] 后 Alice 取 5+1+1=7。"
+  },
+  "test_cases": [
+    {
+      "id": "cf_1398B_c1",
+      "problem_id": "cf_1398B",
+      "input": "5\n01111001\n0000\n111111\n101010101\n011011110111\n",
+      "expected_output": "4\n0\n6\n3\n6\n",
+      "origin": "official_sample",
+      "purpose": "normal",
+      "notes": "官方样例（逐字复制自题面，含 T=5 组）。验证正确段长降序策略：如 01111001 → 段长 [4,1] → Alice 4；0000 → 0；111111 → 6；101010101 → [1,1,1,1,1] → 3；011011110111 → [2,4,3] → 6。官方链接：https://codeforces.com/problemset/problem/1398/B"
+    },
+    {
+      "id": "cf_1398B_c2",
+      "problem_id": "cf_1398B",
+      "input": "1\n0000\n",
+      "expected_output": "0\n",
+      "origin": "manually_designed",
+      "purpose": "boundary",
+      "notes": "边界：全 0 串，无任何 1 段，Alice 得 0。用于检验是否遗漏全 0 边界（见 cf_1398B_t3 的 boundary_omission）。基于公开题面自行构造，非官方样例。"
+    },
+    {
+      "id": "cf_1398B_c3",
+      "problem_id": "cf_1398B",
+      "input": "1\n1011111010101\n",
+      "expected_output": "7\n",
+      "origin": "counterexample",
+      "purpose": "counterexample",
+      "notes": "击破 cf_1398B_t3（wrong_greedy_choice + invalid_greedy_proof + boundary_omission 多错误轨迹）中的『按 1 段出现顺序取』错误策略。该串连续 1 段出现顺序长度为 [1,5,1,1,1]：按出现顺序 Alice 取第 1、3、5 段共 3；正确按长度降序 [5,1,1,1,1] 后 Alice 取 5+1+1=7。基于公开题面自行构造的反例，非官方样例。"
+    }
+  ],
+  "reasoning_traces": [
+    {
+      "id": "cf_1398B_t1",
+      "problem_id": "cf_1398B",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "Alice 与 Bob 轮流操作，每回合可删除一个由相同字符组成的非空连续子串（连续 0 或连续 1 均可）；得分是自己删除的字符 1 的个数；双方最优，求 Alice 最大得分。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "统计每段连续 1 的长度，得到各段长；将段长降序排序；Alice 取第 1、3、5……（奇数位）段，Bob 取第 2、4、6…… 段；Alice 得分为奇数位段长之和。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "不删纯 0 段：串中还有 1 时删 0 段得分恒 0 且只把更大 1 段机会交给对手，非更优。取完整 1 段：删某 1 段的一部分被『删整段』支配（整段得分更多且不残留给对手）。故最优归约为双方轮流取走一个完整 1 段长。每回合取当前最大段：若当前玩家取较短段 s 而把最长段 L 留给对手，交换二者后当前玩家得分不减（L ≥ s），故每回合取最大段最优。综合：1 段长降序后 Alice 取奇数位。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "O(n + k log k)（k 为 1 段数 ≤ n），即 O(n log n)；空间 O(n)。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "全 0 串：无 1 段，Alice 得 0；单段全 1：Alice 取走整段；多组测试每组独立。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "Alice 最大得分（段长降序取奇数位）。"
+    },
+    {
+      "id": "cf_1398B_t2",
+      "problem_id": "cf_1398B",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "正确理解题意：每回合可删连续 0 或连续 1 子串，得分来自删除的 1。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "正确策略：统计连续 1 段长度，降序排序，Alice 取第 1、3、5…… 段。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "该策略显然正确，因为先手总能拿到最长的段，无需额外证明。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "O(n log n)（排序段长）。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "正确：全 0 时得 0；单段全 1 取整段。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "Alice 最大得分（策略正确但缺失证明）。"
+    },
+    {
+      "id": "cf_1398B_t3",
+      "problem_id": "cf_1398B",
+      "author": "hy3",
+      "trace_origin": "model_generated",
+      "generator_model": "hy3",
+      "annotator": "hy3_draft",
+      "review_status": "planner_reviewed",
+      "reviewer": "codex_planner",
+      "reviewed_at": "2026-08-23",
+      "steps": [
+        { "stage": "problem_understanding", "text": "正确理解题意（允许删连续 0 或连续 1）。", "relies_on": [] },
+        { "stage": "greedy_choice", "text": "错误策略：按 1 段在字符串中『出现的先后次序』依次轮流取，Alice 取第 1、3、5…… 个出现的段（不按长度排序）。", "relies_on": ["problem_understanding"] },
+        { "stage": "greedy_proof", "text": "无效论证：因为 Alice 总是先手，先手取到的段一定最多，所以按出现顺序取就行。", "relies_on": ["greedy_choice"] },
+        { "stage": "complexity", "text": "O(n) 扫描分段即可。", "relies_on": ["problem_understanding"] },
+        { "stage": "boundary", "text": "声称『字符串非空，所以不需处理特殊情形』——遗漏了全 0 串（虽非空但无 1 段，Alice 得 0）。", "relies_on": ["problem_understanding"] }
+      ],
+      "intended_outcome": "Alice 最大得分（错误策略 + 无效证明 + 遗漏边界）。"
+    }
+  ],
+  "candidate_solutions": [],
+  "diagnoses": [
+    {
+      "id": "cf_1398B_t1_d",
+      "trace_id": "cf_1398B_t1",
+      "status": "correct",
+      "primary_category": null,
+      "findings": [],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    },
+    {
+      "id": "cf_1398B_t2_d",
+      "trace_id": "cf_1398B_t2",
+      "status": "incorrect",
+      "primary_category": "missing_greedy_proof",
+      "findings": [
+        {
+          "stage": "greedy_proof",
+          "category": "missing_greedy_proof",
+          "locating": "第三步论证",
+          "evidence": "任务要求给出正确性论证（贪心性质/交换论证），但轨迹仅以『显然正确』带过，未提供任何交换论证或性质证明，属于完全缺失论证。",
+          "suggestion": "补充交换论证：说明为何每回合取当前最长 1 段最优，以及段长降序后 Alice 取奇数位等价于该贪心。"
+        }
+      ],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    },
+    {
+      "id": "cf_1398B_t3_d",
+      "trace_id": "cf_1398B_t3",
+      "status": "incorrect",
+      "primary_category": "wrong_greedy_choice",
+      "findings": [
+        {
+          "stage": "greedy_choice",
+          "category": "wrong_greedy_choice",
+          "locating": "第二步策略",
+          "evidence": "按 1 段出现顺序而非长度取，忽略段长，非最优。反例 cf_1398B_c3（1011111010101）：出现顺序段长 [1,5,1,1,1]，按出现顺序 Alice 取第 1、3、5 段共 3；正确按长度降序 [5,1,1,1,1] 后 Alice 取 5+1+1=7。该策略可被反例推翻。",
+          "suggestion": "改为按段长降序排序后 Alice 取奇数位。"
+        },
+        {
+          "stage": "greedy_proof",
+          "category": "invalid_greedy_proof",
+          "locating": "第三步论证",
+          "evidence": "『先手取到的段一定最多』不成立：先手取哪些段取决于策略而非先手身份；位置优先不等于总长最大，论证循环且无一般性。",
+          "suggestion": "提供基于『每回合取最长段』的交换论证。"
+        },
+        {
+          "stage": "boundary",
+          "category": "boundary_omission",
+          "locating": "第五步边界",
+          "evidence": "『字符串非空就不需要特殊处理』错误：全 0 串虽非空，但无任何 1 段可删，Alice 得分为 0，是被遗漏的边界。",
+          "suggestion": "显式说明全 0 串时 Alice 得 0。"
+        }
+      ],
+      "confidence": null,
+      "confidence_method": null,
+      "calibration_version": null
+    }
+  ],
+  "verification_results": []
+}
