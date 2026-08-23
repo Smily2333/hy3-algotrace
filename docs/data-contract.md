@@ -76,13 +76,13 @@ data/
 | trace_origin | string | 来源：`human_written` / `model_generated` / `transformed`。**Phase 1A 固定 `model_generated`** |
 | generator_model | string | 生成模型。**Phase 1A 固定 `hy3`** |
 | annotator | string | 标注者或标注来源。**Phase 1A 固定 `hy3_draft`** |
-| review_status | string | 审查状态。**Phase 1A 固定 `pending_planner_review`** |
+| review_status | string | 审查状态。`pending_planner_review`（模型生成、尚未复核）或 `planner_reviewed`（规划方已复核）。状态转换语义见 §2.1。 |
 | reviewer | string \| null | 审查人；未审查为 `null` |
 | reviewed_at | string \| null | 审查时间（ISO 8601）；未审查为 `null` |
 | steps | array<step> | 推理环节，建议按六环节顺序（见 architecture 第 4 节） |
 | intended_outcome | string | 可选：该题期望结论摘要 |
 
-> 模型（Hy3）生成的轨迹**必须**保持 `trace_origin = model_generated`、`annotator = hy3_draft`、`review_status = pending_planner_review`，**不得**写成 `human_written` 或 `expert-reviewed`。
+> 模型（Hy3）生成的轨迹**必须**保持 `trace_origin = model_generated`、`annotator = hy3_draft`。其 `review_status` 在生成时为 `pending_planner_review`（且 `reviewer`/`reviewed_at` 为 `null`）；规划方复核通过后方可转为 `planner_reviewed`（并填 `reviewer`/`reviewed_at`）。在任何阶段都**不得**把 `model_generated` 内容伪装成 `human_written` 或 `expert-reviewed`。
 
 > **`implementation_consistency` 环节的前提（重要）**：该环节评估「文字思路与所附候选 C++17 代码是否一致」，**仅在轨迹确实关联 `candidate_solution` 时才可评估**。当某条轨迹**没有**关联 `candidate_solution` 时，**必须省略** `implementation_consistency` 步骤，**不得**出现“思路与代码一致”“思路与实现一致”等任何无代码支撑的断言。缺少可选候选代码本身**不会**使该纯思路轨迹自动变成 `incorrect` 或 `undetermined`——是否错误完全取决于其 `problem_understanding` / `greedy_choice` / `greedy_proof` / `complexity` / `boundary` 环节本身（见 `error-taxonomy.md`）。
 
@@ -90,7 +90,7 @@ data/
 
 - `model_generated` 样本在创建时，`review_status` 固定为 `pending_planner_review`（规划方尚未复核）。
 - 后续规划方复核通过后，可转为 `planner_reviewed`；但 `planner_reviewed` **不等同于** `human_reviewed` 或 `expert-reviewed`，仅是「规划方已复核」的内部状态，不表示人工 / 专家背书。
-- 本批次所有样本当前仍为 `pending_planner_review`，`reviewer = null`、`reviewed_at = null`；本轮（Phase 1A 审查修订）**不修改**任何数据记录的 `review_status` / `reviewer` / `reviewed_at`，等待规划方复核后再统一更新。
+- **当前 Phase 1A 基线已经是 `planner_reviewed`**：规划方（codex_planner）复核已于 2026-08-23 完成，全部 9 条轨迹 `reviewer = codex_planner`、`reviewed_at = 2026-08-23`；此状态**不等同于**人工（human_reviewed）或专家（expert-reviewed）审查背书。
 - 在任何阶段都**不得**把 `model_generated` 内容伪装成 `human_written` 或 `expert-reviewed`。
 
 `step` 结构：
@@ -276,3 +276,94 @@ data/
 ```
 
 > 以上示例仅用于说明字段与数组化结构，**不**作为真实评测样本。
+
+---
+
+## 附录 A. Phase 1B 可执行校验规则与错误码映射
+
+> **本附录为 Phase 1B 新增，仅记录「校验器如何实现本契约的检查」，不改变 0.3.0 的数据语义。**
+> 校验器见 `hy3_algotrace validate <data_dir>`（C++17，实现见 `src/validator.cpp`、`docs/journal/phase-01b.md`）。
+> 错误码稳定且机器可读，测试仅断言错误码而非自由文本。
+
+### A.1 规则 → 错误码
+
+| 契约约束（含第 0–7 节） | 违反时的稳定错误码 |
+| --- | --- |
+| 题文件缺 8 个必需顶层键之一 | `E_MISSING_KEY` |
+| 字段类型错误（应为 string/int/array/object 等） | `E_TYPE_MISMATCH` |
+| 字段校验三层顺序：① 存在性（缺键 → `E_MISSING_KEY`，不得静默当 null）② 声明类型（错类型 → `E_TYPE_MISMATCH`）③ 阶段语义（枚举/固定值/审查状态/未校准）。非 null 的 confidence 字段即使类型错误也仍同时报告 `E_TYPE_MISMATCH` 与 `E_UNCALIBRATED_CONFIDENCE` | `E_MISSING_KEY` / `E_TYPE_MISMATCH` / `E_UNCALIBRATED_CONFIDENCE` |
+| `meta.schema/taxonomy/dataset_version` 与 manifest 不一致 | `E_VERSION_MISMATCH` |
+| `problem.id` 与文件名 `<id>.json` 不匹配 | `E_PROBLEM_ID_FILE_MISMATCH` |
+| `reference_verdict.problem_id` ≠ `problem.id` | `E_BAD_PROBLEM_FK` |
+| `reasoning_traces[].id` 重复 | `E_DUPLICATE_ID` |
+| `reasoning_traces[].problem_id` 无法解析到题目 | `E_BAD_PROBLEM_FK` |
+| `reasoning_traces[].review_status` 非法枚举 | `E_INVALID_ENUM` |
+| `review_status=planner_reviewed` 但 `reviewer`/`reviewed_at` 为空（或反之） | `E_REVIEW_STATUS_SEMANTIC` |
+| `steps[].stage` 非法枚举 | `E_INVALID_ENUM` |
+| 含 `implementation_consistency` 步骤但无关联 `candidate_solution` | `E_IMPLEMENTATION_WITHOUT_SOLUTION` |
+| `candidate_solutions[].id` 重复 | `E_DUPLICATE_ID` |
+| `candidate_solutions[].trace_id` 无法解析到轨迹 | `E_BAD_TRACE_FK` |
+| `candidate_solutions[].language/standard/execution_status` 非法 | `E_INVALID_ENUM` |
+| `test_cases[].id` 重复 | `E_DUPLICATE_ID` |
+| `test_cases[].problem_id` 无法解析到题目 | `E_BAD_TEST_FK` |
+| `test_cases[].origin` / `purpose` 非法枚举 | `E_INVALID_ENUM` |
+| `verification_results` 非空（Phase 1A 不变量） | `E_UNEXPECTED_VERIFICATION_RESULT` |
+| `verification_results[].solution_id` / `test_id` 无法解析 | `E_BAD_SOLUTION_FK` / `E_BAD_TEST_FK` |
+| `verification_results[].verdict` 非法枚举 | `E_INVALID_ENUM` |
+| `diagnoses[].trace_id` 无法解析到轨迹 | `E_BAD_TRACE_FK` |
+| 同一轨迹 diagnosis 数量 ≠ 1 | `E_DIAGNOSIS_CARDINALITY` |
+| `diagnoses[].status` 非法枚举 | `E_INVALID_ENUM` |
+| `status=correct` 但 `primary_category` 非空或 `findings` 非空 | `E_CORRECT_WITH_FINDINGS` |
+| `status=incorrect` 但 `findings` 为空 | `E_INCORRECT_WITHOUT_FINDINGS` |
+| `status=incorrect` 但 `primary_category` 未出现于某 `finding.category` | `E_PRIMARY_NOT_IN_FINDINGS` |
+| `status=undetermined` 但 `primary_category` 非空 | `E_STATUS_PRIMARY_MISMATCH` |
+| `diagnoses[].primary_category` 缺键 / 非 string\|null / 非 7 类枚举（incorrect 时） | `E_MISSING_KEY` / `E_TYPE_MISMATCH` / `E_INVALID_ENUM` |
+| `diagnoses[].confidence` 非 number\|null（Phase 4 前须为 null） | `E_TYPE_MISMATCH` / `E_UNCALIBRATED_CONFIDENCE` |
+| `diagnoses[].confidence_method` 非 string\|null（Phase 4 前须为 null） | `E_TYPE_MISMATCH` / `E_UNCALIBRATED_CONFIDENCE` |
+| `diagnoses[].calibration_version` 非 string\|null（Phase 4 前须为 null） | `E_TYPE_MISMATCH` / `E_UNCALIBRATED_CONFIDENCE` |
+| `reasoning_traces[].reviewer` / `reviewed_at` 缺键或类型非 string\|null | `E_MISSING_KEY` / `E_TYPE_MISMATCH` |
+| `problem.reference_tags` 元素非 string | `E_TYPE_MISMATCH` |
+| `reference_verdict.expected_boundaries` 元素非 string | `E_TYPE_MISMATCH` |
+| `reasoning_traces[].steps[].relies_on` 元素非 string | `E_TYPE_MISMATCH` |
+| `manifest.problem_ids` 元素非 string | `E_TYPE_MISMATCH` |
+| `manifest` 必填字段（schema_version/taxonomy_version/dataset_version/problem_count/trace_count/problem_ids/category_counts/status_counts/test_origin_counts/review_status/reviewer/reviewed_at）缺键或类型错 | `E_MISSING_KEY` / `E_TYPE_MISMATCH` |
+| `manifest.review_status` 非法枚举 | `E_INVALID_ENUM` |
+| `manifest.reviewer`/`reviewed_at` 与 `review_status` 语义不符（planner_reviewed 须非空，pending 须 null） | `E_REVIEW_STATUS_SEMANTIC` |
+| `verification_results[]` 字段（solution_id/test_id/actual_output/verdict/runtime_ms 必填，finding_ref 可选 string\|null）缺键或类型错 | `E_MISSING_KEY` / `E_TYPE_MISMATCH` / `E_INVALID_ENUM` |
+| `findings[].stage` / `category` 非法枚举 | `E_INVALID_ENUM` |
+| `confidence` 在 Phase 4 校准前非 null | `E_UNCALIBRATED_CONFIDENCE` |
+| manifest 重算计数（problem/trace/category/status/test_origin/ids）与汇总不一致 | `E_MANIFEST_COUNT_MISMATCH` |
+| 数据集目录 / manifest / problems 目录缺失 | `E_DATA_DIR_NOT_FOUND` / `E_MANIFEST_NOT_FOUND` / `E_PROBLEMS_DIR_NOT_FOUND` |
+| 文件无法打开 / JSON 解析失败 | `E_FILE_READ` / `E_JSON_PARSE` |
+| CLI 参数错误 / 内部异常 | `E_USAGE` |
+
+### A.2 错误码全集（稳定清单）
+
+```
+E_USAGE
+E_DATA_DIR_NOT_FOUND
+E_MANIFEST_NOT_FOUND
+E_PROBLEMS_DIR_NOT_FOUND
+E_FILE_READ
+E_JSON_PARSE
+E_MISSING_KEY
+E_TYPE_MISMATCH
+E_VERSION_MISMATCH
+E_DUPLICATE_ID
+E_BAD_PROBLEM_FK
+E_BAD_TRACE_FK
+E_BAD_SOLUTION_FK
+E_BAD_TEST_FK
+E_DIAGNOSIS_CARDINALITY
+E_INVALID_ENUM
+E_CORRECT_WITH_FINDINGS
+E_INCORRECT_WITHOUT_FINDINGS
+E_PRIMARY_NOT_IN_FINDINGS
+E_IMPLEMENTATION_WITHOUT_SOLUTION
+E_MANIFEST_COUNT_MISMATCH
+E_UNCALIBRATED_CONFIDENCE
+E_UNEXPECTED_VERIFICATION_RESULT
+E_PROBLEM_ID_FILE_MISMATCH
+E_REVIEW_STATUS_SEMANTIC
+E_STATUS_PRIMARY_MISMATCH
+```

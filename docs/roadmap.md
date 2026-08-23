@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。当前处于 **Phase 0**。每个阶段标注目标、主要产物与进入下一阶段的条件。
+> 宏观阶段规划。当前处于 **Phase 1B**，R2.1 已通过规划方技术验收，等待 GitHub CI。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -11,9 +11,20 @@
 
 ## Phase 1 — 数据契约及少量人工样本
 
-- **目标**：落地面向 C++17 的解析与少量真实样本。
-- **主要产物**：data-contract 解析器（C++17）；~3–5 道贪心题 + 每题数条轨迹的人工标注样本；诊断结果样例。
-- **进入下一阶段条件**：解析器可载入示例；样本经人工复核；错误分类可映射到样本。
+> Phase 1 拆分为 **1A（数据）** 与 **1B（C++17 校验器）** 两个落地子阶段。
+
+### Phase 1A — 数据格式冻结与首批样本（已完成，2026-08-23）
+
+- **目标**：冻结数据契约 0.3.0，产出并复核首批模型生成样本。
+- **主要产物**：`data/manifest.json` + 3 题 × 3 轨迹 = 9 条样本；通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed）；journal/phase-01a。
+- **状态**：已完成。
+
+### Phase 1B — C++17 数据契约校验器（规划方验收通过，等待 GitHub CI）
+
+- **目标**：实现纯 C++17 命令行工具 `hy3_algotrace validate`，加载并校验数据集对照 0.3.0 契约。
+- **主要产物**：`include/hy3_algotrace/*`、`src/*`、`tests/validator_tests.cpp`（56 项测试全过）、`third_party/nlohmann/json.hpp`（v3.12.0，SHA-256 校验）、`CMakeLists.txt`（canonical，含 `hy3_algotrace_core` 静态库 + SYSTEM PUBLIC third_party）、`docs/journal/phase-01b.md`。
+- **状态**：`phase1b_planner_reviewed_pending_github_ci`（codex_planner 技术验收已通过，等待 GitHub CI 补齐 canonical CMake/CTest 与跨平台验证）。CMake/CTest 未实际运行（`cmake_ctest_status = unverified_tool_unavailable`）；跨平台未验证（`cross_platform_status = unverified`）；未提交 / 未推送 / 未进入 Phase 2。
+- **进入下一阶段条件（Phase 2）**：规划方复核通过并推送 GitHub（目标分支 `main`）；在具备 CMake 的环境 / CI 中补做 canonical CMake/CTest 验证。
 
 ## Phase 2 — C++17 基础评测管线
 

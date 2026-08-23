@@ -63,3 +63,40 @@
 - 诊断结论区分 `status`（correct / incorrect / undetermined）与 finding 类别（见 error-taxonomy）；`undetermined` 表示输入不足无法判定，**不作为已确认错误**参与计数。
 - `implementation_consistency` 环节仅在轨迹关联候选 C++17 解法时才评估；无候选解法时该环节应**省略**，不得凭空断言「思路与实现一致」（详见 `data-contract.md` 第 2 节）。缺少可选代码**不会**使纯思路轨迹自动判错。
 - 数据集采用**一题一文件**布局：`data/problems/<id>.json` 顶层含 `meta / problem / reference_verdict / test_cases[] / reasoning_traces[] / candidate_solutions[] / diagnoses[] / verification_results[]`，由 `data/manifest.json` 汇总（详见 `data-contract.md`）。Phase 1A 尚未执行候选代码，所有 `verification_results` 为空数组。
+
+## 6. Phase 1B 已落地子集：契约校验器（DatasetValidator）
+
+Phase 1B 实现了**规划中未来系统的子集**——只做「数据结构与契约一致性校验」，不eval推理过程、不执行代码。
+
+### 6.1 已落地模块
+
+| 模块 | 文件 | 职责 | 状态 |
+| --- | --- | --- | --- |
+| `Diagnostic` | `include/hy3_algotrace/diagnostic.hpp` | `Diagnostic` 结构 + 稳定错误码 `errc::E_*` + `formatDiagnostic()` | 已实现 |
+| `JsonLoader` | `src/json_loader.cpp` + `json_loader.hpp` | 二进制读取文件 → `nlohmann::json::parse`；失败返回 `E_FILE_READ`/`E_JSON_PARSE`，**无业务规则** | 已实现 |
+| `DatasetValidator` | `src/validator.cpp` + `validator.hpp` | 加载 manifest + 各题文件，执行全部 executable 规则（A–H），收集尽量多诊断，产出 `ValidationSummary` | 已实现 |
+| `CLI` | `src/main.cpp` | `validate <data_dir>` / `--help`；退出码 0/1/2 | 已实现 |
+| `validator_tests` | `tests/validator_tests.cpp` | 16 项正/负向测试 + 真实数据集；仅断言稳定错误码 | 已实现 |
+
+### 6.2 依赖方向（无循环）
+
+```
+CLI(main) → DatasetValidator / Diagnostic → JsonLoader → nlohmann/json
+```
+
+- `Diagnostic` 是叶子（被其余模块依赖，不自依赖业务逻辑）。
+- `JsonLoader` 只负责「读 + 解析」，把失败转成结构化错误码；不识别任何契约语义。
+- `DatasetValidator` 依赖 `JsonLoader` 与 `Diagnostic`，是唯一的契约规则承载者。
+- `CLI` 依赖 `DatasetValidator`，负责参数解析与退出码，**不**包含校验逻辑。
+
+### 6.3 明确未实现（属 Phase 2+）
+
+Phase 1B **不**包含以下模块（与第 1–2 节规划一致）：
+
+- `Hy3Client` / 模型 API 调用；
+- `ProcessEvaluator`（六环节推理过程评估、错误定位、评分）；
+- `CodeVerifier` / `CandidateRunner`（候选代码编译、运行、对接外部 OJ）；
+- `Scorer` / `Reporter`（置信度校准、诊断报告渲染）。
+
+校验器对 `candidate_solutions` / `verification_results` 只做**结构一致性**检查
+（外键、枚举、`verification_results` 在 Phase 1A 必须为空的不变式），**不会**编译或运行任何代码。

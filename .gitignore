@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# hy3-algotrace — ignore build artifacts (not source).
+# ---------------------------------------------------------------------------
+
+# MSVC local build (produced by build-msvc/build.bat only; NOT by CMake).
+# CMake is the canonical build; its out-of-source dirs are also ignored.
+build-msvc/
+build/
+out/
+_build/
+
+# Compiled object / intermediate files
+*.obj
+*.o
+*.ilk
+*.pdb
+*.idb
+*.exe
+*.dll
+*.lib
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake
+
+# Editor / OS noise
+.vs/
+*.user
+.DS_Store
+Thumbs.db

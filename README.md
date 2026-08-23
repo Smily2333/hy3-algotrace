@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：Phase 1A — 数据格式冻结与首批模型生成样本（数据契约 0.3.0，已产出 3 题 × 3 轨迹 = 9 条模型生成样本）已通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed，2026-08-23）；此复核仅代表规划方技术验收，不等同于人工（human_reviewed）或专家（expert-reviewed）审查背书；尚未实现 C++ 解析器。**
+**当前状态：`phase1b_planner_reviewed_pending_github_ci` — C++17 数据契约校验器（`hy3_algotrace validate`）已实现并通过本地功能验证（MSVC，56/56 测试通过），Phase 1B-R2.1 已通过 codex_planner 技术验收，当前等待 GitHub CI 验证 canonical CMake/CTest 与 Windows/Linux。** 数据集（数据契约 0.3.0，3 题 × 3 轨迹 = 9 条模型生成样本）已通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed，2026-08-23）；此复核仅代表规划方技术验收，不等同于人工（human_reviewed）或专家（expert-reviewed）审查背书。校验器**仅做数据结构与契约一致性校验**（schema / manifest / 外键 / 诊断规则 / 计数重算），**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码。构建方面：CMake 配置（canonical、跨平台）已就绪但本机无 CMake 未实际运行；本地功能验证使用现有 MSVC `cl.exe`（详见 `docs/journal/phase-01b.md`，`cmake_ctest_status = unverified_tool_unavailable`，`cross_platform_status = unverified`）。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -78,32 +78,74 @@ hy3-algotrace 是一个个人开源实验（参赛项目方向）：给定一道
 ```
 hy3-algotrace/
 ├── README.md               本文件（项目说明 + 当前阶段状态）
-├── CMakeLists.txt          C++17 最小骨架（无业务逻辑）
+├── CMakeLists.txt          C++17 校验器 + 测试（canonical 构建；本机未用 CMake 验证）
+├── build-msvc/             本地 MSVC 编译产物（git 忽略，非 CMake 产出）
 ├── docs/
-│   ├── architecture.md     系统架构与处理流程
-│   ├── data-contract.md    数据契约（语言无关，schema 0.3.0）
+│   ├── architecture.md     系统架构与处理流程（含 Phase 1B 落地模块）
+│   ├── data-contract.md    数据契约（语言无关，schema 0.3.0；附录 A 为错误码映射）
 │   ├── error-taxonomy.md   错误分类体系 v1（taxonomy 1.0.0）
 │   ├── roadmap.md          阶段路线图
 │   └── journal/
 │       ├── phase-00.md     Phase 0 设计与探索记录
-│       └── phase-01a.md    Phase 1A 数据冻结与首批样本记录
-├── include/                预留：C++17 头文件
-├── src/                    预留：C++17 源文件（当前仅 main.cpp 占位）
+│       ├── phase-01a.md    Phase 1A 数据冻结与首批样本记录
+│       └── phase-01b.md    Phase 1B C++17 校验器实现与本地验证记录
+├── include/hy3_algotrace/  C++17 头文件（diagnostic / json_loader / validator）
+├── src/                    C++17 源文件（main / json_loader / validator）
+├── tests/                  validator_tests.cpp（56 项正/负向测试，依赖自由）
+├── third_party/nlohmann/   供应商锁定 nlohmann/json v3.12.0 单头文件（MIT）
 ├── data/
 │   ├── manifest.json       数据集汇总（版本/计数/审查状态）
 │   └── problems/
 │       ├── cf_160A.json    题目 160A Twins 完整样本（含 3 条轨迹）
 │       ├── cf_545D.json    题目 545D Queue 完整样本（含 3 条轨迹）
 │       └── cf_1398B.json   题目 1398B Substring Removal Game 完整样本（含 3 条轨迹）
-├── experiments/            预留：实验记录与结果
-└── tests/                  预留：测试
+└── experiments/            预留：实验记录与结果
 ```
 
-## 8. 构建（仅骨架校验）
+## 8. 构建与运行
+
+### 8.1 工具作用范围（重要）
+
+`hy3_algotrace validate` **仅做数据结构与契约一致性校验**：加载 `data/manifest.json`
+与 `data/problems/*.json`，检查 schema 版本、必需键、ID / 外键、诊断规则、manifest 汇总
+计数等。它**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码，也**不**实现
+`ProcessEvaluator` / `CandidateRunner`（这些属于 Phase 2+）。
+
+### 8.2 CMake（canonical，跨平台，未在本机运行）
 
 ```bash
 cmake -S . -B build
 cmake --build build
+ctest --test-dir build        # 运行 validator_tests
+./build/hy3_algotrace validate data
 ```
 
-> 当前仅编译 `hy3_algotrace_skeleton` 占位目标，不执行任何评测。
+> ⚠️ 本机无 CMake，`CMakeLists.txt` 未经实际执行验证；标记
+> `cmake_ctest_status = unverified_tool_unavailable`。上述命令为 canonical 用法，
+> 待规划方在具备 CMake 的环境 / GitHub CI 中补做验证。
+
+### 8.3 本地 MSVC 直接编译（已验证，无 CMake）
+
+本机已用现有 MSVC `cl.exe`（经 `vcvars64.bat` 初始化）完成功能验证：
+
+```bat
+call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
+cl /std:c++17 /EHsc /utf-8 /W4 /external:I third_party /external:W0 ^
+   /I include /I third_party /Febuild-msvc\hy3_algotrace.exe ^
+   src\main.cpp src\json_loader.cpp src\validator.cpp
+cl /std:c++17 /EHsc /utf-8 /W4 /external:I third_party /external:W0 ^
+   /I include /I third_party /Febuild-msvc\validator_tests.exe ^
+   tests\validator_tests.cpp src\json_loader.cpp src\validator.cpp
+build-msvc\validator_tests.exe data     # 56 passed, 0 failed
+build-msvc\hy3_algotrace.exe validate data   # result: PASS (exit 0)
+```
+
+> `build-msvc/` 由 `build-msvc/build.bat` 生成，已加入 `.gitignore`，不纳入版本管理。
+
+### 8.4 CLI 用法与退出码
+
+```text
+hy3_algotrace validate <data_dir>   校验数据集，打印确定性汇总与诊断；0=PASS，1=FAIL
+hy3_algotrace --help | help          打印用法；退出 0
+（其它参数）                         打印 E_USAGE 与用法；退出 2
+```
