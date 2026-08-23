@@ -31,11 +31,32 @@
   - Windows/Linux CI：已完成（run 32656643095，双平台 success）。
   - Phase 2 尚未开始，等待规划方对 Phase 1B 的最终确认与 Phase 2 启动授权。
 
-## Phase 2 — C++17 基础评测管线
+## Phase 2 — 离线评估协议与基础评测管线（拆分为 2A–2D）
 
-- **目标**：搭通 Ingest → ProcessEvaluator → Reporter 的最小管线。
-- **主要产物**：C++17 模块骨架（不含自动路由）；规则化过程评估初版；报告输出。
-- **进入下一阶段条件**：管线可对样本产出结构化诊断报告；与 data-contract 对齐。
+### Phase 2A — 离线评估协议与 Prompt 模板（本阶段，待规划方复审）
+
+- **目标**：冻结公平、可复现、无标签泄漏的 Hy3 离线评估协议：研究问题、`reference_assisted` 输入模式、allowlist/denylist、单条处理流程、失败状态、实验运行目录、`prediction` wrapper、输出契约、评价指标与可复用 Prompt 模板。
+- **主要产物**：`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`、`prompts/hy3-evaluator-v1.md`、`docs/journal/phase-02a.md`；同步 `README.md` / `roadmap.md` / `architecture.md`。
+- **状态**：`phase2a_complete_planner_reviewed`（codex_planner 技术验收通过，2026-08-24；不等同 human/expert review）。**未实现 `ProcessEvaluator` / `Reporter`，未运行 9 轨迹 Hy3 实验，未进入 Phase 2B。**
+- **进入下一阶段条件**：规划方复审通过 Phase 2A 协议与 Prompt 模板。
+
+### Phase 2B — C++ PromptExporter / PredictionImporter / Reporter
+
+- **目标**：实现 C++17 工具，将冻结数据按 allowlist 渲染 prompt、按 denylist 自动检查、保存 raw response、解析并 schema/语义校验、生成 `prediction` wrapper 与 `report`。
+- **主要产物**：`PromptExporter`、`PredictionImporter`、denylist 检查器、`Reporter`；`experiments/phase-02/runs/<run_id>/` 落地结构。
+- **进入下一阶段条件**：管线可对样本产出结构化 prediction 与报告；与 `docs/phase-02-protocol.md` 定义一致。
+
+### Phase 2C — Hy3 9 轨迹冒烟实验
+
+- **目标**：用冻结的 `hy3-evaluator-v1` 模板与 `reference_assisted` 模式，对 Phase 1A 的 9 条贪心轨迹做离线推理（人工/脚本交给 Hy3），运行 Reporter，记录指标。
+- **主要产物**：`experiments/phase-02/runs/<run_id>/` 完整产物（prompts / raw-responses / predictions / report）；冒烟级指标（见 `docs/phase-02-metrics.md` 第 12 节规模限制）。
+- **进入下一阶段条件**：9 条样本全部产生 `parsed` 或明确失败状态；指标可复现；不宣称代表总体能力。
+
+### Phase 2D — CandidateRunner 与代码验证扩展
+
+- **目标**：引入本地受限的候选代码编译与运行（`CandidateRunner` / `CodeVerifier`），为 `implementation_consistency` 提供实证信号。Phase 2D 初版仅进行**本地受限**的 C++ 编译与运行，包含超时控制、stdin/stdout 对比与 `verification_result` 生成；**不连接、不提交外部 OJ**；OJ 对接只能作为未来可选扩展，必须另行授权。
+- **主要产物**：`CandidateRunner`、`CodeVerifier` 增强；与 `code_test_verification` 职责线对齐。
+- **进入下一阶段条件**：候选解法可被编译/运行并产出 `verification_result`；`implementation_consistency` 环节具备实证依据。
 
 ## Phase 3 — 贪心题小规模实验
 

@@ -95,8 +95,28 @@ Phase 1B **不**包含以下模块（与第 1–2 节规划一致）：
 
 - `Hy3Client` / 模型 API 调用；
 - `ProcessEvaluator`（六环节推理过程评估、错误定位、评分）；
-- `CodeVerifier` / `CandidateRunner`（候选代码编译、运行、对接外部 OJ）；
+- `CodeVerifier` / `CandidateRunner`（候选代码的本地受限编译、超时运行与输出对比；外部 OJ 对接不在 Phase 2D 初版范围内）；
 - `Scorer` / `Reporter`（置信度校准、诊断报告渲染）。
 
 校验器对 `candidate_solutions` / `verification_results` 只做**结构一致性**检查
 （外键、枚举、`verification_results` 在 Phase 1A 必须为空的不变式），**不会**编译或运行任何代码。
+
+## 7. 离线模型适配边界（Phase 2A 补充）
+
+Phase 2 引入「离线模型适配」职责线：本仓库的 C++ 进程**不直接调用模型 API**，而是把 prompt 导出到外部，由 Hy3 / WorkBuddy 在进程外完成推理，再把原始响应导回。这样隔离了「协议与契约实现」与「模型运行时」，便于复现与审计。
+
+```text
+Ingest
+  → PromptExporter        （显式 allowlist 构造输入 JSON，渲染 BEGIN/END 间模板，写入 experiments/.../prompts/<trace_id>.txt；仅对输入 payload 做 structural leakage 递归 key 检查）
+  → 外部 Hy3 / WorkBuddy 离线推理（进程外，不属于本仓库 C++ 调用范围；Phase 2C 初版不自动调用模型 API）
+  → PredictionImporter    （保存 raw response，用标准 JSON 解析器 [nlohmann/json] 解析，schema + 语义校验，产出 prediction wrapper）
+  → ProcessEvaluator / Comparator（与 gold diagnosis 比较）
+  → Reporter              （汇总指标，输出 report.json / report.md）
+```
+
+设计约束：
+
+- **外部 Hy3 步骤不是当前 C++ 进程直接调用 API**；本仓库只负责导出 prompt 与导入 prediction，模型调用在进程外发生（人工复制或后续桥接脚本），API 接入须另行授权。
+- PromptExporter 的 leakage 检查仅针对**输入 payload**（替换占位符后的输入 JSON 块），**不**扫描模板任务说明与输出 schema 中的 `status` / `findings` / 7 类 category 名称等通用字符串（它们在输出契约中合法）。structural leakage（禁止 key 进入输入）由递归 key 检查拦截；semantic leakage（自由文本直接透露 gold label）通过排除 `test_cases.notes` 等字段降低，其余自由文本须单独人工/规则审计。
+- Phase 2A 只冻结协议、Prompt 模板、指标与运行目录；`PromptExporter` / `PredictionImporter` / `Reporter` 的实现属 **Phase 2B**，`CandidateRunner` 属 **Phase 2D**（Phase 2D 初版仅本地受限编译/运行/对比，不连接外部 OJ，见 `roadmap.md`）。
+- prompt 与 raw response 的原始文本必须独立保留（见 `docs/phase-02-protocol.md` 第 10、9 节），不得只保存清洗后 JSON；SHA-256 用于关联与复现（模板哈希与实例哈希分别定义，见协议第 9 节）。
