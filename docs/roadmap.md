@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。Phase 2B 已完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 CI run `32734561463`，冻结的 9 条 Hy3 pilot 已完成并脱敏报告。当前状态 `interactive_greedy_diagnosis_demo_pending_ci`：正在把已验证能力封装为本地交互 Demo；正式 Prompt、指标和数据保持冻结，交互结果不进入实验指标。
+> 宏观阶段规划。Phase 2B 已完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 CI run `32734561463`，冻结的 9 条 Hy3 pilot 已完成并脱敏报告。当前状态 `interactive_greedy_diagnosis_demo_ci_verified`：本地交互 Demo 已通过 CI run `32748016328` 的 Windows/Ubuntu canonical 验证；正式 Prompt、指标和数据保持冻结，交互结果不进入实验指标。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -66,7 +66,7 @@
 - **目标**：用独立、无 gold 的交互契约和 Prompt，把 Hy3 静态诊断能力封装为仅监听 loopback 的中文本地网页；与冻结评测管线及指标完全隔离。
 - **主要产物**：`InteractiveDiagnosisRequest` / 严格响应校验、本地一次性审计、`hy3_algotrace_demo`、原生 `web/` 页面、FakeModelClient 测试、版本锁定的 MIT HTTP server 依赖。
 - **边界**：只支持已知贪心题；C++ 仅供模型静态审查，不编译/运行，不连接 OJ，不代表形式化证明。一次真实 smoke 只验证调用链；模型输出质量仍可能错误。
-- **当前状态**：`interactive_greedy_diagnosis_demo_pending_ci`；本地 Fake/loopback smoke 已通过，等待 canonical Windows/Ubuntu CI。
+- **当前状态**：`interactive_greedy_diagnosis_demo_ci_verified`；本地 Fake/loopback smoke 与 CI run `32748016328` 的 Windows/Ubuntu canonical Configure/Build/全部 CTest/CLI 均通过。
 - **进入下一阶段条件**：双平台 CI 通过、凭证/冻结文件检查通过、分支工作区干净；随后由 Planner 决定恢复 CandidateRunner 或优先扩展正式贪心数据集。
 
 ### Phase 2D — CandidateRunner 与代码验证扩展

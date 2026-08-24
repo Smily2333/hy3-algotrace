@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`interactive_greedy_diagnosis_demo_pending_ci`（2026-08-24）。** Phase 2C 生产 HTTPS transport 与逐次调用审计已由 [CI run 32734561463](https://github.com/Smily2333/hy3-algotrace/actions/runs/32734561463) 在 Windows/Ubuntu 验证；冻结的 9 条 Hy3 pilot 脱敏报告保持 `phase2c_pilot_complete_reported`。当前新增本地中文交互 Demo，允许输入贪心题面、思路和可选 C++17 代码并取得 Hy3 静态诊断；**不编译/运行代码、不连接 OJ、不读取 gold，也不把交互结果计入正式指标。** CandidateRunner WIP 已独立保存，等待本 Demo 收口后恢复。
+**当前状态：`interactive_greedy_diagnosis_demo_ci_verified`（2026-08-24）。** 本地中文交互 Demo 已由 [CI run 32748016328](https://github.com/Smily2333/hy3-algotrace/actions/runs/32748016328) 在 Windows/Ubuntu 完成 canonical Configure/Build/全部 CTest/CLI 验证；它允许输入贪心题面、思路和可选 C++17 代码并取得 Hy3 静态诊断，**不编译/运行代码、不连接 OJ、不读取 gold，也不把交互结果计入正式指标。** 冻结的 9 条 Hy3 pilot 脱敏报告仍保持 `phase2c_pilot_complete_reported`；CandidateRunner WIP 已独立保存，等待本 Demo 收口后恢复。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 

@@ -83,7 +83,11 @@ Credential scanning found no API key, Authorization, or Bearer value in the
 interactive artifacts. The full prompt/raw/diagnosis run remains under the
 Git-ignored local artifacts directory and is not committed.
 
-## Pending
+## Canonical CI and final technical state
 
-Canonical Windows/Ubuntu CMake/CTest CI is still required before the status can
-be set to `interactive_greedy_diagnosis_demo_ci_verified`.
+GitHub Actions run `32748016328` verified commit `5a4dbb3` on both
+`windows-latest` and `ubuntu-latest`. Configure, Build, all CTest executables,
+and the validator CLI target passed on both platforms. The only annotation was
+GitHub's unrelated Node 20 deprecation notice for `actions/checkout@v4`.
+
+Technical state: `interactive_greedy_diagnosis_demo_ci_verified`.
