@@ -202,19 +202,26 @@ int main(int argc, char** argv) {
         CHECK(body.find("PRE") == std::string::npos, "body excludes PRE");
         CHECK(body.find("POST") == std::string::npos, "body excludes POST");
 
+        std::string documented =
+            "The boundary names are <!-- HY3_PROMPT_BEGIN --> and "
+            "<!-- HY3_PROMPT_END -->.\n" + kTemplate;
+        auto documentedResult = hy3::extractTemplateBody(documented, body);
+        CHECK(documentedResult.ok,
+              "marker mentions in prose do not count as prompt boundaries");
+
         std::string missing;
         auto r2 = hy3::extractTemplateBody("no markers here", missing);
         CHECK(!r2.ok && r2.error_code == hy3::exporter_errc::E_TEMPLATE_MARKER,
               "missing BEGIN -> E_TEMPLATE_MARKER");
 
         auto r3 = hy3::extractTemplateBody(
-            "<!-- HY3_PROMPT_BEGIN -->x<!-- HY3_PROMPT_BEGIN -->y"
+            "<!-- HY3_PROMPT_BEGIN -->\nx\n<!-- HY3_PROMPT_BEGIN -->\ny\n"
             "<!-- HY3_PROMPT_END -->", missing);
         CHECK(!r3.ok && r3.error_code == hy3::exporter_errc::E_TEMPLATE_MARKER,
               "duplicate BEGIN -> E_TEMPLATE_MARKER");
 
         auto r4 = hy3::extractTemplateBody(
-            "<!-- HY3_PROMPT_END -->x<!-- HY3_PROMPT_BEGIN -->y", missing);
+            "<!-- HY3_PROMPT_END -->\nx\n<!-- HY3_PROMPT_BEGIN -->\ny", missing);
         CHECK(!r4.ok && r4.error_code == hy3::exporter_errc::E_TEMPLATE_MARKER,
               "END before BEGIN -> E_TEMPLATE_MARKER");
     }
@@ -222,7 +229,7 @@ int main(int argc, char** argv) {
     // --- 5. Placeholder errors -------------------------------------------
     {
         // duplicate placeholder
-        std::string tpl = "<!-- HY3_PROMPT_BEGIN -->{{problem_json}}{{problem_json}}"
+        std::string tpl = "<!-- HY3_PROMPT_BEGIN -->\n{{problem_json}}{{problem_json}}\n"
                           "<!-- HY3_PROMPT_END -->";
         std::string body;
         hy3::extractTemplateBody(tpl, body);
@@ -234,7 +241,7 @@ int main(int argc, char** argv) {
               "duplicate placeholder -> E_TEMPLATE_PLACEHOLDER");
 
         // residual placeholder
-        std::string tpl2 = "<!-- HY3_PROMPT_BEGIN -->BODY{{missing_ph}}"
+        std::string tpl2 = "<!-- HY3_PROMPT_BEGIN -->\nBODY{{missing_ph}}\n"
                            "<!-- HY3_PROMPT_END -->";
         std::string body2;
         hy3::extractTemplateBody(tpl2, body2);
@@ -251,6 +258,9 @@ int main(int argc, char** argv) {
         json out;
         auto r = hy3::projectTraceInput(prob, trace, out);
         CHECK(r.ok, "projectTraceInput ok");
+        CHECK(out.at("problem").at("id") == "p1" &&
+                  out.at("problem").at("title") == "t",
+              "nested problem allowlist fields copied");
         CHECK(!out.contains("problem") || !out.at("problem").contains("notes"),
               "problem.notes stripped");
         CHECK(out.contains("reference_verdict"), "reference_verdict present");
@@ -369,8 +379,9 @@ int main(int argc, char** argv) {
         for (auto& e : fs::directory_iterator(runDir / "prompts")) cnt++;
         CHECK(cnt == 9, "9 prompt files written");
         // trace_ids in manifest sorted lexicographically
-        json mj = json::parse(
-            (fs::path(runDir / "run-manifest.json")).string());
+        std::ifstream manifestFile(runDir / "run-manifest.json");
+        json mj;
+        manifestFile >> mj;
         auto ids = mj.at("trace_ids").get<std::vector<std::string>>();
         CHECK(ids.size() == 9, "manifest has 9 trace_ids");
         bool sorted = true;
@@ -389,20 +400,34 @@ int main(int argc, char** argv) {
         fs::path dir = makeTempData("det", problems, pids);
         hy3::RunManifest m;
         m.run_id = "det"; m.pipeline_commit = "c"; m.started_at = "s";
-        std::string sha1, sha2;
+        std::string sha1, sha2, sha3;
         hy3::exportPrompts(dir.string(), kTemplate, (dir / "r1").string(), m, sha1);
         hy3::exportPrompts(dir.string(), kTemplate, (dir / "r2").string(), m, sha2);
         CHECK(sha1 == sha2, "template sha256 deterministic across runs");
+        std::string crlfTemplate = "\xEF\xBB\xBF";
+        for (char c : kTemplate) {
+            if (c == '\n') crlfTemplate += "\r\n";
+            else crlfTemplate.push_back(c);
+        }
+        auto crlfResult = hy3::exportPrompts(dir.string(), crlfTemplate,
+                                             (dir / "r3").string(), m, sha3);
+        CHECK(crlfResult.ok && sha1 == sha3,
+              "BOM/CRLF template canonicalizes to the LF template hash");
         // prompt file content identical
         std::ifstream f1((dir / "r1" / "prompts" / "d1_t1.txt").string(),
                          std::ios::binary);
         std::ifstream f2((dir / "r2" / "prompts" / "d1_t1.txt").string(),
                          std::ios::binary);
+        std::ifstream f3((dir / "r3" / "prompts" / "d1_t1.txt").string(),
+                         std::ios::binary);
         std::string s1((std::istreambuf_iterator<char>(f1)),
                        std::istreambuf_iterator<char>());
         std::string s2((std::istreambuf_iterator<char>(f2)),
+                        std::istreambuf_iterator<char>());
+        std::string s3((std::istreambuf_iterator<char>(f3)),
                        std::istreambuf_iterator<char>());
-        CHECK(s1 == s2, "rendered prompt deterministic across runs");
+        CHECK(s1 == s2 && s1 == s3,
+              "rendered prompt deterministic across newline/BOM variants");
     }
 
     // --- 13. Run-dir-exists refusal --------------------------------------

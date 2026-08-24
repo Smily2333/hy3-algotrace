@@ -26,6 +26,7 @@
 #include "hy3_algotrace/prompt_exporter.hpp"
 #include "hy3_algotrace/prediction_importer.hpp"
 #include "hy3_algotrace/reporter.hpp"
+#include "hy3_algotrace/json_loader.hpp"
 #include "hy3_algotrace/validator.hpp"
 #include "hy3_algotrace/sha256.hpp"
 
@@ -119,12 +120,16 @@ int main(int argc, char** argv) {
 
         // export-prompts <data_dir> <template_file> <run_dir>
         //   --run-id <id> --pipeline-commit <commit> --started-at <iso>
-        if (args.size() >= 4 && args[1] == "export-prompts") {
+        if (args.size() >= 5 && args[1] == "export-prompts") {
             const std::string dataDir = args[2];
             const std::string templateFile = args[3];
             const std::string runDir = args[4];
 
             std::string runId, pipelineCommit, startedAt;
+            if ((args.size() - 5) % 2 != 0) {
+                std::cerr << "E_BAD_ARGUMENT: option missing value\n";
+                return 2;
+            }
             for (size_t i = 5; i + 1 < args.size(); i += 2) {
                 if (args[i] == "--run-id") runId = args[i + 1];
                 else if (args[i] == "--pipeline-commit") pipelineCommit = args[i + 1];
@@ -172,8 +177,17 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            std::cout << "run_id: " << runId << "\n";
-            std::cout << "total_traces: " << m.total_traces << "\n";
+            hy3::LoadResult manifestResult =
+                hy3::loadJsonFile("run-manifest.json", runDir);
+            if (!manifestResult.ok) {
+                std::cerr << manifestResult.error_code << ": "
+                          << manifestResult.error_message << "\n";
+                return 2;
+            }
+            std::cout << "run_id: "
+                      << manifestResult.doc.value("run_id", runId) << "\n";
+            std::cout << "total_traces: "
+                      << manifestResult.doc.value("total_traces", 0) << "\n";
             std::cout << "prompt_template_sha256: " << promptTemplateSha256 << "\n";
             std::cout << "output_dir: " << runDir << "\n";
             std::cout << "result: PASS\n";
@@ -187,6 +201,10 @@ int main(int argc, char** argv) {
             const std::string traceId = args[3];
             const std::string rawFile = args[4];
             std::string runId, generatedAt;
+            if ((args.size() - 5) % 2 != 0) {
+                std::cerr << "E_BAD_ARGUMENT: option missing value\n";
+                return 2;
+            }
             for (size_t i = 5; i + 1 < args.size(); i += 2) {
                 if (args[i] == "--run-id") runId = args[i + 1];
                 else if (args[i] == "--generated-at") generatedAt = args[i + 1];
@@ -213,10 +231,14 @@ int main(int argc, char** argv) {
 
         // mark-not-attempted <run_dir> <trace_id>
         //   --run-id <id> --generated-at <iso>
-        if (args.size() >= 3 && args[1] == "mark-not-attempted") {
+        if (args.size() >= 4 && args[1] == "mark-not-attempted") {
             const std::string runDir = args[2];
             const std::string traceId = args[3];
             std::string runId, generatedAt;
+            if ((args.size() - 4) % 2 != 0) {
+                std::cerr << "E_BAD_ARGUMENT: option missing value\n";
+                return 2;
+            }
             for (size_t i = 4; i + 1 < args.size(); i += 2) {
                 if (args[i] == "--run-id") runId = args[i + 1];
                 else if (args[i] == "--generated-at") generatedAt = args[i + 1];
@@ -242,10 +264,14 @@ int main(int argc, char** argv) {
 
         // report <run_dir> <data_dir>
         //   --completed-at <iso|null> --generated-at <iso>
-        if (args.size() >= 3 && args[1] == "report") {
+        if (args.size() >= 4 && args[1] == "report") {
             const std::string runDir = args[2];
             const std::string dataDir = args[3];
             std::string completedAt, generatedAt;
+            if ((args.size() - 4) % 2 != 0) {
+                std::cerr << "E_BAD_ARGUMENT: option missing value\n";
+                return 2;
+            }
             for (size_t i = 4; i + 1 < args.size(); i += 2) {
                 if (args[i] == "--completed-at") completedAt = args[i + 1];
                 else if (args[i] == "--generated-at") generatedAt = args[i + 1];
@@ -264,7 +290,13 @@ int main(int argc, char** argv) {
                 std::cerr << rr.error_code << ": " << rr.message << "\n";
                 return 1;
             }
-            std::cout << "run_id: " << rr.run_complete << "\n";
+            hy3::LoadResult reportResult = hy3::loadJsonFile("report.json", runDir);
+            if (!reportResult.ok) {
+                std::cerr << reportResult.error_code << ": "
+                          << reportResult.error_message << "\n";
+                return 2;
+            }
+            std::cout << "run_id: " << reportResult.doc.value("run_id", "") << "\n";
             std::cout << "run_complete: " << (rr.run_complete ? "true" : "false") << "\n";
             std::cout << "output_dir: " << runDir << "\n";
             std::cout << "result: PASS\n";

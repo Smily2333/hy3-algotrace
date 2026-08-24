@@ -72,6 +72,28 @@ bool isSafeId(const std::string& id) {
     return true;
 }
 
+// Marker mentions in the surrounding design notes are not prompt boundaries.
+// Only a marker that occupies an entire line is structural.
+std::vector<size_t> standaloneMarkerPositions(const std::string& text,
+                                              const std::string& marker) {
+    std::vector<size_t> positions;
+    size_t lineStart = 0;
+    while (lineStart <= text.size()) {
+        size_t lineEnd = text.find('\n', lineStart);
+        size_t contentEnd = lineEnd == std::string::npos ? text.size() : lineEnd;
+        if (contentEnd > lineStart && text[contentEnd - 1] == '\r') {
+            --contentEnd;
+        }
+        if (contentEnd - lineStart == marker.size() &&
+            text.compare(lineStart, marker.size(), marker) == 0) {
+            positions.push_back(lineStart);
+        }
+        if (lineEnd == std::string::npos) break;
+        lineStart = lineEnd + 1;
+    }
+    return positions;
+}
+
 } // namespace
 
 // --- Template boundary extraction ------------------------------------------
@@ -82,30 +104,30 @@ ExporterResult extractTemplateBody(const std::string& text,
     const std::string endMark = "<!-- HY3_PROMPT_END -->";
     ExporterResult res;
 
-    size_t b = text.find(beginMark);
-    if (b == std::string::npos) {
+    const auto begins = standaloneMarkerPositions(text, beginMark);
+    const auto ends = standaloneMarkerPositions(text, endMark);
+    if (begins.empty()) {
         res.error_code = exporter_errc::E_TEMPLATE_MARKER;
         res.message = "missing BEGIN marker: " + beginMark;
         return res;
     }
-    size_t b2 = text.find(beginMark, b + 1);
-    if (b2 != std::string::npos) {
+    if (begins.size() != 1) {
         res.error_code = exporter_errc::E_TEMPLATE_MARKER;
         res.message = "duplicate BEGIN marker";
         return res;
     }
-    size_t e = text.find(endMark, b + beginMark.size());
-    if (e == std::string::npos) {
+    if (ends.empty()) {
         res.error_code = exporter_errc::E_TEMPLATE_MARKER;
         res.message = "missing END marker: " + endMark;
         return res;
     }
-    size_t e2 = text.find(endMark, e + endMark.size());
-    if (e2 != std::string::npos) {
+    if (ends.size() != 1) {
         res.error_code = exporter_errc::E_TEMPLATE_MARKER;
         res.message = "duplicate END marker";
         return res;
     }
+    const size_t b = begins.front();
+    const size_t e = ends.front();
     if (e < b + beginMark.size()) {
         res.error_code = exporter_errc::E_TEMPLATE_MARKER;
         res.message = "END marker appears before BEGIN marker";
@@ -125,15 +147,20 @@ ExporterResult projectTraceInput(const nlohmann::json& problemJson,
     ExporterResult res;
     out = nlohmann::json::object();
 
-    // Problem (allowlist only; explicitly NOT problem.notes).
+    // Problem (allowlist only; explicitly NOT problem.notes). Dataset files
+    // store these fields under the top-level "problem" object.
+    const nlohmann::json& problemFields =
+        problemJson.contains("problem") && problemJson.at("problem").is_object()
+            ? problemJson.at("problem")
+            : problemJson;
     nlohmann::json problem;
-    copyIfPresent(problemJson, "id", problem);
-    copyIfPresent(problemJson, "source", problem);
-    copyIfPresent(problemJson, "title", problem);
-    copyIfPresent(problemJson, "statement", problem);
-    copyIfPresent(problemJson, "constraints", problem);
-    copyIfPresent(problemJson, "algorithm_type", problem);
-    copyIfPresent(problemJson, "reference_tags", problem);
+    copyIfPresent(problemFields, "id", problem);
+    copyIfPresent(problemFields, "source", problem);
+    copyIfPresent(problemFields, "title", problem);
+    copyIfPresent(problemFields, "statement", problem);
+    copyIfPresent(problemFields, "constraints", problem);
+    copyIfPresent(problemFields, "algorithm_type", problem);
+    copyIfPresent(problemFields, "reference_tags", problem);
     out["problem"] = problem;
 
     // Reference verdict (allowlist only).
@@ -363,9 +390,19 @@ ExporterResult exportPrompts(const std::string& dataDir,
         return res;
     }
 
-    // 3) Template body + template hash (normalized bytes).
+    // 3) Canonicalize template bytes, then extract and hash its body.
+    std::vector<uint8_t> rawTemplate(templateText.begin(), templateText.end());
+    std::vector<uint8_t> normalizedTemplate;
+    std::string normalizationError;
+    if (!normalizeUtf8(rawTemplate, normalizedTemplate, normalizationError)) {
+        res.error_code = normalizationError;
+        res.message = "template normalization failed: " + normalizationError;
+        return res;
+    }
+    const std::string canonicalTemplate(normalizedTemplate.begin(),
+                                        normalizedTemplate.end());
     std::string body;
-    ExporterResult extr = extractTemplateBody(templateText, body);
+    ExporterResult extr = extractTemplateBody(canonicalTemplate, body);
     if (!extr.ok) return extr;
     promptTemplateSha256 = sha256_hex(body);
 

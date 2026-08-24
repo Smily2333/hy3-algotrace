@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <locale>
 #include <map>
 #include <set>
 #include <sstream>
@@ -430,6 +431,7 @@ std::string renderReportMarkdown(const nlohmann::json& reportJson) {
     // Render a double with fixed, human-readable precision (deterministic).
     auto fmtDbl = [](double v) -> std::string {
         std::ostringstream s;
+        s.imbue(std::locale::classic());
         s << std::fixed << std::setprecision(4) << v;
         return s.str();
     };

@@ -51,9 +51,33 @@ std::string extraTopKey(const nlohmann::json& j,
     return "";
 }
 
-// Validate a parsed finding object; append errors. Returns true if all ok.
-bool validateFinding(const nlohmann::json& f, std::vector<std::string>& errors,
-                     bool hasCandidateSolution) {
+// Read the fifth fenced JSON input block from the frozen prompt format.
+// Missing/malformed blocks are treated conservatively as having no candidate.
+bool promptHasCandidateSolution(const std::string& promptText) {
+    const std::string sectionMarker = "#### 5.";
+    const std::string candidateToken = "candidate_solution";
+    const std::string fenceMarker = "```json";
+    const size_t section = promptText.find(sectionMarker);
+    if (section == std::string::npos) return false;
+    const size_t fence = promptText.find(fenceMarker, section + sectionMarker.size());
+    if (fence == std::string::npos) return false;
+    const size_t token = promptText.find(candidateToken, section);
+    if (token == std::string::npos || token >= fence) return false;
+    const size_t contentStart = promptText.find('\n', fence + fenceMarker.size());
+    if (contentStart == std::string::npos) return false;
+    const size_t contentEnd = promptText.find("\n```", contentStart + 1);
+    if (contentEnd == std::string::npos) return false;
+
+    const std::string candidateText =
+        promptText.substr(contentStart + 1, contentEnd - contentStart - 1);
+    const nlohmann::json candidate =
+        nlohmann::json::parse(candidateText, nullptr, false);
+    return candidate.is_object();
+}
+
+// Validate a parsed finding's shape, types, and enums.
+bool validateFindingSchema(const nlohmann::json& f,
+                           std::vector<std::string>& errors) {
     bool ok = true;
     if (!f.is_object()) {
         errors.push_back("finding is not an object");
@@ -96,6 +120,14 @@ bool validateFinding(const nlohmann::json& f, std::vector<std::string>& errors,
             ok = false;
         }
     }
+    return ok;
+}
+
+// Validate finding rules that require run context or cross-field meaning.
+bool validateFindingSemantics(const nlohmann::json& f,
+                              std::vector<std::string>& errors,
+                              bool hasCandidateSolution) {
+    bool ok = true;
     // implementation_consistency requires an associated candidate solution.
     if (f.contains("stage") && f.at("stage").is_string() &&
         f.at("stage").get<std::string>() == "implementation_consistency") {
@@ -269,6 +301,10 @@ ImporterResult classifyResponse(const std::string& rawText,
         if (!(pc.is_string() || pc.is_null())) {
             errors.push_back("primary_category must be string or null");
             schemaOk = false;
+        } else if (pc.is_string() &&
+                   !taxonomy::isCategory(pc.get<std::string>())) {
+            errors.push_back("primary_category invalid enum");
+            schemaOk = false;
         }
     }
     // findings: array
@@ -276,6 +312,12 @@ ImporterResult classifyResponse(const std::string& rawText,
         if (!doc.at("findings").is_array()) {
             errors.push_back("findings must be array");
             schemaOk = false;
+        } else {
+            for (const auto& f : doc.at("findings")) {
+                if (!validateFindingSchema(f, errors)) {
+                    schemaOk = false;
+                }
+            }
         }
     }
     // confidence fields must be null (Phase 4)
@@ -307,14 +349,14 @@ ImporterResult classifyResponse(const std::string& rawText,
     const auto& pc = doc.at("primary_category");
     const auto& findings = doc.at("findings");
 
-    // Validate each finding (schema-level granularity + candidate rule).
+    // Validate contextual and cross-field finding rules after schema passes.
+    bool semanticOk = true;
     for (const auto& f : findings) {
-        if (!validateFinding(f, errors, hasCandidateSolution)) {
+        if (!validateFindingSemantics(f, errors, hasCandidateSolution)) {
             semanticOk = false;
         }
     }
 
-    bool semanticOk = true;
     if (status == "correct") {
         if (!pc.is_null()) {
             errors.push_back("correct requires primary_category=null");
@@ -520,28 +562,9 @@ ImporterResult importResponse(const std::string& runDir,
     ParseStatus ps;
     nlohmann::json pred;
     std::vector<std::string> errs;
-    // Determine candidate association from the rendered prompt: the exporter
-    // projects candidate_solution as JSON null when none is associated, or as
-    // an object otherwise. We detect the null case conservatively.
-    bool hasCandidateSolution = true; // assume present unless clearly null
-    {
-        const std::string marker = "\"candidate_solution\"";
-        size_t pos = promptText.find(marker);
-        if (pos != std::string::npos) {
-            size_t colon = promptText.find(':', pos + marker.size());
-            if (colon != std::string::npos) {
-                // Find first non-space char after colon.
-                size_t k = colon + 1;
-                while (k < promptText.size() &&
-                       (promptText[k] == ' ' || promptText[k] == '\t' ||
-                        promptText[k] == '\n' || promptText[k] == '\r')) k++;
-                if (k < promptText.size() &&
-                    promptText.compare(k, 4, "null") == 0) {
-                    hasCandidateSolution = false;
-                }
-            }
-        }
-    }
+    // The exporter renders candidate_solution as the fifth fenced JSON block:
+    // JSON null when absent, or an object when associated.
+    const bool hasCandidateSolution = promptHasCandidateSolution(promptText);
     ImporterResult cr = classifyResponse(rawText, traceId, hasCandidateSolution,
                                          ps, pred, errs);
     if (!cr.ok) return cr;

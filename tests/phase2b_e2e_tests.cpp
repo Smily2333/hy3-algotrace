@@ -72,6 +72,9 @@ int main(int argc, char** argv) {
     m.notes = "SYNTHETIC end-to-end smoke; not a real experiment.";
     std::string ptSha;
     ExporterResult er = exportPrompts(dataDir.string(), tmplText, run.string(), m, ptSha);
+    if (!er.ok) {
+        std::cerr << "exportPrompts failed: " << er.error_code << ": " << er.message << "\n";
+    }
     CHECK(er.ok, "exportPrompts ok");
     CHECK(fs::exists(run / "run-manifest.json"), "run-manifest written");
     int nPrompts = 0;

@@ -7,6 +7,7 @@
 // byte-exact raw hashing, and overwrite refusal.
 
 #include "hy3_algotrace/prediction_importer.hpp"
+#include "hy3_algotrace/prompt_exporter.hpp"
 #include "hy3_algotrace/sha256.hpp"
 
 #include <cassert>
@@ -44,11 +45,10 @@ fs::path makeRunDir(const std::string& base, const std::string& traceId,
     fs::create_directories(run / "prompts", ec);
     fs::create_directories(run / "raw-responses", ec);
     fs::create_directories(run / "predictions", ec);
-    // Prompt text includes candidate_solution marker.
-    std::string prompt = "{\"problem\":{},\"reference_verdict\":{},\"test_cases\":[],"
-                         "\"reasoning_trace\":{\"id\":\"" + traceId + "\"},\"candidate_solution\":";
+    // Match the frozen template's fifth fenced JSON input block.
+    std::string prompt = "#### 5. candidate_solution\n\n```json\n";
     prompt += withCandidate ? "{\"id\":\"sol1\",\"trace_id\":\"" + traceId + "\"}" : "null";
-    prompt += "}";
+    prompt += "\n```\n";
     std::ofstream ofs(run / "prompts" / (traceId + ".txt"), std::ios::binary);
     ofs << prompt;
     return run;
@@ -234,7 +234,25 @@ int main(int argc, char** argv) {
         CHECK(w.at("parse_status") == "semantic_invalid", "correct+primary -> semantic_invalid");
     }
 
-    // ---- 12. correct: findings non-empty -> semantic_invalid ----
+    // ---- 12. primary_category illegal enum -> schema_invalid ----
+    {
+        auto run = makeRunDir(tmp.string(), "t_bad_primary", false);
+        std::string s = "{\"trace_id\":\"t_bad_primary\",\"status\":\"incorrect\","
+            "\"primary_category\":\"not_a_category\",\"findings\":[],"
+            "\"confidence\":null,\"confidence_method\":null,"
+            "\"calibration_version\":null}";
+        writeRawFile(tmp / "raw.txt", s);
+        ImporterResult r = importResponse(run.string(), "t_bad_primary",
+                                          (tmp / "raw.txt").string(), "run_x",
+                                          "2026-08-24T00:00:00Z");
+        CHECK(r.ok, "illegal primary category import ok");
+        std::ifstream wf(run / "predictions" / "t_bad_primary.json");
+        nlohmann::json w; wf >> w;
+        CHECK(w.at("parse_status") == "schema_invalid",
+              "illegal primary category -> schema_invalid");
+    }
+
+    // ---- 13. correct: findings non-empty -> semantic_invalid ----
     {
         auto run = makeRunDir(tmp.string(), "t_cf", false);
         std::string s = "{\"trace_id\":\"t_cf\",\"status\":\"correct\",\"primary_category\":null,"
@@ -335,11 +353,30 @@ int main(int argc, char** argv) {
         CHECK(r.ok, "ics-no-candidate import ok");
         std::ifstream wf(run / "predictions" / "t_ics.json");
         nlohmann::json w; wf >> w;
-        CHECK(w.at("parse_status") == "schema_invalid" || w.at("parse_status") == "semantic_invalid",
-              "implementation_consistency without candidate rejected");
+        CHECK(w.at("parse_status") == "semantic_invalid",
+              "implementation_consistency without candidate -> semantic_invalid");
     }
 
-    // ---- 18. implementation_consistency WITH candidate -> parsed ----
+    // ---- 18. finding schema failures -> schema_invalid ----
+    {
+        auto run = makeRunDir(tmp.string(), "t_finding_schema", false);
+        std::string s = "{\"trace_id\":\"t_finding_schema\",\"status\":\"incorrect\","
+            "\"primary_category\":\"boundary_omission\","
+            "\"findings\":[{\"stage\":\"boundary\",\"category\":\"boundary_omission\","
+            "\"locating\":\"x\",\"evidence\":\"y\"}],\"confidence\":null,"
+            "\"confidence_method\":null,\"calibration_version\":null}";
+        writeRawFile(tmp / "raw.txt", s);
+        ImporterResult r = importResponse(run.string(), "t_finding_schema",
+                                          (tmp / "raw.txt").string(), "run_x",
+                                          "2026-08-24T00:00:00Z");
+        CHECK(r.ok, "finding-schema import ok");
+        std::ifstream wf(run / "predictions" / "t_finding_schema.json");
+        nlohmann::json w; wf >> w;
+        CHECK(w.at("parse_status") == "schema_invalid",
+              "finding missing required key -> schema_invalid");
+    }
+
+    // ---- 19. implementation_consistency WITH candidate -> parsed ----
     {
         auto run = makeRunDir(tmp.string(), "t_ics2", true); // with candidate
         std::string s = "{\"trace_id\":\"t_ics2\",\"status\":\"incorrect\","
@@ -357,7 +394,62 @@ int main(int argc, char** argv) {
         CHECK(w.at("parse_status") == "parsed", "ics with candidate -> parsed");
     }
 
-    // ---- 19. trace_id mismatch -> schema_invalid ----
+    // ---- 20. exporter/importer candidate association integration ----
+    if (argc >= 2) {
+        const fs::path dataDir = fs::path(argv[1]);
+        const fs::path templatePath = dataDir.parent_path() / "prompts" /
+                                      "hy3-evaluator-v1.md";
+        std::ifstream templateFile(templatePath, std::ios::binary);
+        std::string templateText((std::istreambuf_iterator<char>(templateFile)),
+                                 std::istreambuf_iterator<char>());
+        const fs::path run = tmp / "run_exporter_integration";
+        RunManifest manifest;
+        manifest.run_id = "importer-integration";
+        manifest.pipeline_commit = "test";
+        manifest.started_at = "2026-08-24T00:00:00Z";
+        std::string templateSha;
+        ExporterResult exported = exportPrompts(dataDir.string(), templateText,
+                                                 run.string(), manifest, templateSha);
+        CHECK(exported.ok, "real exporter prompt integration setup");
+        if (exported.ok) {
+            auto implementationResponse = [](const std::string& traceId) {
+                return "{\"trace_id\":\"" + traceId +
+                    "\",\"status\":\"incorrect\","
+                    "\"primary_category\":\"implementation_mismatch\","
+                    "\"findings\":[{\"stage\":\"implementation_consistency\","
+                    "\"category\":\"implementation_mismatch\",\"locating\":\"x\","
+                    "\"evidence\":\"y\",\"suggestion\":\"z\"}],"
+                    "\"confidence\":null,\"confidence_method\":null,"
+                    "\"calibration_version\":null}";
+            };
+
+            writeRawFile(tmp / "no_candidate.raw",
+                         implementationResponse("cf_160A_t1"));
+            ImporterResult noCandidate = importResponse(
+                run.string(), "cf_160A_t1", (tmp / "no_candidate.raw").string(),
+                "importer-integration", "2026-08-24T00:01:00Z");
+            CHECK(noCandidate.ok, "import real prompt without candidate");
+            std::ifstream noCandidateFile(run / "predictions" /
+                                          "cf_160A_t1.json");
+            nlohmann::json noCandidateWrapper; noCandidateFile >> noCandidateWrapper;
+            CHECK(noCandidateWrapper.at("parse_status") == "semantic_invalid",
+                  "real null candidate rejects implementation finding");
+
+            writeRawFile(tmp / "with_candidate.raw",
+                         implementationResponse("cf_160A_t3"));
+            ImporterResult withCandidate = importResponse(
+                run.string(), "cf_160A_t3", (tmp / "with_candidate.raw").string(),
+                "importer-integration", "2026-08-24T00:01:00Z");
+            CHECK(withCandidate.ok, "import real prompt with candidate");
+            std::ifstream withCandidateFile(run / "predictions" /
+                                            "cf_160A_t3.json");
+            nlohmann::json withCandidateWrapper; withCandidateFile >> withCandidateWrapper;
+            CHECK(withCandidateWrapper.at("parse_status") == "parsed",
+                  "real candidate object permits implementation finding");
+        }
+    }
+
+    // ---- 21. trace_id mismatch -> schema_invalid ----
     {
         auto run = makeRunDir(tmp.string(), "t_tm", false);
         std::string s = "{\"trace_id\":\"DIFFERENT\",\"status\":\"correct\",\"primary_category\":null,"

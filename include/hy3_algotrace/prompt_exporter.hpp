@@ -49,10 +49,11 @@ struct ExporterResult {
 
 // --- Template boundary extraction ------------------------------------------
 //
-// Extracts the text strictly between the markers
+// Extracts the text strictly between the standalone marker lines
 //   <!-- HY3_PROMPT_BEGIN -->  and  <!-- HY3_PROMPT_END -->
-// The markers themselves are NOT included. Leading/trailing whitespace of the
-// captured text is preserved verbatim (no trim). `body` is set only on success.
+// Inline mentions in surrounding design notes are ignored. The markers
+// themselves are NOT included. Leading/trailing whitespace of the captured
+// text is preserved verbatim (no trim). `body` is set only on success.
 ExporterResult extractTemplateBody(const std::string& templateText,
                                    std::string& body);
 
@@ -125,8 +126,9 @@ nlohmann::json buildManifestJson(const RunManifest& m);
 
 // --- Top-level export ------------------------------------------------------
 //
-// Exports prompts for every trace in `dataDir` using `templateText` (raw file
-// bytes, already normalized by caller). Results are written under `runDir`
+// Exports prompts for every trace in `dataDir` using `templateText` raw file
+// bytes. The exporter canonicalizes UTF-8/BOM/newlines before extraction,
+// hashing, and rendering. Results are written under `runDir`
 // (which MUST NOT already exist). `runDir` is created only after a temp stage
 // succeeds, then renamed into place (atomic-ish, failure-safe).
 //
