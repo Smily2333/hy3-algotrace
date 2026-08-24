@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase2c_modelclient_implemented_pending_ci_and_real_call_authorization`（2026-08-24）。** Phase 2B 已在 commit `385c48e` 通过 Windows/Ubuntu CI 技术验收。当前 Phase 2C 已实现 transport-neutral `IModelClient`、`ModelRunner`、零费用 `FakeModelClient`，以及按腾讯云官方 TokenHub/OpenAI-compatible 协议构造请求和解析响应 envelope 的 `Hy3ModelClient`；后者只接受注入式 HTTP transport，仓库尚未提供生产网络 transport，也未进行任何真实或付费模型调用。现有 `export-prompts` → 人工转交 → `import-response` → `report` 仍是正式 offline/manual fallback。**尚未运行 9 条真实 Hy3 pilot，所有真实指标仍为 N/A / not_computed；未连接 OJ、未执行候选代码。** 本状态仅代表 Codex Planner 技术开发进度，不等同于 human/expert review。
+**当前状态：`phase2c_modelclient_ci_verified_pending_protocol_and_real_call_authorization`（2026-08-24）。** Phase 2B 已在 commit `385c48e` 通过 Windows/Ubuntu CI 技术验收。Phase 2C transport-neutral `IModelClient`、`ModelRunner`、零费用 `FakeModelClient`，以及腾讯云官方 TokenHub/OpenAI-compatible 协议层 `Hy3ModelClient` 已在 commit `0ace55d` 实现，并由 [CI run 32719459034](https://github.com/Smily2333/hy3-algotrace/actions/runs/32719459034) 在 Windows/Ubuntu 完成 Configure/Build/全部 CTest/CLI 验证。Hy3 adapter 只接受注入式 HTTP transport，仓库尚未提供生产网络 transport，也未进行任何真实或付费模型调用。现有 `export-prompts` → 人工转交 → `import-response` → `report` 仍是正式 offline/manual fallback。**尚未运行 9 条真实 Hy3 pilot，所有真实指标仍为 N/A / not_computed；未连接 OJ、未执行候选代码。** 本状态仅代表 Codex Planner 技术验收，不等同于 human/expert review。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 

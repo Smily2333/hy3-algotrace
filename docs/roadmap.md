@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。Phase 2B 已在 commit `385c48e` 完成 Windows/Ubuntu CI 技术验收；当前处于 **Phase 2C ModelClient 与最小垂直链路实现后、等待 CI 与真实调用授权**，状态 `phase2c_modelclient_implemented_pending_ci_and_real_call_authorization`。Phase 2A 协议、Prompt 与指标继续冻结；尚未运行 9 条真实 Hy3 pilot。
+> 宏观阶段规划。Phase 2B 已在 commit `385c48e` 完成 Windows/Ubuntu CI 技术验收；Phase 2C ModelClient 与最小垂直链路已在 commit `0ace55d` 通过 Windows/Ubuntu CI run `32719459034`，当前状态 `phase2c_modelclient_ci_verified_pending_protocol_and_real_call_authorization`。Phase 2A 协议、Prompt 与指标继续冻结；尚未运行 9 条真实 Hy3 pilot。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
