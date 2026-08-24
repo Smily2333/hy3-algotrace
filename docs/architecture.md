@@ -162,6 +162,8 @@ Phase 2C 在不改变冻结 prediction schema 的前提下增加 transport-neutr
 
 `Hy3ModelClient` 依赖注入式 `IHttpTransport`。生产实现由 Windows 系统 WinHTTP / Linux 系统 libcurl 提供统一语义：TLS 校验、官方 origin pin、禁重定向和重试、显式 connect/total timeout；CI 只做无网测试。`runRecordedModelForTrace` 在发送前原子创建一次性 `model-calls` 侧车并在导入后原子完成，任何既存侧车均阻止重调。成功返回的空文本、非法 JSON 或 schema/语义错误仍由 `PredictionImporter` 分别判为既有 `empty_response` / `invalid_json` / `schema_invalid` / `semantic_invalid`，adapter 不修复模型内容。run manifest 是模型身份的权威来源，Runner 与 wrapper 会校验/继承该身份。
 
+网络依赖不 vendoring：Windows 使用随受信任 runner/操作系统交付和维护的 WinHTTP（Microsoft 系统组件）；Ubuntu CI 从 Ubuntu 官方签名 APT 仓库安装 `libcurl4-openssl-dev`（curl license），安装步骤输出精确包版本，包完整性由 APT 仓库签名与 runner 镜像信任链验证。生产部署必须以同等方式记录实际系统组件/包版本。
+
 ## 6.5 冻结文件边界
 
 以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。任何指标/枚举/语义变更必须回到规划方修订这些冻结文件，而非在 C++ 中自行创造类别。
