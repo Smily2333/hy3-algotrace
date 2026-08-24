@@ -48,13 +48,19 @@ add_library(hy3_algotrace_core STATIC
     src/prompt_exporter.cpp
     src/prediction_importer.cpp
     src/reporter.cpp
+    src/model_client.cpp
+    src/model_runner.cpp
+    src/hy3_model_client.cpp
     include/hy3_algotrace/diagnostic.hpp
     include/hy3_algotrace/json_loader.hpp
     include/hy3_algotrace/validator.hpp
     include/hy3_algotrace/sha256.hpp
     include/hy3_algotrace/prompt_exporter.hpp
     include/hy3_algotrace/prediction_importer.hpp
-    include/hy3_algotrace/reporter.hpp)
+    include/hy3_algotrace/reporter.hpp
+    include/hy3_algotrace/model_client.hpp
+    include/hy3_algotrace/model_runner.hpp
+    include/hy3_algotrace/hy3_model_client.hpp)
 target_include_directories(hy3_algotrace_core
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
@@ -108,6 +114,27 @@ target_include_directories(phase2b_e2e_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(phase2b_e2e_tests PRIVATE ${HY3_WARN_FLAGS})
 
+# Phase 2C transport-neutral ModelClient + one-trace runner tests.
+add_executable(model_client_tests tests/model_client_tests.cpp)
+target_link_libraries(model_client_tests PRIVATE hy3_algotrace_core)
+target_include_directories(model_client_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(model_client_tests PRIVATE ${HY3_WARN_FLAGS})
+
+# Phase 2C synthetic vertical smoke: real exporter/data + one fake model call.
+add_executable(phase2c_vertical_tests tests/phase2c_vertical_tests.cpp)
+target_link_libraries(phase2c_vertical_tests PRIVATE hy3_algotrace_core)
+target_include_directories(phase2c_vertical_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(phase2c_vertical_tests PRIVATE ${HY3_WARN_FLAGS})
+
+# Phase 2C official TokenHub protocol adapter tests (injected fake HTTP only).
+add_executable(hy3_model_client_tests tests/hy3_model_client_tests.cpp)
+target_link_libraries(hy3_model_client_tests PRIVATE hy3_algotrace_core)
+target_include_directories(hy3_model_client_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(hy3_model_client_tests PRIVATE ${HY3_WARN_FLAGS})
+
 # ---- Tests -----------------------------------------------------------------
 enable_testing()
 # Pass the canonical data path explicitly so the real-dataset case is never
@@ -122,6 +149,12 @@ add_test(NAME reporter_tests
          COMMAND reporter_tests "${CMAKE_CURRENT_SOURCE_DIR}/data")
 add_test(NAME phase2b_e2e_tests
          COMMAND phase2b_e2e_tests "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME model_client_tests
+         COMMAND model_client_tests "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME phase2c_vertical_tests
+         COMMAND phase2c_vertical_tests "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME hy3_model_client_tests
+         COMMAND hy3_model_client_tests)
 
 # Convenience: `cmake --build . --target run_cli` runs the validator on data/.
 add_custom_target(run_cli

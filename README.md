@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase2b_offline_pipeline_implemented_unverified_pending_planner_review`（2026-08-24）。** 整个 Phase 2B 离线评估管线已实现：C++17 `PromptExporter`（`export-prompts`）→ `PredictionImporter`（`import-response` / `mark-not-attempted`）→ `Reporter`（`report`），全程**不调用任何模型 API、不连接 OJ、不执行候选代码**。新增模块：`sha256`（自包含 FIPS 180-4 SHA-256 + UTF-8 规范化）、`prompt_exporter`、`prediction_importer`、`reporter` 四对 hpp/cpp，CLI 三命令，以及三组单元测试 + 一个端到端 synthetic smoke（`tests/phase2b_e2e_tests.cpp`，使用 `tests/fixtures/` 中明确标记 `SYNTHETIC_TEST_FIXTURE` 的合成响应，绝不伪装真实 Hy3 实验），`CMakeLists.txt` 全部接入 CTest。Phase 2A 协议与模板仍冻结（`phase2a_complete_planner_reviewed`）。**尚未运行任何真实 Hy3 实验，尚未创建正式 `experiments/` run，所有真实指标仍为 N/A / not_computed**——本管线产出的是可复现的工具与 synthetic 验证，不是真实评测结论。未进入 Phase 2C。**本地 MSVC 编译验证因 Windows SDK(ucrt) 缺失且 `cmd.exe`/WSL 被沙箱安全策略禁用而未能在本会话执行；完整验证通过 GitHub CI（commit/push 到 `phase2b-integration` 分支后）执行。** 该实现验收**不等同于**人工（human_reviewed）或专家（expert-reviewed）审查背书，也**不**等同于 `accepted`/`complete`。数据集（数据契约 0.3.0，3 题 × 3 轨迹 = 9 条模型生成样本）校验器**仅做数据结构与契约一致性校验**，**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码。
+**当前状态：`phase2c_modelclient_implemented_pending_ci_and_real_call_authorization`（2026-08-24）。** Phase 2B 已在 commit `385c48e` 通过 Windows/Ubuntu CI 技术验收。当前 Phase 2C 已实现 transport-neutral `IModelClient`、`ModelRunner`、零费用 `FakeModelClient`，以及按腾讯云官方 TokenHub/OpenAI-compatible 协议构造请求和解析响应 envelope 的 `Hy3ModelClient`；后者只接受注入式 HTTP transport，仓库尚未提供生产网络 transport，也未进行任何真实或付费模型调用。现有 `export-prompts` → 人工转交 → `import-response` → `report` 仍是正式 offline/manual fallback。**尚未运行 9 条真实 Hy3 pilot，所有真实指标仍为 N/A / not_computed；未连接 OJ、未执行候选代码。** 本状态仅代表 Codex Planner 技术开发进度，不等同于 human/expert review。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -91,9 +91,9 @@ hy3-algotrace/
 │       ├── phase-01b.md    Phase 1B C++17 校验器实现与本地验证记录
 │       ├── phase-02a.md    Phase 2A 离线评估协议与 Prompt 模板冻结记录
 │       └── phase-02b.md    Phase 2B-1 PromptExporter 实现与验证记录
-├── include/hy3_algotrace/  C++17 头文件（diagnostic / json_loader / validator / sha256 / prompt_exporter）
-├── src/                    C++17 源文件（main / json_loader / validator / sha256 / prompt_exporter）
-├── tests/                  validator_tests.cpp（56 项）+ prompt_exporter_tests.cpp（22 项），依赖自由
+├── include/hy3_algotrace/  C++17 头文件（校验、离线管线、ModelClient/Runner、Hy3 adapter）
+├── src/                    对应 C++17 实现与 CLI
+├── tests/                  依赖自由单元测试与 synthetic 端到端 smoke
 ├── third_party/nlohmann/   供应商锁定 nlohmann/json v3.12.0 单头文件（MIT）
 ├── data/
 │   ├── manifest.json       数据集汇总（版本/计数/审查状态）
@@ -177,3 +177,10 @@ hy3_algotrace --help | help          打印用法；退出 0
 > `export-prompts`（生成 prompts/run-manifest）→ 人工把 prompt 交给 Hy3 并取回
 > 原始响应 → `import-response` 逐条导入 → 未调用的轨迹 `mark-not-attempted` →
 > `report` 生成报告。
+
+### 8.5 Hy3 TokenHub 配置边界（Phase 2C）
+
+- 官方云端默认组合：Base URL `https://tokenhub.tencentmaas.com/v1`、model `hy3`、Bearer API Key；项目默认从 `TOKENHUB_API_KEY` 读取，也支持显式配置注入，任何诊断均不得回显 Key。Key 默认只允许发送到该 HTTPS origin；自定义 HTTPS gateway 必须显式 opt-in。
+- `Hy3ModelClient` 固定使用非流式 Chat Completions 与 JSON object 模式；模型内容仍逐字节交给 `PredictionImporter`，不会绕过严格 JSON/schema/语义校验。
+- 当前只有注入式 `IHttpTransport` 与 fake transport 测试，**没有生产 HTTP transport、没有 CLI 网络调用、没有真实费用**。offline/manual 流程继续可用。
+- 真实调用前仍需确定生产 transport、逐次调用审计 sidecar 的冻结协议扩展、显式 timeout，并取得 API Key/额度与一次付费调用授权；不得把 `hy3-preview` 或旧平台 `hunyuan-turbos-latest` 当作正式 `hy3`。

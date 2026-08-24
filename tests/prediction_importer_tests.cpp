@@ -45,6 +45,16 @@ fs::path makeRunDir(const std::string& base, const std::string& traceId,
     fs::create_directories(run / "prompts", ec);
     fs::create_directories(run / "raw-responses", ec);
     fs::create_directories(run / "predictions", ec);
+    nlohmann::json manifest;
+    manifest["evaluation_schema_version"] = "0.1.0";
+    manifest["run_id"] = "run_x";
+    manifest["model_provider"] = "tencent-hunyuan";
+    manifest["model_name"] = "hy3";
+    manifest["model_version"] = nullptr;
+    manifest["prompt_template_id"] = "hy3-evaluator-v1";
+    manifest["input_mode"] = "reference_assisted";
+    std::ofstream manifestFile(run / "run-manifest.json", std::ios::binary);
+    manifestFile << manifest.dump(2);
     // Match the frozen template's fifth fenced JSON input block.
     std::string prompt = "#### 5. candidate_solution\n\n```json\n";
     prompt += withCandidate ? "{\"id\":\"sol1\",\"trace_id\":\"" + traceId + "\"}" : "null";
@@ -498,11 +508,20 @@ int main(int argc, char** argv) {
         ImporterResult r1 = importResponse(run.string(), "t_ow", (tmp / "raw.txt").string(),
                                            "run_x", "2026-08-24T00:00:00Z");
         CHECK(r1.ok, "first import ok");
-        // second import must refuse (raw exists)
+        // With both artifacts present, prediction preflight wins before any
+        // raw mutation is attempted.
         ImporterResult r2 = importResponse(run.string(), "t_ow", (tmp / "raw.txt").string(),
                                            "run_x", "2026-08-24T00:00:00Z");
-        CHECK(!r2.ok && r2.error_code == importer_errc::E_RAW_EXISTS,
-              "refuse overwrite of raw response");
+        CHECK(!r2.ok && r2.error_code == importer_errc::E_PREDICTION_EXISTS,
+              "refuse overwrite when prediction already exists");
+
+        auto rawOnlyRun = makeRunDir(tmp.string(), "t_raw_only", false);
+        writeRawFile(rawOnlyRun / "raw-responses" / "t_raw_only.txt", "existing");
+        ImporterResult rawOnly = importResponse(
+            rawOnlyRun.string(), "t_raw_only", (tmp / "raw.txt").string(),
+            "run_x", "2026-08-24T00:00:00Z");
+        CHECK(!rawOnly.ok && rawOnly.error_code == importer_errc::E_RAW_EXISTS,
+              "refuse overwrite when only raw response exists");
     }
 
     // ---- 22. explicit mark-not-attempted ----

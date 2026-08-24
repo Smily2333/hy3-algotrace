@@ -391,6 +391,11 @@ int main(int argc, char** argv) {
         CHECK(mj.at("total_traces").get<int>() == 9, "total_traces == 9");
         CHECK(mj.at("model_version").is_null(), "model_version is null");
         CHECK(mj.at("completed_at").is_null(), "completed_at is null");
+
+        m.model_version = "hy3-2026-08";
+        json versioned = hy3::buildManifestJson(m);
+        CHECK(versioned.at("model_version") == "hy3-2026-08",
+              "explicit model_version is preserved in manifest");
     }
 
     // --- 12. Determinism (same input -> identical hashes/output) ---------

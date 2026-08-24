@@ -46,6 +46,7 @@ namespace importer_errc {
     inline constexpr const char* E_PROMPT_SHA_MISMATCH = "E_PROMPT_SHA_MISMATCH";
     inline constexpr const char* E_TRACE_ID_MISMATCH  = "E_TRACE_ID_MISMATCH";
     inline constexpr const char* E_INVALID_RAW_BYTES  = "E_INVALID_RAW_BYTES"; // invalid UTF-8 raw
+    inline constexpr const char* E_RUN_CONTEXT        = "E_RUN_CONTEXT";
 } // namespace importer_errc
 
 // The six canonical parse statuses from protocol §5.
@@ -171,6 +172,17 @@ ImporterResult importResponse(const std::string& runDir,
                               const std::string& rawFilePath,
                               const std::string& runId,
                               const std::string& generatedAt);
+
+// In-memory equivalent of importResponse. ModelClient implementations use
+// this entry point so their exact response bytes enter the same strict
+// save/hash/classify/wrapper pipeline as the offline file workflow. The byte
+// vector is preserved verbatim in raw-responses; no repair or normalization is
+// applied before hashing or saving.
+ImporterResult importResponseBytes(const std::string& runDir,
+                                   const std::string& traceId,
+                                   const std::vector<uint8_t>& rawBytes,
+                                   const std::string& runId,
+                                   const std::string& generatedAt);
 
 // --- Explicit "not attempted" marker --------------------------------------
 //

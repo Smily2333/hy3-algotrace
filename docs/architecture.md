@@ -150,18 +150,31 @@ Phase 2B **不**包含以下模块：
 - `Reporter` 在 wrapper 缺失时标记 `run_complete=false`，**绝不**默认 `correct`；`completed_at` 仅在 run 完整且传入合法 ISO-8601 时写回 `run-manifest.json`。
 - gold 隔离：prediction wrapper 结构由协议 §7 固定，无任何 `diagnoses` 字段；`Reporter` 比较后 gold 只进入 `report.*`，不污染 `predictions/`。
 
+### 6.4.5 Phase 2C ModelClient 最小垂直层
+
+Phase 2C 在不改变冻结 prediction schema 的前提下增加 transport-neutral 模型层：
+
+| 模块 | 职责 |
+| --- | --- |
+| `IModelClient` / `FakeModelClient` | 接收已渲染且已哈希的 Prompt；返回原始模型内容字节、模型身份、调用状态与时间元数据；fake 仅用于零费用测试 |
+| `ModelRunner` | `loadPromptSha → IModelClient::invoke → importResponseBytes`；只在传输成功时进入 Importer，timeout/auth/rate-limit/provider/transport 失败绝不伪装成 `model_call_not_attempted` |
+| `Hy3ModelClient` | 按腾讯云 TokenHub OpenAI-compatible Chat 协议构造非流式 `hy3` 请求，解析 `choices[0].message.content`；Bearer Key 由显式配置或 `TOKENHUB_API_KEY` 注入且不得进入诊断 |
+
+`Hy3ModelClient` 依赖注入式 `IHttpTransport`。当前仓库不含生产 HTTP transport，不进行网络或付费调用；单元测试使用 fake transport。成功返回的空文本、非法 JSON 或 schema/语义错误仍由 `PredictionImporter` 分别判为既有 `empty_response` / `invalid_json` / `schema_invalid` / `semantic_invalid`，adapter 不修复模型内容。run manifest 是模型身份的权威来源，Runner 与 wrapper 会校验/继承该身份。
+
 ## 6.5 冻结文件边界
 
 以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。任何指标/枚举/语义变更必须回到规划方修订这些冻结文件，而非在 C++ 中自行创造类别。
 
-## 7. 离线模型适配边界（Phase 2A 补充）
+## 7. 模型适配边界（offline/manual + 可注入 adapter）
 
-Phase 2 引入「离线模型适配」职责线：本仓库的 C++ 进程**不直接调用模型 API**，而是把 prompt 导出到外部，由 Hy3 / WorkBuddy 在进程外完成推理，再把原始响应导回。这样隔离了「协议与契约实现」与「模型运行时」，便于复现与审计。
+offline/manual 仍是无需凭证的正式回退路径；Phase 2C 同时提供 transport-neutral adapter，使模型传输与严格解析、gold 比较和报告计算保持解耦。
 
 ```text
 Ingest
   → PromptExporter        （显式 allowlist 构造输入 JSON，渲染 BEGIN/END 间模板，写入 experiments/.../prompts/<trace_id>.txt；仅对输入 payload 做 structural leakage 递归 key 检查）
-  → 外部 Hy3 / WorkBuddy 离线推理（进程外，不属于本仓库 C++ 调用范围；Phase 2C 初版不自动调用模型 API）
+  → [offline/manual] 外部 Hy3 推理后导入 raw response
+    或 [adapter] ModelRunner → IModelClient（Fake / Hy3 TokenHub）
   → PredictionImporter    （保存 raw response，用标准 JSON 解析器 [nlohmann/json] 解析，schema + 语义校验，产出 prediction wrapper）
   → ProcessEvaluator / Comparator（与 gold diagnosis 比较）
   → Reporter              （汇总指标，输出 report.json / report.md）
@@ -169,7 +182,7 @@ Ingest
 
 设计约束：
 
-- **外部 Hy3 步骤不是当前 C++ 进程直接调用 API**；本仓库只负责导出 prompt 与导入 prediction，模型调用在进程外发生（人工复制或后续桥接脚本），API 接入须另行授权。
+- offline/manual 路径不调用 API；Hy3 adapter 当前只有请求/响应协议层与注入式 transport 接口，没有生产网络实现。真实付费调用仍须另行授权。
 - PromptExporter 的 leakage 检查仅针对**输入 payload**（替换占位符后的输入 JSON 块），**不**扫描模板任务说明与输出 schema 中的 `status` / `findings` / 7 类 category 名称等通用字符串（它们在输出契约中合法）。structural leakage（禁止 key 进入输入）由递归 key 检查拦截；semantic leakage（自由文本直接透露 gold label）通过排除 `test_cases.notes` 等字段降低，其余自由文本须单独人工/规则审计。
 - Phase 2A 只冻结协议、Prompt 模板、指标与运行目录；`PromptExporter` / `PredictionImporter` / `Reporter` 的实现属 **Phase 2B**，`CandidateRunner` 属 **Phase 2D**（Phase 2D 初版仅本地受限编译/运行/对比，不连接外部 OJ，见 `roadmap.md`）。
 - prompt 与 raw response 的原始文本必须独立保留（见 `docs/phase-02-protocol.md` 第 10、9 节），不得只保存清洗后 JSON；SHA-256 用于关联与复现（模板哈希与实例哈希分别定义，见协议第 9 节）。

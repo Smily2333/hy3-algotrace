@@ -335,7 +335,9 @@ nlohmann::json buildManifestJson(const RunManifest& m) {
     j["taxonomy_version"] = m.taxonomy_version;
     j["model_provider"] = m.model_provider;
     j["model_name"] = m.model_name;
-    j["model_version"] = nlohmann::json::value_t::null; // always null in v0.1.0
+    j["model_version"] = (m.model_version.empty() || m.model_version == "null")
+                             ? nlohmann::json(nlohmann::json::value_t::null)
+                             : nlohmann::json(m.model_version);
     j["pipeline_commit"] = m.pipeline_commit;
     j["prompt_template_id"] = m.prompt_template_id;
     j["prompt_template_sha256"] = m.prompt_template_sha256;

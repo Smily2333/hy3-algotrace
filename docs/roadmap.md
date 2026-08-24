@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。当前处于 **Phase 2B（离线评估管线已整体实现，待统一规划方复审）**，状态 `phase2b_offline_pipeline_implemented_unverified_pending_planner_review`（实现完成；本地 MSVC 因沙箱无 Windows SDK 未跑，完整验证待 GitHub CI 在 `phase2b-integration` 分支执行）。Phase 1B 已完成且 CI 已验证（`phase1b_complete_ci_verified`）；Phase 2A 协议与模板已冻结（`phase2a_complete_planner_reviewed`）。本阶段**不**拆分为 2B-1/2B-2 单独验收，整体完成后一次性复审。
+> 宏观阶段规划。Phase 2B 已在 commit `385c48e` 完成 Windows/Ubuntu CI 技术验收；当前处于 **Phase 2C ModelClient 与最小垂直链路实现后、等待 CI 与真实调用授权**，状态 `phase2c_modelclient_implemented_pending_ci_and_real_call_authorization`。Phase 2A 协议、Prompt 与指标继续冻结；尚未运行 9 条真实 Hy3 pilot。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -33,14 +33,14 @@
 
 ## Phase 2 — 离线评估协议与基础评测管线（拆分为 2A–2D）
 
-### Phase 2A — 离线评估协议与 Prompt 模板（本阶段，待规划方复审）
+### Phase 2A — 离线评估协议与 Prompt 模板（已完成）
 
 - **目标**：冻结公平、可复现、无标签泄漏的 Hy3 离线评估协议：研究问题、`reference_assisted` 输入模式、allowlist/denylist、单条处理流程、失败状态、实验运行目录、`prediction` wrapper、输出契约、评价指标与可复用 Prompt 模板。
 - **主要产物**：`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`、`prompts/hy3-evaluator-v1.md`、`docs/journal/phase-02a.md`；同步 `README.md` / `roadmap.md` / `architecture.md`。
-- **状态**：`phase2a_complete_planner_reviewed`（codex_planner 技术验收通过，2026-08-24；不等同 human/expert review）。**未实现 `ProcessEvaluator` / `Reporter`，未运行 9 轨迹 Hy3 实验，未进入 Phase 2B。**
+- **状态**：`phase2a_complete_planner_reviewed`（codex_planner 技术验收通过，2026-08-24；不等同 human/expert review）。该阶段未运行 9 轨迹 Hy3 实验；后续 Phase 2B 已另行完成。
 - **进入下一阶段条件**：规划方复审通过 Phase 2A 协议与 Prompt 模板。
 
-### Phase 2B — 离线评估管线：PromptExporter / PredictionImporter / Reporter（整体实现，待统一复审）
+### Phase 2B — 离线评估管线：PromptExporter / PredictionImporter / Reporter（已完成）
 
 - **目标**：实现完整 C++17 离线评估管线三段式：`export-prompts`（确定性导出无泄漏 Prompt）、`import-response` + `mark-not-attempted`（逐字节保存 raw、6 态严格判别、schema/语义校验、生成 prediction wrapper、gold 隔离）、`report`（严格按 `docs/phase-02-metrics.md` 汇总指标、report.json/md 一致、completed_at 仅完整时更新）。**全程不调用模型 API、不连接 OJ、不执行候选代码。**
 - **主要产物**：
@@ -51,13 +51,14 @@
   - CLI 四命令（`export-prompts` / `import-response` / `mark-not-attempted` / `report`）+ `validate` / `--help`
   - 测试：`prompt_exporter_tests`(22) + `prediction_importer_tests`(25) + `reporter_tests`(5) + `phase2b_e2e_tests`(synthetic smoke) + `validator_tests`(56 回归)；`CMakeLists.txt` 全部接入 CTest；`tests/fixtures/`（标记 `SYNTHETIC_TEST_FIXTURE`，绝不伪装真实实验）
   - `docs/journal/phase-02b.md` 统一记录
-- **状态**：`phase2b_offline_pipeline_implemented_unverified_pending_planner_review`（2026-08-24）。在 `phase2b-integration` 分支实现完成；本地 MSVC 因沙箱 Windows SDK(ucrt) 缺失、`cmd.exe`/WSL 被安全策略禁用未跑，**完整验证通过 GitHub CI（推送该分支后 `gh workflow run ci.yml --ref phase2b-integration`）执行**；最多 3 次 CI 修复循环。**未运行真实 Hy3 实验、未创建正式 `experiments/` run、未进入 Phase 2C。**
+- **状态**：`phase2b_complete_ci_verified_pending_planner_release_decision`（commit `385c48e`；Windows/Ubuntu CI run `32712043144` 全绿）。该状态不等同 human/expert review；未创建 tag/Release。
 - **进入下一阶段条件（Phase 2C）**：规划方统一复审通过 Phase 2B 实现与测试；CI 在 Windows+Linux 全绿；确认无 gold 泄漏、no model/API/OJ/candidate 调用、报告数值一致；然后启动 9 条轨迹离线冒烟实验。
 
 ### Phase 2C — Hy3 9 轨迹冒烟实验
 
 - **目标**：用冻结的 `hy3-evaluator-v1` 模板与 `reference_assisted` 模式，对 Phase 1A 的 9 条贪心轨迹做离线推理（人工/脚本交给 Hy3），运行 Reporter，记录指标。
 - **主要产物**：`experiments/phase-02/runs/<run_id>/` 完整产物（prompts / raw-responses / predictions / report）；冒烟级指标（见 `docs/phase-02-metrics.md` 第 12 节规模限制）。
+- **当前进度**：已实现 `IModelClient` / `ModelRunner` / `FakeModelClient`、官方 TokenHub 协议 adapter（注入式 transport，无网络副作用）与一条 synthetic 垂直 smoke；production HTTP transport、逐次调用审计 sidecar 与 9 条真实调用尚未完成。
 - **进入下一阶段条件**：9 条样本全部产生 `parsed` 或明确失败状态；指标可复现；不宣称代表总体能力。
 
 ### Phase 2D — CandidateRunner 与代码验证扩展

@@ -26,6 +26,65 @@ bool isSafeId(const std::string& id) {
     return true;
 }
 
+struct WrapperContext {
+    std::string evaluation_schema_version = "0.1.0";
+    std::string run_id;
+    std::string model_name = "hy3";
+    std::string prompt_template_id = "hy3-evaluator-v1";
+    std::string input_mode = "reference_assisted";
+};
+
+// Canonical exported runs have a manifest. Unit-level importer callers may
+// omit it, in which case the frozen v0.1.0 defaults remain for compatibility.
+// When present, the manifest is authoritative so fake/alternate clients are
+// not mislabeled as Hy3 in prediction wrappers.
+ImporterResult loadWrapperContext(const std::string& runDir,
+                                  WrapperContext& context) {
+    ImporterResult result;
+    const fs::path manifestPath = fs::path(runDir) / "run-manifest.json";
+    std::error_code ec;
+    const bool manifestExists = fs::exists(manifestPath, ec);
+    if (ec) {
+        result.error_code = importer_errc::E_RUN_CONTEXT;
+        result.message = "cannot inspect run-manifest: " + ec.message();
+        return result;
+    }
+    if (!manifestExists) {
+        result.error_code = importer_errc::E_RUN_CONTEXT;
+        result.message = "run-manifest is missing";
+        return result;
+    }
+
+    const LoadResult loaded = loadJsonFile("run-manifest.json", runDir);
+    if (!loaded.ok || !loaded.doc.is_object()) {
+        result.error_code = importer_errc::E_RUN_CONTEXT;
+        result.message = loaded.ok
+                             ? "run-manifest is not an object"
+                             : loaded.error_code + ": " + loaded.error_message;
+        return result;
+    }
+
+    const auto copyRequiredString = [&](const char* key, std::string& target) {
+        if (!loaded.doc.contains(key) || !loaded.doc.at(key).is_string()) {
+            return false;
+        }
+        target = loaded.doc.at(key).get<std::string>();
+        return !target.empty();
+    };
+    if (!copyRequiredString("evaluation_schema_version",
+                            context.evaluation_schema_version) ||
+        !copyRequiredString("run_id", context.run_id) ||
+        !copyRequiredString("model_name", context.model_name) ||
+        !copyRequiredString("prompt_template_id", context.prompt_template_id) ||
+        !copyRequiredString("input_mode", context.input_mode)) {
+        result.error_code = importer_errc::E_RUN_CONTEXT;
+        result.message = "run-manifest wrapper identity is missing or invalid";
+        return result;
+    }
+    result.ok = true;
+    return result;
+}
+
 std::string parseStatusName(ParseStatus s) {
     switch (s) {
         case ParseStatus::ModelCallNotAttempted: return "model_call_not_attempted";
@@ -433,6 +492,14 @@ ImporterResult writePredictionWrapper(const std::string& runDir,
         res.message = "unsafe trace id: " + traceId;
         return res;
     }
+    WrapperContext context;
+    const ImporterResult contextResult = loadWrapperContext(runDir, context);
+    if (!contextResult.ok) return contextResult;
+    if (!context.run_id.empty() && context.run_id != runId) {
+        res.error_code = importer_errc::E_BAD_ARGUMENT;
+        res.message = "run_id does not match run-manifest";
+        return res;
+    }
     fs::path outDir = fs::path(runDir) / "predictions";
     fs::path outPath = outDir / (traceId + ".json");
     std::error_code ec;
@@ -451,12 +518,12 @@ ImporterResult writePredictionWrapper(const std::string& runDir,
         }
     }
     nlohmann::json w;
-    w["evaluation_schema_version"] = "0.1.0";
+    w["evaluation_schema_version"] = context.evaluation_schema_version;
     w["run_id"] = runId;
     w["trace_id"] = traceId;
-    w["model_name"] = "hy3";
-    w["prompt_template_id"] = "hy3-evaluator-v1";
-    w["input_mode"] = "reference_assisted";
+    w["model_name"] = context.model_name;
+    w["prompt_template_id"] = context.prompt_template_id;
+    w["input_mode"] = context.input_mode;
     w["prompt_sha256"] = promptSha256;
     w["raw_response_sha256"] = rawResponseSha256; // null only when not_attempted
     w["parse_status"] = parseStatusName(parseStatus);
@@ -531,17 +598,62 @@ ImporterResult importResponse(const std::string& runDir,
     std::vector<uint8_t> rawBytes((std::istreambuf_iterator<char>(ifs)),
                                   std::istreambuf_iterator<char>());
 
-    // 2) save raw (refuse overwrite)
-    std::string rawSha;
-    ImporterResult sr = saveRawResponse(runDir, traceId, rawBytes, rawSha);
-    if (!sr.ok) return sr;
+    return importResponseBytes(runDir, traceId, rawBytes, runId, generatedAt);
+}
 
-    // 3) load prompt hash
+ImporterResult importResponseBytes(const std::string& runDir,
+                                   const std::string& traceId,
+                                   const std::vector<uint8_t>& rawBytes,
+                                   const std::string& runId,
+                                   const std::string& generatedAt) {
+    ImporterResult res;
+    if (!isSafeId(traceId)) {
+        res.error_code = importer_errc::E_UNSAFE_ID;
+        res.message = "unsafe trace id: " + traceId;
+        return res;
+    }
+    std::error_code ec;
+    if (!fs::exists(runDir, ec)) {
+        res.error_code = importer_errc::E_RUN_DIR_MISSING;
+        res.message = "run directory missing: " + runDir;
+        return res;
+    }
+    WrapperContext context;
+    const ImporterResult contextResult = loadWrapperContext(runDir, context);
+    if (!contextResult.ok) return contextResult;
+    if (!context.run_id.empty() && context.run_id != runId) {
+        res.error_code = importer_errc::E_BAD_ARGUMENT;
+        res.message = "run_id does not match run-manifest";
+        return res;
+    }
+
+    // Complete all non-mutating preflight checks before saving raw bytes. This
+    // prevents a pre-existing prediction from causing a half-written run.
+    const fs::path predictionPath =
+        fs::path(runDir) / "predictions" / (traceId + ".json");
+    if (fs::exists(predictionPath, ec)) {
+        res.error_code = importer_errc::E_PREDICTION_EXISTS;
+        res.message = "prediction wrapper already exists (refuse overwrite): " +
+                      predictionPath.string();
+        return res;
+    }
+    if (ec) {
+        res.error_code = importer_errc::E_WRITE_FAILED;
+        res.message = "cannot inspect prediction path: " + ec.message();
+        return res;
+    }
+
+    // Load and validate the prompt before any output mutation.
     std::string promptSha, promptText;
     ImporterResult lp = loadPromptSha(runDir, traceId, promptSha, promptText);
     if (!lp.ok) return lp;
 
-    // 4) classify
+    // Save raw (refuse overwrite).
+    std::string rawSha;
+    ImporterResult sr = saveRawResponse(runDir, traceId, rawBytes, rawSha);
+    if (!sr.ok) return sr;
+
+    // Classify.
     std::string rawText(rawBytes.begin(), rawBytes.end());
     // Validate raw bytes are decodable as UTF-8 for classification (do not
     // normalize JSON content; only decode for parsing). If invalid UTF-8, the
@@ -592,6 +704,14 @@ ImporterResult markNotAttempted(const std::string& runDir,
         res.message = "run directory missing: " + runDir;
         return res;
     }
+    WrapperContext context;
+    const ImporterResult contextResult = loadWrapperContext(runDir, context);
+    if (!contextResult.ok) return contextResult;
+    if (!context.run_id.empty() && context.run_id != runId) {
+        res.error_code = importer_errc::E_BAD_ARGUMENT;
+        res.message = "run_id does not match run-manifest";
+        return res;
+    }
     fs::path outPath = fs::path(runDir) / "predictions" / (traceId + ".json");
     if (fs::exists(outPath, ec)) {
         res.error_code = importer_errc::E_PREDICTION_EXISTS;
@@ -607,12 +727,12 @@ ImporterResult markNotAttempted(const std::string& runDir,
         if (!lp.ok) promptSha = "null";
     }
     nlohmann::json w;
-    w["evaluation_schema_version"] = "0.1.0";
+    w["evaluation_schema_version"] = context.evaluation_schema_version;
     w["run_id"] = runId;
     w["trace_id"] = traceId;
-    w["model_name"] = "hy3";
-    w["prompt_template_id"] = "hy3-evaluator-v1";
-    w["input_mode"] = "reference_assisted";
+    w["model_name"] = context.model_name;
+    w["prompt_template_id"] = context.prompt_template_id;
+    w["input_mode"] = context.input_mode;
     w["prompt_sha256"] = promptSha;
     w["raw_response_sha256"] = nlohmann::json::value_t::null;
     w["parse_status"] = "model_call_not_attempted";
