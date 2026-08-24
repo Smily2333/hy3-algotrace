@@ -32,6 +32,12 @@ enum class ModelCallStatus {
     Cancelled
 };
 
+struct ModelTokenUsage {
+    std::optional<std::uint64_t> prompt_tokens;
+    std::optional<std::uint64_t> completion_tokens;
+    std::optional<std::uint64_t> total_tokens;
+};
+
 // Stable lower-case spelling for diagnostics, tests, and future audit records.
 const char* modelCallStatusName(ModelCallStatus status) noexcept;
 
@@ -46,6 +52,12 @@ struct ModelCallResult {
     std::string provider;
     std::string model_name;
     std::optional<std::string> model_version;
+
+    // Safe provider metadata retained when the response exposes it. Missing
+    // values remain null; adapters must never invent them.
+    std::optional<int> http_status;
+    std::optional<std::string> request_id;
+    std::optional<ModelTokenUsage> token_usage;
 
     // UTC wall-clock timestamps describe when the call started and finished.
     // duration_ms is measured independently with a monotonic clock by a real

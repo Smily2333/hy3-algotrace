@@ -6,6 +6,8 @@
 //   hy3_algotrace export-prompts <data_dir> <template_file> <run_dir>
 //       --run-id <run_id> --pipeline-commit <commit> --started-at <ISO-8601>
 //       Export evaluation prompts for every trace (Phase 2B PromptExporter).
+//   hy3_algotrace call-hy3 <run_dir> <trace_id> ...
+//       Execute one audited call to the pinned official TokenHub Hy3 endpoint.
 //   hy3_algotrace import-response <run_dir> <trace_id> <raw_file>
 //       --run-id <run_id> --generated-at <ISO-8601>
 //       Import a model's raw response into a prediction wrapper (PredictionImporter).
@@ -27,11 +29,15 @@
 #include "hy3_algotrace/prediction_importer.hpp"
 #include "hy3_algotrace/reporter.hpp"
 #include "hy3_algotrace/json_loader.hpp"
+#include "hy3_algotrace/hy3_model_client.hpp"
+#include "hy3_algotrace/model_runner.hpp"
+#include "hy3_algotrace/production_http_transport.hpp"
 #include "hy3_algotrace/validator.hpp"
 #include "hy3_algotrace/sha256.hpp"
 
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -39,7 +45,7 @@ namespace {
 
 void printUsage() {
     std::cout
-        << "hy3_algotrace — Phase 1B dataset contract validator + Phase 2B offline pipeline\n"
+        << "hy3_algotrace — dataset validator + Phase 2 evaluation pipeline\n"
         << "\n"
         << "USAGE:\n"
         << "  hy3_algotrace validate <data_dir>\n"
@@ -51,6 +57,12 @@ void printUsage() {
         << "      Export evaluation prompts for every reasoning trace (Phase 2B).\n"
         << "      <run_dir> must not already exist. Prints run_id/total_traces/\n"
         << "      prompt_template_sha256/output_dir/result. Exit 0 on success, 1 on failure.\n"
+        << "\n"
+        << "  hy3_algotrace call-hy3 <run_dir> <trace_id>\n"
+        << "      --run-id <run_id> --generated-at <ISO-8601>\n"
+        << "      --connect-timeout-seconds <n> --total-timeout-seconds <n>\n"
+        << "      Perform one audited, non-retrying call to the pinned official\n"
+        << "      TokenHub Hy3 endpoint. API key is read only from TOKENHUB_API_KEY.\n"
         << "\n"
         << "  hy3_algotrace import-response <run_dir> <trace_id> <raw_file>\n"
         << "      --run-id <run_id> --generated-at <ISO-8601>\n"
@@ -71,7 +83,22 @@ void printUsage() {
         << "      Print this help and exit 0.\n"
         << "\n"
         << "EXIT CODES: 0 = success, 1 = data/business failure, 2 = usage/internal error.\n"
-        << "No model API, OJ, or candidate code is ever invoked by these commands.\n";
+        << "Only call-hy3 invokes a model API. No command invokes an OJ or candidate code.\n";
+}
+
+bool parsePositiveSeconds(const std::string& text, std::uint64_t& value) {
+    try {
+        std::size_t consumed = 0;
+        const unsigned long long parsed = std::stoull(text, &consumed, 10);
+        if (consumed != text.size() || parsed == 0 ||
+            parsed > std::numeric_limits<std::uint64_t>::max() / 1000U) {
+            return false;
+        }
+        value = static_cast<std::uint64_t>(parsed);
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 void printSummary(const hy3::ValidationSummary& s, bool pass,
@@ -190,6 +217,66 @@ int main(int argc, char** argv) {
                       << manifestResult.doc.value("total_traces", 0) << "\n";
             std::cout << "prompt_template_sha256: " << promptTemplateSha256 << "\n";
             std::cout << "output_dir: " << runDir << "\n";
+            std::cout << "result: PASS\n";
+            return 0;
+        }
+
+        // call-hy3 <run_dir> <trace_id>
+        //   --run-id <id> --generated-at <iso>
+        //   --connect-timeout-seconds <n> --total-timeout-seconds <n>
+        if (args.size() >= 4 && args[1] == "call-hy3") {
+            const std::string runDir = args[2];
+            const std::string traceId = args[3];
+            std::string runId, generatedAt, connectText, totalText;
+            if ((args.size() - 4) % 2 != 0) {
+                std::cerr << "E_BAD_ARGUMENT: option missing value\n";
+                return 2;
+            }
+            for (size_t i = 4; i + 1 < args.size(); i += 2) {
+                if (args[i] == "--run-id") runId = args[i + 1];
+                else if (args[i] == "--generated-at") generatedAt = args[i + 1];
+                else if (args[i] == "--connect-timeout-seconds") {
+                    connectText = args[i + 1];
+                } else if (args[i] == "--total-timeout-seconds") {
+                    totalText = args[i + 1];
+                } else {
+                    std::cerr << "E_BAD_ARGUMENT: unknown option " << args[i] << "\n";
+                    return 2;
+                }
+            }
+            std::uint64_t connectSeconds = 0;
+            std::uint64_t totalSeconds = 0;
+            if (runId.empty() || generatedAt.empty() ||
+                !parsePositiveSeconds(connectText, connectSeconds) ||
+                !parsePositiveSeconds(totalText, totalSeconds) ||
+                connectSeconds > totalSeconds) {
+                std::cerr << "E_BAD_ARGUMENT: run id, generated time, and positive "
+                             "connect/total timeouts are required\n";
+                return 2;
+            }
+
+            hy3::ProductionHttpTransport transport;
+            hy3::Hy3ModelClientConfig config;
+            config.connect_timeout_ms = connectSeconds * 1000U;
+            config.read_timeout_ms = totalSeconds * 1000U;
+            config.total_timeout_ms = totalSeconds * 1000U;
+            hy3::Hy3ModelClient client(transport, config);
+            hy3::ModelCallAuditConfig audit;
+            audit.service = "tokenhub";
+            audit.endpoint_origin = "https://tokenhub.tencentmaas.com";
+            audit.timeout_seconds = totalSeconds;
+            const hy3::ModelRunResult result = hy3::runRecordedModelForTrace(
+                runDir, traceId, runId, generatedAt, audit, client);
+            if (!result.ok) {
+                std::cerr << result.error_code << ": " << result.message << "\n";
+                return 1;
+            }
+            std::cout << "trace_id: " << traceId << "\n";
+            std::cout << "http_status: "
+                      << (result.call_result.http_status
+                              ? std::to_string(*result.call_result.http_status)
+                              : "null") << "\n";
+            std::cout << "latency_ms: " << result.call_result.duration_ms << "\n";
             std::cout << "result: PASS\n";
             return 0;
         }

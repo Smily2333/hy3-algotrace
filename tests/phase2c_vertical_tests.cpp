@@ -139,8 +139,12 @@ int main(int argc, char** argv) {
     scripted.duration_ms = 1;
     FakeModelClient client(scripted);
 
-    const ModelRunResult called = runModelForTrace(
-        run.string(), targetTraceId, runId, generatedAt, client);
+    ModelCallAuditConfig audit;
+    audit.service = "tokenhub";
+    audit.endpoint_origin = "https://tokenhub.tencentmaas.com";
+    audit.timeout_seconds = 30;
+    const ModelRunResult called = runRecordedModelForTrace(
+        run.string(), targetTraceId, runId, generatedAt, audit, client);
     CHECK(called.ok, "FakeModelClient response completes ModelRunner path");
     CHECK(client.callCount() == 1, "one fake model call for target trace");
     CHECK(client.lastRequest().has_value(), "fake client captured target request");
@@ -169,6 +173,16 @@ int main(int argc, char** argv) {
           "wrapper stores prompt SHA");
     CHECK(wrapper.at("raw_response_sha256") == sha256_hex(rawBytes),
           "wrapper stores unnormalized raw-byte SHA");
+    nlohmann::json sidecar;
+    {
+        std::ifstream input(run / "model-calls" / (targetTraceId + ".json"));
+        input >> sidecar;
+    }
+    CHECK(sidecar.at("outcome") == "success",
+          "fake vertical finalizes the audited sidecar");
+    CHECK(sidecar.at("parse_status") == "parsed" &&
+              sidecar.at("raw_response_sha256") == sha256_hex(rawBytes),
+          "fake vertical sidecar links the strict importer artifacts");
 
     // A complete report requires one explicit wrapper for every remaining
     // trace.  These are intentionally not model calls and must carry the

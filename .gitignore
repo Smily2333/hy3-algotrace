@@ -9,6 +9,11 @@ build/
 out/
 _build/
 
+# Local Phase 2 experiment runs can contain paid model responses and audit
+# metadata. They remain local unless a later explicit publication decision is
+# made.
+experiments/phase-02/runs/
+
 # Compiled object / intermediate files
 *.obj
 *.o

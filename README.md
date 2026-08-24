@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase2c_modelclient_ci_verified_pending_protocol_and_real_call_authorization`（2026-08-24）。** Phase 2B 已在 commit `385c48e` 通过 Windows/Ubuntu CI 技术验收。Phase 2C transport-neutral `IModelClient`、`ModelRunner`、零费用 `FakeModelClient`，以及腾讯云官方 TokenHub/OpenAI-compatible 协议层 `Hy3ModelClient` 已在 commit `0ace55d` 实现，并由 [CI run 32719459034](https://github.com/Smily2333/hy3-algotrace/actions/runs/32719459034) 在 Windows/Ubuntu 完成 Configure/Build/全部 CTest/CLI 验证。Hy3 adapter 只接受注入式 HTTP transport，仓库尚未提供生产网络 transport，也未进行任何真实或付费模型调用。现有 `export-prompts` → 人工转交 → `import-response` → `report` 仍是正式 offline/manual fallback。**尚未运行 9 条真实 Hy3 pilot，所有真实指标仍为 N/A / not_computed；未连接 OJ、未执行候选代码。** 本状态仅代表 Codex Planner 技术验收，不等同于 human/expert review。
+**当前状态：`phase2c_production_transport_implemented_pending_ci_and_single_canary`（2026-08-24）。** Phase 2B 已在 commit `385c48e` 通过 Windows/Ubuntu CI 技术验收；Phase 2C transport-neutral ModelClient 基线已由 [CI run 32719459034](https://github.com/Smily2333/hy3-algotrace/actions/runs/32719459034) 验证。本分支新增生产 HTTPS transport、一次性 `model-calls` 审计侧车和受限 `call-hy3` CLI，尚待本轮 Windows/Ubuntu CI 与唯一一次 `cf_160A_t3` 项目 canary 验证。现有 `export-prompts` → 人工转交 → `import-response` → `report` 继续作为正式 offline/manual fallback。**尚未运行 9 条真实 Hy3 pilot，不计算整体真实指标；未连接 OJ、未执行候选代码。**
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -182,5 +182,5 @@ hy3_algotrace --help | help          打印用法；退出 0
 
 - 官方云端默认组合：Base URL `https://tokenhub.tencentmaas.com/v1`、model `hy3`、Bearer API Key；项目默认从 `TOKENHUB_API_KEY` 读取，也支持显式配置注入，任何诊断均不得回显 Key。Key 默认只允许发送到该 HTTPS origin；自定义 HTTPS gateway 必须显式 opt-in。
 - `Hy3ModelClient` 固定使用非流式 Chat Completions 与 JSON object 模式；模型内容仍逐字节交给 `PredictionImporter`，不会绕过严格 JSON/schema/语义校验。
-- 当前只有注入式 `IHttpTransport` 与 fake transport 测试，**没有生产 HTTP transport、没有 CLI 网络调用、没有真实费用**。offline/manual 流程继续可用。
-- 真实调用前仍需确定生产 transport、逐次调用审计 sidecar 的冻结协议扩展、显式 timeout，并取得 API Key/额度与一次付费调用授权；不得把 `hy3-preview` 或旧平台 `hunyuan-turbos-latest` 当作正式 `hy3`。
+- 生产 transport 在 Windows 使用系统 WinHTTP，在 Linux 使用系统 libcurl；默认只接受官方 TokenHub HTTPS origin，验证 TLS，禁重定向和自动重试，并设置明确 connect/total timeout。offline/manual 流程继续可用。
+- `call-hy3` 仅从 `TOKENHUB_API_KEY` 环境变量读取凭证，并在发送前原子创建 `model-calls/<trace_id>.json`。任何既存 sidecar/raw/prediction 都会在网络前拒绝重复调用；不得把 `hy3-preview` 或旧平台 `hunyuan-turbos-latest` 当作正式 `hy3`。

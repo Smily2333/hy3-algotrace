@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "hy3_algotrace/model_client.hpp"
@@ -25,6 +26,8 @@ namespace model_runner_errc {
     inline constexpr const char* E_MODEL_CANCELLED = "E_MODEL_CANCELLED";
     inline constexpr const char* E_MODEL_RESULT_INVALID = "E_MODEL_RESULT_INVALID";
     inline constexpr const char* E_IMPORT_FAILED = "E_MODEL_IMPORT_FAILED";
+    inline constexpr const char* E_AUDIT_PRECHECK = "E_MODEL_AUDIT_PRECHECK";
+    inline constexpr const char* E_AUDIT_WRITE = "E_MODEL_AUDIT_WRITE";
 } // namespace model_runner_errc
 
 struct ModelRunResult {
@@ -32,6 +35,13 @@ struct ModelRunResult {
     std::string error_code;
     std::string message;
     ModelCallResult call_result;
+};
+
+struct ModelCallAuditConfig {
+    std::string schema_version = "0.1.0";
+    std::string service;
+    std::string endpoint_origin;
+    std::uint64_t timeout_seconds = 0;
 };
 
 // Loads and hashes <runDir>/prompts/<traceId>.txt, sends exactly that
@@ -46,5 +56,16 @@ ModelRunResult runModelForTrace(const std::string& runDir,
                                 const std::string& runId,
                                 const std::string& generatedAt,
                                 IModelClient& client);
+
+// Production/audited variant. Before client.invoke() it atomically creates
+// model-calls/<traceId>.json with outcome=attempting. Any pre-existing sidecar
+// refuses the call, including a stranded attempted record from a prior crash.
+// Completion atomically replaces the sidecar with safe transport/import data.
+ModelRunResult runRecordedModelForTrace(const std::string& runDir,
+                                        const std::string& traceId,
+                                        const std::string& runId,
+                                        const std::string& generatedAt,
+                                        const ModelCallAuditConfig& audit,
+                                        IModelClient& client);
 
 } // namespace hy3

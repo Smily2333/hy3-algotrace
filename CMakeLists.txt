@@ -33,6 +33,14 @@ endif()
 # Treated as SYSTEM so its warnings never pollute our own code's /W4.
 set(HY3_THIRD_PARTY "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
 
+# Production HTTPS transport: Windows uses the system WinHTTP API. Other
+# platforms use the system/runner libcurl package (curl license), discovered
+# by CMake; nothing is downloaded or vendored by this build.
+if(NOT WIN32)
+  set(CURL_USE_STATIC_LIBS OFF)
+  find_package(CURL REQUIRED)
+endif()
+
 # ---- compiler flags (clear if/else, no generator expressions) -------------
 if(MSVC)
   set(HY3_WARN_FLAGS /W4 /EHsc /utf-8)
@@ -51,6 +59,7 @@ add_library(hy3_algotrace_core STATIC
     src/model_client.cpp
     src/model_runner.cpp
     src/hy3_model_client.cpp
+    src/production_http_transport.cpp
     include/hy3_algotrace/diagnostic.hpp
     include/hy3_algotrace/json_loader.hpp
     include/hy3_algotrace/validator.hpp
@@ -60,7 +69,8 @@ add_library(hy3_algotrace_core STATIC
     include/hy3_algotrace/reporter.hpp
     include/hy3_algotrace/model_client.hpp
     include/hy3_algotrace/model_runner.hpp
-    include/hy3_algotrace/hy3_model_client.hpp)
+    include/hy3_algotrace/hy3_model_client.hpp
+    include/hy3_algotrace/production_http_transport.hpp)
 target_include_directories(hy3_algotrace_core
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
@@ -71,6 +81,11 @@ target_include_directories(hy3_algotrace_core
     SYSTEM PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party>)
 target_compile_options(hy3_algotrace_core PRIVATE ${HY3_WARN_FLAGS})
+if(WIN32)
+  target_link_libraries(hy3_algotrace_core PRIVATE winhttp)
+else()
+  target_link_libraries(hy3_algotrace_core PRIVATE CURL::libcurl)
+endif()
 
 # ---- CLI executable: hy3_algotrace -----------------------------------------
 add_executable(hy3_algotrace src/main.cpp)
@@ -135,6 +150,15 @@ target_include_directories(hy3_model_client_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(hy3_model_client_tests PRIVATE ${HY3_WARN_FLAGS})
 
+# Production transport request safety checks. These tests perform no network
+# I/O and use no credentials.
+add_executable(production_http_transport_tests
+    tests/production_http_transport_tests.cpp)
+target_link_libraries(production_http_transport_tests PRIVATE hy3_algotrace_core)
+target_include_directories(production_http_transport_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(production_http_transport_tests PRIVATE ${HY3_WARN_FLAGS})
+
 # ---- Tests -----------------------------------------------------------------
 enable_testing()
 # Pass the canonical data path explicitly so the real-dataset case is never
@@ -155,6 +179,8 @@ add_test(NAME phase2c_vertical_tests
          COMMAND phase2c_vertical_tests "${CMAKE_CURRENT_SOURCE_DIR}")
 add_test(NAME hy3_model_client_tests
          COMMAND hy3_model_client_tests)
+add_test(NAME production_http_transport_tests
+         COMMAND production_http_transport_tests)
 
 # Convenience: `cmake --build . --target run_cli` runs the validator on data/.
 add_custom_target(run_cli

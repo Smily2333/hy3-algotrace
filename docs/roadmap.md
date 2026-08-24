@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。Phase 2B 已在 commit `385c48e` 完成 Windows/Ubuntu CI 技术验收；Phase 2C ModelClient 与最小垂直链路已在 commit `0ace55d` 通过 Windows/Ubuntu CI run `32719459034`，当前状态 `phase2c_modelclient_ci_verified_pending_protocol_and_real_call_authorization`。Phase 2A 协议、Prompt 与指标继续冻结；尚未运行 9 条真实 Hy3 pilot。
+> 宏观阶段规划。Phase 2B 已在 commit `385c48e` 完成 Windows/Ubuntu CI 技术验收；Phase 2C ModelClient 基线已在 commit `0ace55d` 通过 Windows/Ubuntu CI run `32719459034`。生产 transport 与 `model-calls` 审计侧车已实现，当前状态 `phase2c_production_transport_implemented_pending_ci_and_single_canary`。Prompt、指标和数据继续冻结；尚未运行 9 条真实 Hy3 pilot。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -58,7 +58,7 @@
 
 - **目标**：用冻结的 `hy3-evaluator-v1` 模板与 `reference_assisted` 模式，对 Phase 1A 的 9 条贪心轨迹做离线推理（人工/脚本交给 Hy3），运行 Reporter，记录指标。
 - **主要产物**：`experiments/phase-02/runs/<run_id>/` 完整产物（prompts / raw-responses / predictions / report）；冒烟级指标（见 `docs/phase-02-metrics.md` 第 12 节规模限制）。
-- **当前进度**：已实现 `IModelClient` / `ModelRunner` / `FakeModelClient`、官方 TokenHub 协议 adapter（注入式 transport，无网络副作用）与一条 synthetic 垂直 smoke；production HTTP transport、逐次调用审计 sidecar 与 9 条真实调用尚未完成。
+- **当前进度**：已实现 `IModelClient` / `ModelRunner` / `FakeModelClient`、官方 TokenHub adapter、Windows WinHTTP / Linux libcurl production transport、逐次调用审计 sidecar 与 synthetic 垂直 smoke；本轮 CI 和唯一一次 `cf_160A_t3` canary 尚待完成，其余 8 条未获授权。
 - **进入下一阶段条件**：9 条样本全部产生 `parsed` 或明确失败状态；指标可复现；不宣称代表总体能力。
 
 ### Phase 2D — CandidateRunner 与代码验证扩展

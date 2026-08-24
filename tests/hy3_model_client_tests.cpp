@@ -95,6 +95,12 @@ int main() {
     {
         const std::string modelText = "{\"status\":\"correct\"}\r\n";
         FakeHttpTransport transport(completed(200, {
+            {"request_id", "req-success_123"},
+            {"usage", {
+                {"prompt_tokens", 11},
+                {"completion_tokens", 7},
+                {"total_tokens", 18}
+            }},
             {"choices", nlohmann::json::array({
                 {{"message", {{"role", "assistant"}, {"content", modelText}}}}
             })}
@@ -108,6 +114,13 @@ int main() {
               "message content bytes are returned without normalization");
         CHECK(result.provider == "tencent-hunyuan", "provider is canonical");
         CHECK(result.model_name == "hy3", "default model is hy3");
+        CHECK(result.http_status == 200, "HTTP status is retained");
+        CHECK(result.request_id == "req-success_123",
+              "safe success request id is retained");
+        CHECK(result.token_usage && result.token_usage->prompt_tokens == 11 &&
+                  result.token_usage->completion_tokens == 7 &&
+                  result.token_usage->total_tokens == 18,
+              "available token usage is retained without fabrication");
         CHECK(transport.call_count == 1, "transport called exactly once");
         CHECK(transport.last_request.has_value(), "request was recorded");
         if (transport.last_request) {
@@ -150,6 +163,20 @@ int main() {
         CHECK(result.status == ModelCallStatus::Succeeded,
               "empty model content remains a successful call");
         CHECK(result.raw_response.empty(), "empty model content stays empty");
+    }
+
+    // A constrained response-header request id is used only when the JSON
+    // envelope does not provide one.
+    {
+        HttpResponse response = completed(200, {
+            {"choices", nlohmann::json::array({{{"message", {{"content", "{}"}}}}})}
+        });
+        response.headers = {{"x-request-id", "req-header_456"}};
+        FakeHttpTransport transport(response);
+        Hy3ModelClient client(transport, explicitConfig());
+        const ModelCallResult result = client.invoke(modelRequest());
+        CHECK(result.request_id == "req-header_456",
+              "safe response-header request id is retained as fallback");
     }
 
     // A successful HTTP response without string content is a provider failure,
@@ -198,6 +225,10 @@ int main() {
               "HTTP status maps to ModelCallStatus");
         CHECK(result.error_code == test.expected_code,
               "provider code accepts string or integer form");
+        CHECK(result.http_status == test.http_status,
+              "HTTP failure status is retained");
+        CHECK(result.request_id == "req-safe_123",
+              "HTTP failure request id is retained structurally");
         CHECK(result.message.find("req-safe_123") != std::string::npos,
               "safe request id is retained for support");
         CHECK(result.message.find("synthetic-secret-for-test") == std::string::npos,

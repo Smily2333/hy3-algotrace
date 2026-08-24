@@ -48,11 +48,21 @@ fs::path makeRun(const std::string& tag, bool writePrompt = true) {
     nlohmann::json manifest;
     manifest["evaluation_schema_version"] = "0.1.0";
     manifest["run_id"] = "synthetic-model-run";
+    manifest["dataset_version"] = "synthetic-dataset";
+    manifest["dataset_commit"] = "synthetic-commit";
+    manifest["taxonomy_version"] = "1.0.0";
     manifest["model_provider"] = "synthetic-test";
     manifest["model_name"] = "fake-hy3";
     manifest["model_version"] = "test-v1";
+    manifest["pipeline_commit"] = "synthetic-pipeline";
     manifest["prompt_template_id"] = "hy3-evaluator-v1";
+    manifest["prompt_template_sha256"] = sha256_hex("synthetic-template");
     manifest["input_mode"] = "reference_assisted";
+    manifest["started_at"] = "2026-08-24T00:00:00Z";
+    manifest["completed_at"] = nullptr;
+    manifest["trace_ids"] = {"trace_1"};
+    manifest["total_traces"] = 1;
+    manifest["notes"] = "synthetic test fixture";
     std::ofstream manifestFile(run / "run-manifest.json", std::ios::binary);
     manifestFile << manifest.dump(2);
     if (writePrompt) {
@@ -94,6 +104,44 @@ nlohmann::json readWrapper(const fs::path& run) {
     return wrapper;
 }
 
+nlohmann::json readSidecar(const fs::path& run) {
+    std::ifstream input(run / "model-calls" / "trace_1.json");
+    nlohmann::json sidecar;
+    input >> sidecar;
+    return sidecar;
+}
+
+ModelCallAuditConfig auditConfig() {
+    ModelCallAuditConfig config;
+    config.service = "tokenhub";
+    config.endpoint_origin = "https://tokenhub.tencentmaas.com";
+    config.timeout_seconds = 30;
+    return config;
+}
+
+class SidecarInspectingClient final : public IModelClient {
+public:
+    SidecarInspectingClient(fs::path run, ModelCallResult scripted)
+        : run_(std::move(run)), scripted_(std::move(scripted)) {}
+
+    ModelCallResult invoke(const ModelRequest&) noexcept override {
+        ++call_count;
+        try {
+            const nlohmann::json sidecar = readSidecar(run_);
+            observed_attempting = sidecar.at("outcome") == "attempting" &&
+                                  sidecar.at("completed_at").is_null();
+        } catch (...) {
+            observed_attempting = false;
+        }
+        return scripted_;
+    }
+
+    fs::path run_;
+    ModelCallResult scripted_;
+    int call_count = 0;
+    bool observed_attempting = false;
+};
+
 bool noRunArtifacts(const fs::path& run) {
     return !fs::exists(run / "raw-responses" / "trace_1.txt") &&
            !fs::exists(run / "predictions" / "trace_1.json");
@@ -109,6 +157,101 @@ void cleanup(const fs::path& path) {
 int main() {
     const std::string kRunId = "synthetic-model-run";
     const std::string kGeneratedAt = "2026-08-24T00:02:00Z";
+
+    // The audited production path creates its durable one-shot record before
+    // invoke(), then atomically finalizes it after strict import.
+    {
+        const fs::path run = makeRun("recorded_success");
+        const std::string rawText =
+            "{\"trace_id\":\"trace_1\",\"status\":\"correct\","
+            "\"primary_category\":null,\"findings\":[],"
+            "\"confidence\":null,\"confidence_method\":null,"
+            "\"calibration_version\":null}";
+        ModelCallResult scripted = success(toBytes(rawText));
+        scripted.http_status = 200;
+        scripted.request_id = "req-synthetic-1";
+        scripted.token_usage = ModelTokenUsage{11, 7, 18};
+        SidecarInspectingClient client(run, scripted);
+
+        const ModelRunResult result = runRecordedModelForTrace(
+            run.string(), "trace_1", kRunId, kGeneratedAt, auditConfig(), client);
+        CHECK(result.ok, "recorded fake response succeeds");
+        CHECK(client.call_count == 1, "recorded path invokes exactly once");
+        CHECK(client.observed_attempting,
+              "attempting sidecar is present before model invocation");
+        const nlohmann::json sidecar = readSidecar(run);
+        CHECK(sidecar.at("schema_version") == "0.1.0",
+              "sidecar has independent schema version");
+        CHECK(sidecar.at("outcome") == "success",
+              "successful imported response finalizes as success");
+        CHECK(sidecar.at("http_status") == 200 &&
+                  sidecar.at("request_id") == "req-synthetic-1",
+              "sidecar retains safe HTTP metadata");
+        CHECK(sidecar.at("token_usage").at("total_tokens") == 18,
+              "sidecar retains available token usage");
+        CHECK(sidecar.at("raw_response_sha256") == sha256_hex(rawText),
+              "sidecar links the saved raw response by hash");
+        CHECK(sidecar.at("response_saved") == true &&
+                  sidecar.at("prediction_imported") == true &&
+                  sidecar.at("parse_status") == "parsed",
+              "sidecar records importer completion without copying content");
+        cleanup(run);
+    }
+
+    // Even a failed attempt leaves a sidecar that blocks a second request.
+    {
+        const fs::path run = makeRun("recorded_failure_latch");
+        ModelCallResult timedOut;
+        timedOut.status = ModelCallStatus::Timeout;
+        timedOut.provider = "synthetic-test";
+        timedOut.model_name = "fake-hy3";
+        timedOut.started_at = "2026-08-24T00:00:00Z";
+        timedOut.finished_at = "2026-08-24T00:00:30Z";
+        timedOut.duration_ms = 30000;
+        timedOut.message = "Authorization: Bearer synthetic-secret-must-not-leak";
+        FakeModelClient first(timedOut);
+        const ModelRunResult failed = runRecordedModelForTrace(
+            run.string(), "trace_1", kRunId, kGeneratedAt, auditConfig(), first);
+        CHECK(!failed.ok && readSidecar(run).at("outcome") == "timeout",
+              "failed attempt is finalized as timeout");
+        const std::vector<std::uint8_t> sidecarBytes = readBytes(
+            run / "model-calls" / "trace_1.json");
+        CHECK(std::string(sidecarBytes.begin(), sidecarBytes.end()).find(
+                  "synthetic-secret-must-not-leak") == std::string::npos,
+              "sidecar never copies unsafe client error text");
+
+        FakeModelClient second(success(toBytes("{}")));
+        const ModelRunResult repeated = runRecordedModelForTrace(
+            run.string(), "trace_1", kRunId, kGeneratedAt, auditConfig(), second);
+        CHECK(!repeated.ok &&
+                  repeated.error_code == model_runner_errc::E_AUDIT_PRECHECK,
+              "existing failed sidecar refuses a repeated call");
+        CHECK(second.callCount() == 0,
+              "failed sidecar latch prevents another billable invocation");
+        cleanup(run);
+    }
+
+    // A completed run is immutable and must fail before creating an attempt
+    // record or invoking the model client.
+    {
+        const fs::path run = makeRun("recorded_completed_manifest");
+        nlohmann::json manifest;
+        {
+            std::ifstream input(run / "run-manifest.json");
+            input >> manifest;
+        }
+        manifest["completed_at"] = "2026-08-24T00:03:00Z";
+        std::ofstream(run / "run-manifest.json", std::ios::binary | std::ios::trunc)
+            << manifest.dump(2);
+        FakeModelClient client(success(toBytes("{}")));
+        const ModelRunResult result = runRecordedModelForTrace(
+            run.string(), "trace_1", kRunId, kGeneratedAt, auditConfig(), client);
+        CHECK(!result.ok && result.error_code == model_runner_errc::E_RUN_CONTEXT,
+              "completed manifest is a hard pre-call failure");
+        CHECK(client.callCount() == 0 && !fs::exists(run / "model-calls"),
+              "completed manifest creates no sidecar and performs no call");
+        cleanup(run);
+    }
 
     // A valid fake response reaches the same byte-preserving Importer path as
     // an offline raw-response file and creates a parsed prediction wrapper.

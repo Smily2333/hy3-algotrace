@@ -160,7 +160,7 @@ Phase 2C 在不改变冻结 prediction schema 的前提下增加 transport-neutr
 | `ModelRunner` | `loadPromptSha → IModelClient::invoke → importResponseBytes`；只在传输成功时进入 Importer，timeout/auth/rate-limit/provider/transport 失败绝不伪装成 `model_call_not_attempted` |
 | `Hy3ModelClient` | 按腾讯云 TokenHub OpenAI-compatible Chat 协议构造非流式 `hy3` 请求，解析 `choices[0].message.content`；Bearer Key 由显式配置或 `TOKENHUB_API_KEY` 注入且不得进入诊断 |
 
-`Hy3ModelClient` 依赖注入式 `IHttpTransport`。当前仓库不含生产 HTTP transport，不进行网络或付费调用；单元测试使用 fake transport。成功返回的空文本、非法 JSON 或 schema/语义错误仍由 `PredictionImporter` 分别判为既有 `empty_response` / `invalid_json` / `schema_invalid` / `semantic_invalid`，adapter 不修复模型内容。run manifest 是模型身份的权威来源，Runner 与 wrapper 会校验/继承该身份。
+`Hy3ModelClient` 依赖注入式 `IHttpTransport`。生产实现由 Windows 系统 WinHTTP / Linux 系统 libcurl 提供统一语义：TLS 校验、官方 origin pin、禁重定向和重试、显式 connect/total timeout；CI 只做无网测试。`runRecordedModelForTrace` 在发送前原子创建一次性 `model-calls` 侧车并在导入后原子完成，任何既存侧车均阻止重调。成功返回的空文本、非法 JSON 或 schema/语义错误仍由 `PredictionImporter` 分别判为既有 `empty_response` / `invalid_json` / `schema_invalid` / `semantic_invalid`，adapter 不修复模型内容。run manifest 是模型身份的权威来源，Runner 与 wrapper 会校验/继承该身份。
 
 ## 6.5 冻结文件边界
 
@@ -182,7 +182,7 @@ Ingest
 
 设计约束：
 
-- offline/manual 路径不调用 API；Hy3 adapter 当前只有请求/响应协议层与注入式 transport 接口，没有生产网络实现。真实付费调用仍须另行授权。
+- offline/manual 路径不调用 API；只有显式 `call-hy3` 命令进入生产 transport，并受一次性 sidecar、官方 HTTPS origin、环境凭证和无重试策略约束。
 - PromptExporter 的 leakage 检查仅针对**输入 payload**（替换占位符后的输入 JSON 块），**不**扫描模板任务说明与输出 schema 中的 `status` / `findings` / 7 类 category 名称等通用字符串（它们在输出契约中合法）。structural leakage（禁止 key 进入输入）由递归 key 检查拦截；semantic leakage（自由文本直接透露 gold label）通过排除 `test_cases.notes` 等字段降低，其余自由文本须单独人工/规则审计。
 - Phase 2A 只冻结协议、Prompt 模板、指标与运行目录；`PromptExporter` / `PredictionImporter` / `Reporter` 的实现属 **Phase 2B**，`CandidateRunner` 属 **Phase 2D**（Phase 2D 初版仅本地受限编译/运行/对比，不连接外部 OJ，见 `roadmap.md`）。
 - prompt 与 raw response 的原始文本必须独立保留（见 `docs/phase-02-protocol.md` 第 10、9 节），不得只保存清洗后 JSON；SHA-256 用于关联与复现（模板哈希与实例哈希分别定义，见协议第 9 节）。

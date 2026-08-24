@@ -67,6 +67,22 @@ std::string resolveApiKey(const Hy3ModelClientConfig& config) {
 #endif
 }
 
+bool isSafeRequestId(const std::string& candidate) {
+    if (candidate.empty() || candidate.size() > 128) {
+        return false;
+    }
+    for (const unsigned char ch : candidate) {
+        const bool allowed = (ch >= 'a' && ch <= 'z') ||
+                             (ch >= 'A' && ch <= 'Z') ||
+                             (ch >= '0' && ch <= '9') ||
+                             ch == '_' || ch == '-' || ch == '.';
+        if (!allowed) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::string safeRequestId(const json& document) {
     const json* value = nullptr;
     if (document.is_object() && document.contains("request_id")) {
@@ -81,19 +97,60 @@ std::string safeRequestId(const json& document) {
     }
 
     const std::string candidate = value->get<std::string>();
-    if (candidate.empty() || candidate.size() > 128) {
-        return {};
-    }
-    for (const unsigned char ch : candidate) {
-        const bool allowed = (ch >= 'a' && ch <= 'z') ||
-                             (ch >= 'A' && ch <= 'Z') ||
-                             (ch >= '0' && ch <= '9') ||
-                             ch == '_' || ch == '-' || ch == '.';
-        if (!allowed) {
-            return {};
+    return isSafeRequestId(candidate) ? candidate : std::string{};
+}
+
+std::string safeRequestId(
+    const std::vector<std::pair<std::string, std::string>>& headers) {
+    for (const auto& header : headers) {
+        std::string name = header.first;
+        for (char& ch : name) {
+            if (ch >= 'A' && ch <= 'Z') {
+                ch = static_cast<char>(ch - 'A' + 'a');
+            }
+        }
+        if ((name == "request-id" || name == "x-request-id" ||
+             name == "x-tc-requestid") &&
+            isSafeRequestId(header.second)) {
+            return header.second;
         }
     }
-    return candidate;
+    return {};
+}
+
+std::optional<std::uint64_t> optionalTokenCount(const json& usage,
+                                                const char* key) {
+    if (!usage.is_object() || !usage.contains(key)) {
+        return std::nullopt;
+    }
+    const json& value = usage.at(key);
+    if (value.is_number_unsigned()) {
+        return value.get<std::uint64_t>();
+    }
+    if (value.is_number_integer()) {
+        const std::int64_t candidate = value.get<std::int64_t>();
+        if (candidate >= 0) {
+            return static_cast<std::uint64_t>(candidate);
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<ModelTokenUsage> safeTokenUsage(const json& document) {
+    if (!document.is_object() || !document.contains("usage") ||
+        !document.at("usage").is_object()) {
+        return std::nullopt;
+    }
+    const json& usage = document.at("usage");
+    ModelTokenUsage result;
+    result.prompt_tokens = optionalTokenCount(usage, "prompt_tokens");
+    result.completion_tokens = optionalTokenCount(usage, "completion_tokens");
+    result.total_tokens = optionalTokenCount(usage, "total_tokens");
+    if (!result.prompt_tokens && !result.completion_tokens &&
+        !result.total_tokens) {
+        return std::nullopt;
+    }
+    return result;
 }
 
 std::string providerErrorCode(const json& document, int httpStatus) {
@@ -180,8 +237,10 @@ void setSafeHttpFailure(ModelCallResult& result,
                      std::to_string(status);
     const std::string requestId = safeRequestId(document);
     if (!requestId.empty()) {
+        result.request_id = requestId;
         result.message += " (request_id=" + requestId + ")";
     }
+    result.token_usage = safeTokenUsage(document);
 }
 
 } // namespace
@@ -295,6 +354,10 @@ ModelCallResult Hy3ModelClient::invoke(const ModelRequest& request) noexcept {
                 break;
         }
 
+        if (response.status_code > 0) {
+            result.http_status = response.status_code;
+        }
+
         if (response.status_code < 200 || response.status_code >= 300) {
             if (response.status_code <= 0) {
                 result.status = ModelCallStatus::TransportError;
@@ -304,6 +367,13 @@ ModelCallResult Hy3ModelClient::invoke(const ModelRequest& request) noexcept {
                 return result;
             }
             setSafeHttpFailure(result, response.status_code, response.body);
+            if (!result.request_id) {
+                const std::string headerRequestId =
+                    safeRequestId(response.headers);
+                if (!headerRequestId.empty()) {
+                    result.request_id = headerRequestId;
+                }
+            }
             finishTiming(result, wallStart, steadyStart);
             return result;
         }
@@ -318,6 +388,17 @@ ModelCallResult Hy3ModelClient::invoke(const ModelRequest& request) noexcept {
             finishTiming(result, wallStart, steadyStart);
             return result;
         }
+
+        const std::string requestId = safeRequestId(responseDocument);
+        if (!requestId.empty()) {
+            result.request_id = requestId;
+        } else {
+            const std::string headerRequestId = safeRequestId(response.headers);
+            if (!headerRequestId.empty()) {
+                result.request_id = headerRequestId;
+            }
+        }
+        result.token_usage = safeTokenUsage(responseDocument);
 
         const bool validEnvelope = responseDocument.is_object() &&
             responseDocument.contains("choices") &&
