@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。Phase 2B 已在 commit `385c48e` 完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 Windows/Ubuntu CI run `32734561463`。唯一一次 `cf_160A_t3` 正式 canary 已完成，当前状态 `phase2c_single_canary_completed_pending_remaining_pilot_authorization`。Prompt、指标和数据继续冻结；其余 8 条未调用，9 条真实 Hy3 pilot 尚未完成。
+> 宏观阶段规划。Phase 2B 已完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 CI run `32734561463`，冻结的 9 条 Hy3 pilot 已完成并脱敏报告。当前状态 `phase2c_pilot_complete_reported`；Prompt、指标和数据保持冻结，结果不外推模型总体能力。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -58,7 +58,7 @@
 
 - **目标**：用冻结的 `hy3-evaluator-v1` 模板与 `reference_assisted` 模式，对 Phase 1A 的 9 条贪心轨迹做离线推理（人工/脚本交给 Hy3），运行 Reporter，记录指标。
 - **主要产物**：`experiments/phase-02/runs/<run_id>/` 完整产物（prompts / raw-responses / predictions / report）；冒烟级指标（见 `docs/phase-02-metrics.md` 第 12 节规模限制）。
-- **当前进度**：已实现 `IModelClient` / `ModelRunner` / `FakeModelClient`、官方 TokenHub adapter、Windows WinHTTP / Linux libcurl production transport、逐次调用审计 sidecar 与 synthetic 垂直 smoke；Windows/Ubuntu CI 已通过，唯一一次 `cf_160A_t3` canary 已完成并严格解析。其余 8 条未获授权，不计算整体指标。
+- **状态**：`phase2c_pilot_complete_reported`。9 条 trace 均单次调用、HTTP success、`parsed`；status / primary category accuracy `1.0000`，finding micro F1 `0.7619`。脱敏指标、hash 清单与限制见 `docs/journal/phase-02c.md`；raw response 和完整运行目录未提交。
 - **进入下一阶段条件**：9 条样本全部产生 `parsed` 或明确失败状态；指标可复现；不宣称代表总体能力。
 
 ### Phase 2D — CandidateRunner 与代码验证扩展

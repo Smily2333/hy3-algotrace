@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase2c_single_canary_completed_pending_remaining_pilot_authorization`（2026-08-24）。** Phase 2B 已在 commit `385c48e` 通过 Windows/Ubuntu CI 技术验收；Phase 2C 生产 HTTPS transport、一次性 `model-calls` 审计侧车和受限 `call-hy3` CLI 已由 [CI run 32734561463](https://github.com/Smily2333/hy3-algotrace/actions/runs/32734561463) 在 Windows/Ubuntu 验证。正式项目 canary 仅调用 `cf_160A_t3` 一次，HTTP 200，经严格 Importer 得到 `parsed`；其余 8 条未调用，等待另行授权。现有 `export-prompts` → 人工转交 → `import-response` → `report` 继续作为正式 offline/manual fallback。**9 条真实 Hy3 pilot 尚未完成，不计算或外推整体指标；未连接 OJ、未执行候选代码。**
+**当前状态：`phase2c_pilot_complete_reported`（2026-08-24）。** Phase 2C 生产 HTTPS transport 与逐次调用审计已由 [CI run 32734561463](https://github.com/Smily2333/hy3-algotrace/actions/runs/32734561463) 在 Windows/Ubuntu 验证；冻结的 9 条 Hy3 pilot 均只调用一次、HTTP 成功并严格解析。status / primary category accuracy 均为 `1.0000`，finding micro F1 为 `0.7619`；完整脱敏记录见 `docs/journal/phase-02c.md`。**结果只代表这 9 条 pilot，不外推模型总体能力；未连接 OJ、未执行候选代码。**
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
