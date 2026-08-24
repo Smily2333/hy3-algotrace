@@ -436,9 +436,14 @@ int main(int argc, char** argv) {
 
     // ---- 24. output determinism: two identical imports produce identical wrapper ----
     {
-        // (can't re-import same trace due to overwrite; use two dirs)
-        auto runA = makeRunDir(tmp.string(), "t_det", false);
-        auto runB = makeRunDir(tmp.string(), "t_det2", false);
+        // Same trace_id + identical response, but in two distinct parent dirs
+        // (re-importing the same trace is refused to avoid overwrite).
+        fs::path baseA = tmp / "detA";
+        fs::path baseB = tmp / "detB";
+        fs::create_directories(baseA, ec);
+        fs::create_directories(baseB, ec);
+        auto runA = makeRunDir(baseA.string(), "t_det", false);
+        auto runB = makeRunDir(baseB.string(), "t_det", false);
         std::string s = "{\"trace_id\":\"t_det\",\"status\":\"correct\",\"primary_category\":null,"
             "\"findings\":[],\"confidence\":null,\"confidence_method\":null,"
             "\"calibration_version\":null}";
@@ -446,10 +451,10 @@ int main(int argc, char** argv) {
         writeRawFile(tmp / "rawB.txt", s);
         importResponse(runA.string(), "t_det", (tmp / "rawA.txt").string(),
                        "run_x", "2026-08-24T00:00:00Z");
-        importResponse(runB.string(), "t_det2", (tmp / "rawB.txt").string(),
+        importResponse(runB.string(), "t_det", (tmp / "rawB.txt").string(),
                        "run_x", "2026-08-24T00:00:00Z");
         std::ifstream a(runA / "predictions" / "t_det.json");
-        std::ifstream b(runB / "predictions" / "t_det2.json");
+        std::ifstream b(runB / "predictions" / "t_det.json");
         nlohmann::json wa, wb; a >> wa; b >> wb;
         CHECK(wa.dump() == wb.dump(), "deterministic wrapper output");
     }

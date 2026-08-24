@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <map>
 #include <set>
 #include <sstream>
@@ -426,6 +427,12 @@ std::string renderReportMarkdown(const nlohmann::json& reportJson) {
             return reportJson.at(key).get<std::string>();
         return def;
     };
+    // Render a double with fixed, human-readable precision (deterministic).
+    auto fmtDbl = [](double v) -> std::string {
+        std::ostringstream s;
+        s << std::fixed << std::setprecision(4) << v;
+        return s.str();
+    };
     std::ostringstream os;
     os << "# Phase 2B Evaluation Report\n\n";
     os << "- run_id: " << strOr("run_id", "") << "\n";
@@ -437,21 +444,21 @@ std::string renderReportMarkdown(const nlohmann::json& reportJson) {
     os << "## Metrics\n\n";
     os << "- total_traces: " << m.value("total_traces", 0) << "\n";
     os << "- parsed_count: " << m.value("parsed_count", 0) << "\n";
-    os << "- parse_success_rate: " << m.value("parse_success_rate", 0.0) << "\n";
-    os << "- status_accuracy: " << m.value("status_accuracy", 0.0) << "\n";
+    os << "- parse_success_rate: " << fmtDbl(m.value("parse_success_rate", 0.0)) << "\n";
+    os << "- status_accuracy: " << fmtDbl(m.value("status_accuracy", 0.0)) << "\n";
     auto pca = m.at("primary_category_accuracy");
     os << "- primary_category_accuracy: "
-       << (pca.is_null() ? std::string("N/A") : std::to_string(pca.get<double>())) << "\n";
+       << (pca.is_null() ? std::string("N/A") : fmtDbl(pca.get<double>())) << "\n";
     const auto& mic = m.at("finding_category_micro");
-    os << "- finding_category_micro: P=" << mic.value("precision", 0.0)
-       << " R=" << mic.value("recall", 0.0)
-       << " F1=" << mic.value("f1", 0.0) << "\n";
-    os << "- finding_category_macro_F1: " << m.value("finding_category_macro_F1", 0.0) << "\n";
+    os << "- finding_category_micro: P=" << fmtDbl(mic.value("precision", 0.0))
+       << " R=" << fmtDbl(mic.value("recall", 0.0))
+       << " F1=" << fmtDbl(mic.value("f1", 0.0)) << "\n";
+    os << "- finding_category_macro_F1: " << fmtDbl(m.value("finding_category_macro_F1", 0.0)) << "\n";
     const auto& smic = m.at("stage_category_pair_micro");
-    os << "- stage_category_pair_micro: P=" << smic.value("precision", 0.0)
-       << " R=" << smic.value("recall", 0.0)
-       << " F1=" << smic.value("f1", 0.0) << "\n";
-    os << "- undetermined_rate: " << m.value("undetermined_rate", 0.0) << "\n\n";
+    os << "- stage_category_pair_micro: P=" << fmtDbl(smic.value("precision", 0.0))
+       << " R=" << fmtDbl(smic.value("recall", 0.0))
+       << " F1=" << fmtDbl(smic.value("f1", 0.0)) << "\n";
+    os << "- undetermined_rate: " << fmtDbl(m.value("undetermined_rate", 0.0)) << "\n\n";
 
     os << "## Parse status counts\n\n";
     for (auto it = m.at("parse_status_counts").begin();

@@ -61,8 +61,10 @@ fs::path makeDataset(const fs::path& base) {
 // Create a run dir with manifest + predictions. predictions is a map tid->wrapper json.
 fs::path makeRun(const fs::path& base, const nlohmann::json& manifestExtra,
                  const std::map<std::string, nlohmann::json>& wrappers) {
+    std::error_code ec;
     fs::path run = base / "run";
-    fs::create_directories(run / "predictions", std::error_code{});
+    fs::remove_all(run, ec); // clean slate: each case must not inherit stale wrappers
+    fs::create_directories(run / "predictions", ec);
     nlohmann::json man;
     man["evaluation_schema_version"] = "0.1.0";
     man["run_id"] = "syn_run";
@@ -171,9 +173,9 @@ int main() {
 
         // consistency: report.md numbers match JSON
         std::string md = renderReportMarkdown(rep);
-        CHECK(md.find("parse_success_rate: 1.") != std::string::npos,
+        CHECK(md.find("parse_success_rate: 1.0000") != std::string::npos,
               "caseA md shows parse_success_rate");
-        CHECK(md.find("status_accuracy: 1.") != std::string::npos,
+        CHECK(md.find("status_accuracy: 1.0000") != std::string::npos,
               "caseA md shows status_accuracy");
     }
 

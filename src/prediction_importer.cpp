@@ -309,7 +309,9 @@ ImporterResult classifyResponse(const std::string& rawText,
 
     // Validate each finding (schema-level granularity + candidate rule).
     for (const auto& f : findings) {
-        validateFinding(f, errors, hasCandidateSolution);
+        if (!validateFinding(f, errors, hasCandidateSolution)) {
+            semanticOk = false;
+        }
     }
 
     bool semanticOk = true;
