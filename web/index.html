@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><title>Hy3 贪心解法诊断台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark" aria-hidden="true">H3</div><div><strong>Hy3 贪心解法诊断台</strong><span>hy3-algotrace · interactive demo</span></div></div>
+    <div class="topbar-meta" aria-label="当前诊断范围">
+      <span class="tag"><i></i>模型 Hy3</span><span class="tag"><i></i>仅贪心算法</span>
+      <span id="healthStatus" class="health pending"><i></i><span>检查 TokenHub…</span></span>
+    </div>
+  </header>
+  <div class="call-notice"><strong>一次点击，对应至多一次模型调用。</strong> 页面不会自动重试，刷新也不会重新提交。</div>
+
+  <main class="workspace">
+    <section class="panel input-panel" aria-labelledby="inputTitle">
+      <div class="panel-heading"><div><span class="eyebrow">01 · INPUT</span><h1 id="inputTitle">描述题目与解法</h1></div><span class="required-note"><b>*</b> 必填</span></div>
+      <form id="diagnosisForm" novalidate>
+        <label class="field"><span>题目标题 <b>*</b></span><input id="title" maxlength="256" required placeholder="例如：CF 160A · Twins"></label>
+        <label class="field"><span>题目描述 <b>*</b></span><textarea id="statement" maxlength="30000" rows="6" required placeholder="准确描述目标、判定条件与关键语义。"></textarea></label>
+        <div class="field-grid">
+          <label class="field"><span>输入要求 <b>*</b></span><textarea id="inputFormat" maxlength="10000" rows="4" required placeholder="完整 stdin 格式"></textarea></label>
+          <label class="field"><span>输出要求 <b>*</b></span><textarea id="outputFormat" maxlength="10000" rows="4" required placeholder="完整 stdout 格式"></textarea></label>
+        </div>
+        <label class="field"><span>数据范围 / 约束 <b>*</b></span><textarea id="constraints" maxlength="10000" rows="3" required placeholder="例如：1 ≤ n ≤ 100，1 ≤ aᵢ ≤ 100"></textarea></label>
+        <label class="field"><span>解法思路 <b>*</b></span><textarea id="reasoning" maxlength="30000" rows="8" required placeholder="写出贪心选择、停止条件、正确性理由、复杂度与边界考虑。"></textarea></label>
+
+        <details class="optional-block"><summary><span>C++17 代码</span><small>可选 · 仅静态审查，不运行</small></summary>
+          <label class="field code-field"><span class="sr-only">C++17 代码</span><textarea id="cppSolution" maxlength="120000" rows="13" spellcheck="false" placeholder="#include &lt;iostream&gt;&#10;..."></textarea></label>
+        </details>
+        <details class="optional-block"><summary><span>测试数据</span><small>可选 · 只作为模型上下文</small></summary>
+          <div class="field-grid"><label class="field"><span>测试输入</span><textarea id="testInput" maxlength="20000" rows="5" spellcheck="false"></textarea></label><label class="field"><span>期望输出</span><textarea id="expectedOutput" maxlength="20000" rows="5" spellcheck="false"></textarea></label></div>
+        </details>
+        <details class="optional-block"><summary><span>补充说明</span><small>可选</small></summary>
+          <label class="field"><span class="sr-only">用户补充说明</span><textarea id="userNotes" maxlength="10000" rows="4" placeholder="补充假设或希望重点检查的部分。"></textarea></label>
+        </details>
+        <div id="formError" class="inline-error" role="alert" hidden></div>
+        <div class="form-actions"><button id="clearButton" type="button" class="button secondary">清空</button><button id="exampleButton" type="button" class="button secondary">填入示例</button><button id="submitButton" type="submit" class="button primary"><span class="button-label">开始诊断</span><span class="spinner" aria-hidden="true"></span></button></div>
+      </form>
+    </section>
+
+    <section class="panel result-panel" aria-labelledby="resultTitle" aria-live="polite">
+      <div class="panel-heading"><div><span class="eyebrow">02 · DIAGNOSIS</span><h2 id="resultTitle">诊断结果</h2></div><button id="copyButton" type="button" class="copy-button" hidden>复制 JSON</button></div>
+      <div id="emptyState" class="empty-state"><div class="radar" aria-hidden="true"><span></span></div><h3>等待一次完整输入</h3><p>Hy3 将按六个推理阶段定位问题，并给出可追溯的证据与修正建议。</p></div>
+      <div id="loadingState" class="loading-state" hidden><div class="scan" aria-hidden="true"></div><h3>正在检查贪心推理链</h3><p>请求只会提交一次。请保持页面打开，失败时不会自动重试。</p></div>
+      <div id="errorState" class="error-state" hidden><span class="error-icon" aria-hidden="true">!</span><div><h3 id="errorTitle">无法完成诊断</h3><p id="errorMessage"></p><small id="errorCode"></small></div></div>
+
+      <div id="resultContent" hidden>
+        <article id="statusCard" class="status-card"><div><span class="result-label">总体判断</span><strong id="statusText">—</strong><small id="statusCode"></small></div><div class="primary-category"><span class="result-label">主要类别</span><strong id="primaryCategory">—</strong><small id="primaryCategoryCode"></small></div></article>
+        <section class="result-section"><div class="section-title"><h3>六阶段诊断</h3><span id="findingCount">0 项</span></div><div id="findingsGroups" class="findings-groups"></div></section>
+        <section class="result-section"><div class="section-title"><h3>专项评价</h3></div><div id="assessments" class="assessment-grid"></div></section>
+        <section class="suggestion-section"><span class="eyebrow">NEXT STEP</span><p id="shortSuggestion"></p></section>
+        <section class="result-section metadata-section"><div class="section-title"><h3>调用与复现信息</h3></div><dl id="metadata"></dl></section>
+      </div>
+      <div class="disclaimers"><p><b>模型静态诊断，非形式化证明。</b> 交互结果不进入冻结的 Phase 2C 实验指标。</p><p><b>本次代码结论来自模型静态审查，尚未编译或运行。</b> 页面不连接 OJ，也不产生真实 CE/RE/TLE/WA 结论。</p></div>
+    </section>
+  </main>
+  <footer>hy3-algotrace · 仅贪心 · 不执行代码 · 不连接 OJ</footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

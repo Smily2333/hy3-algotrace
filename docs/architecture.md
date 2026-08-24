@@ -164,6 +164,29 @@ Phase 2C 在不改变冻结 prediction schema 的前提下增加 transport-neutr
 
 网络依赖不 vendoring：Windows 使用随受信任 runner/操作系统交付和维护的 WinHTTP（Microsoft 系统组件）；Ubuntu CI 从 Ubuntu 官方签名 APT 仓库安装 `libcurl4-openssl-dev`（curl license），安装步骤输出精确包版本，包完整性由 APT 仓库签名与 runner 镜像信任链验证。生产部署必须以同等方式记录实际系统组件/包版本。
 
+### 6.4.6 独立交互诊断 Demo
+
+交互 Demo 不复用冻结数据集投影或 gold-aware Reporter，而是在同一模型基础层之上建立独立契约：
+
+```text
+Browser (no key)
+  → loopback cpp-httplib server
+  → InteractiveDiagnosisRequest + interactive prompt/strict validator
+  → ModelRunner::invokeModelOnce
+  → Hy3ModelClient → ProductionHttpTransport → TokenHub
+```
+
+| 模块 | 职责 |
+| --- | --- |
+| `InteractiveDiagnosis` | 严格解析临时用户输入、渲染并哈希独立 Prompt、一次性目录/sidecar latch、保存 raw、校验独立响应 schema、只返回脱敏诊断 |
+| `InteractiveHttpApplication` | `health` / `diagnose` 的无 socket 可测业务面；限制 body/content type 与并发调用，区分 transport 和 diagnosis 错误 |
+| `InteractiveServer` / `hy3_algotrace_demo` | 仅绑定 `127.0.0.1`，校验 Host，提供静态页面与 API；Key 只存在于 C++ 服务进程 |
+| `web/` | 原生中文输入/结果界面；七类中文映射、六阶段 findings、loading/失败/复制 JSON；不保存 Key，不刷新重调 |
+
+`runRecordedModelForTrace` 仍专属于带 manifest/PredictionImporter 的冻结评测运行；交互路径只共享其 transport-neutral `invokeModelOnce` 单次调用边界，避免把临时输入伪装成 dataset trace。交互产物写入 Git 忽略目录，绝不回写 `data/` 或进入 Reporter 指标。可选 C++17 只作为模型文本上下文，不被编译或执行。
+
+本地 server 使用固定 `cpp-httplib v0.51.0`（MIT）单头文件；它只承载 loopback HTTP，TokenHub HTTPS 继续由现有 WinHTTP/libcurl transport 负责。
+
 ## 6.5 冻结文件边界
 
 以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。任何指标/枚举/语义变更必须回到规划方修订这些冻结文件，而非在 C++ 中自行创造类别。

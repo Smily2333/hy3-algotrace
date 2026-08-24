@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。Phase 2B 已完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 CI run `32734561463`，冻结的 9 条 Hy3 pilot 已完成并脱敏报告。当前状态 `phase2c_pilot_complete_reported`；Prompt、指标和数据保持冻结，结果不外推模型总体能力。
+> 宏观阶段规划。Phase 2B 已完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 CI run `32734561463`，冻结的 9 条 Hy3 pilot 已完成并脱敏报告。当前状态 `interactive_greedy_diagnosis_demo_pending_ci`：正在把已验证能力封装为本地交互 Demo；正式 Prompt、指标和数据保持冻结，交互结果不进入实验指标。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -61,10 +61,19 @@
 - **状态**：`phase2c_pilot_complete_reported`。9 条 trace 均单次调用、HTTP success、`parsed`；status / primary category accuracy `1.0000`，finding micro F1 `0.7619`。脱敏指标、hash 清单与限制见 `docs/journal/phase-02c.md`；raw response 和完整运行目录未提交。
 - **进入下一阶段条件**：9 条样本全部产生 `parsed` 或明确失败状态；指标可复现；不宣称代表总体能力。
 
+### Phase 2C 产品化检查点 — 交互式贪心诊断 Demo
+
+- **目标**：用独立、无 gold 的交互契约和 Prompt，把 Hy3 静态诊断能力封装为仅监听 loopback 的中文本地网页；与冻结评测管线及指标完全隔离。
+- **主要产物**：`InteractiveDiagnosisRequest` / 严格响应校验、本地一次性审计、`hy3_algotrace_demo`、原生 `web/` 页面、FakeModelClient 测试、版本锁定的 MIT HTTP server 依赖。
+- **边界**：只支持已知贪心题；C++ 仅供模型静态审查，不编译/运行，不连接 OJ，不代表形式化证明。一次真实 smoke 只验证调用链；模型输出质量仍可能错误。
+- **当前状态**：`interactive_greedy_diagnosis_demo_pending_ci`；本地 Fake/loopback smoke 已通过，等待 canonical Windows/Ubuntu CI。
+- **进入下一阶段条件**：双平台 CI 通过、凭证/冻结文件检查通过、分支工作区干净；随后由 Planner 决定恢复 CandidateRunner 或优先扩展正式贪心数据集。
+
 ### Phase 2D — CandidateRunner 与代码验证扩展
 
 - **目标**：引入本地受限的候选代码编译与运行（`CandidateRunner` / `CodeVerifier`），为 `implementation_consistency` 提供实证信号。Phase 2D 初版仅进行**本地受限**的 C++ 编译与运行，包含超时控制、stdin/stdout 对比与 `verification_result` 生成；**不连接、不提交外部 OJ**；OJ 对接只能作为未来可选扩展，必须另行授权。
 - **主要产物**：`CandidateRunner`、`CodeVerifier` 增强；与 `code_test_verification` 职责线对齐。
+- **当前状态**：因交互 Demo 优先级调整而暂停；WIP 接口已在 `codex/phase2d-candidate-runner` 的 `a03fa9f` 安全保存并推送，UI 分支不含该未完成实现。
 - **进入下一阶段条件**：候选解法可被编译/运行并产出 `verification_result`；`implementation_consistency` 环节具备实证依据。
 
 ## Phase 3 — 贪心题小规模实验

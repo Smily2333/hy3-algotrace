@@ -40,6 +40,7 @@ if(NOT WIN32)
   set(CURL_USE_STATIC_LIBS OFF)
   find_package(CURL REQUIRED)
 endif()
+find_package(Threads REQUIRED)
 
 # ---- compiler flags (clear if/else, no generator expressions) -------------
 if(MSVC)
@@ -60,6 +61,7 @@ add_library(hy3_algotrace_core STATIC
     src/model_runner.cpp
     src/hy3_model_client.cpp
     src/production_http_transport.cpp
+    src/interactive_diagnosis.cpp
     include/hy3_algotrace/diagnostic.hpp
     include/hy3_algotrace/json_loader.hpp
     include/hy3_algotrace/validator.hpp
@@ -70,7 +72,8 @@ add_library(hy3_algotrace_core STATIC
     include/hy3_algotrace/model_client.hpp
     include/hy3_algotrace/model_runner.hpp
     include/hy3_algotrace/hy3_model_client.hpp
-    include/hy3_algotrace/production_http_transport.hpp)
+    include/hy3_algotrace/production_http_transport.hpp
+    include/hy3_algotrace/interactive_diagnosis.hpp)
 target_include_directories(hy3_algotrace_core
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
@@ -86,6 +89,30 @@ if(WIN32)
 else()
   target_link_libraries(hy3_algotrace_core PRIVATE CURL::libcurl)
 endif()
+
+# ---- Interactive local diagnosis demo -------------------------------------
+# cpp-httplib is vendored as a pinned MIT single header. This target is kept
+# separate from core so the evaluation CLI does not acquire an HTTP server
+# surface. TokenHub HTTPS still uses ProductionHttpTransport from core.
+add_library(hy3_algotrace_interactive_server STATIC
+    src/interactive_server.cpp
+    include/hy3_algotrace/interactive_server.hpp)
+target_link_libraries(hy3_algotrace_interactive_server
+    PUBLIC hy3_algotrace_core
+    PRIVATE Threads::Threads)
+target_include_directories(hy3_algotrace_interactive_server
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(hy3_algotrace_interactive_server PRIVATE ${HY3_WARN_FLAGS})
+if(WIN32)
+  target_link_libraries(hy3_algotrace_interactive_server PRIVATE ws2_32)
+endif()
+
+add_executable(hy3_algotrace_demo src/interactive_demo_main.cpp)
+target_link_libraries(hy3_algotrace_demo
+    PRIVATE hy3_algotrace_interactive_server hy3_algotrace_core)
+target_include_directories(hy3_algotrace_demo PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(hy3_algotrace_demo PRIVATE ${HY3_WARN_FLAGS})
 
 # ---- CLI executable: hy3_algotrace -----------------------------------------
 add_executable(hy3_algotrace src/main.cpp)
@@ -159,6 +186,23 @@ target_include_directories(production_http_transport_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(production_http_transport_tests PRIVATE ${HY3_WARN_FLAGS})
 
+# Interactive diagnosis business/API tests use FakeModelClient only. The
+# server handler test opens no socket and performs no model or network call.
+add_executable(interactive_diagnosis_tests
+    tests/interactive_diagnosis_tests.cpp)
+target_link_libraries(interactive_diagnosis_tests PRIVATE hy3_algotrace_core)
+target_include_directories(interactive_diagnosis_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(interactive_diagnosis_tests PRIVATE ${HY3_WARN_FLAGS})
+
+add_executable(interactive_server_tests
+    tests/interactive_server_tests.cpp)
+target_link_libraries(interactive_server_tests
+    PRIVATE hy3_algotrace_interactive_server hy3_algotrace_core)
+target_include_directories(interactive_server_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(interactive_server_tests PRIVATE ${HY3_WARN_FLAGS})
+
 # ---- Tests -----------------------------------------------------------------
 enable_testing()
 # Pass the canonical data path explicitly so the real-dataset case is never
@@ -181,6 +225,10 @@ add_test(NAME hy3_model_client_tests
          COMMAND hy3_model_client_tests)
 add_test(NAME production_http_transport_tests
          COMMAND production_http_transport_tests)
+add_test(NAME interactive_diagnosis_tests
+         COMMAND interactive_diagnosis_tests)
+add_test(NAME interactive_server_tests
+         COMMAND interactive_server_tests)
 
 # Convenience: `cmake --build . --target run_cli` runs the validator on data/.
 add_custom_target(run_cli

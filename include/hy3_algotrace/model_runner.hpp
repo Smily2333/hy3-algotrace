@@ -44,6 +44,13 @@ struct ModelCallAuditConfig {
     std::uint64_t timeout_seconds = 0;
 };
 
+// Shared one-shot invocation boundary used by both the frozen evaluation
+// runner and the interactive demo. It performs exactly one client invocation,
+// never retries, and defensively converts an escaped adapter exception into a
+// credential-free ProviderError result.
+ModelCallResult invokeModelOnce(const ModelRequest& request,
+                                IModelClient& client) noexcept;
+
 // Loads and hashes <runDir>/prompts/<traceId>.txt, sends exactly that
 // normalized prompt to `client`, and on transport success passes the returned
 // bytes unchanged to PredictionImporter::importResponseBytes.

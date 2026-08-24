@@ -1,0 +1,4 @@
+# Preserve the exact upstream bytes whose SHA-256 values are recorded beside
+# this pinned dependency, independent of core.autocrlf on Windows.
+third_party/cpp-httplib/httplib.h -text
+third_party/cpp-httplib/LICENSE -text

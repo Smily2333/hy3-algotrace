@@ -2,7 +2,7 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase2c_pilot_complete_reported`（2026-08-24）。** Phase 2C 生产 HTTPS transport 与逐次调用审计已由 [CI run 32734561463](https://github.com/Smily2333/hy3-algotrace/actions/runs/32734561463) 在 Windows/Ubuntu 验证；冻结的 9 条 Hy3 pilot 均只调用一次、HTTP 成功并严格解析。status / primary category accuracy 均为 `1.0000`，finding micro F1 为 `0.7619`；完整脱敏记录见 `docs/journal/phase-02c.md`。**结果只代表这 9 条 pilot，不外推模型总体能力；未连接 OJ、未执行候选代码。**
+**当前状态：`interactive_greedy_diagnosis_demo_pending_ci`（2026-08-24）。** Phase 2C 生产 HTTPS transport 与逐次调用审计已由 [CI run 32734561463](https://github.com/Smily2333/hy3-algotrace/actions/runs/32734561463) 在 Windows/Ubuntu 验证；冻结的 9 条 Hy3 pilot 脱敏报告保持 `phase2c_pilot_complete_reported`。当前新增本地中文交互 Demo，允许输入贪心题面、思路和可选 C++17 代码并取得 Hy3 静态诊断；**不编译/运行代码、不连接 OJ、不读取 gold，也不把交互结果计入正式指标。** CandidateRunner WIP 已独立保存，等待本 Demo 收口后恢复。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -94,7 +94,9 @@ hy3-algotrace/
 ├── include/hy3_algotrace/  C++17 头文件（校验、离线管线、ModelClient/Runner、Hy3 adapter）
 ├── src/                    对应 C++17 实现与 CLI
 ├── tests/                  依赖自由单元测试与 synthetic 端到端 smoke
+├── web/                    本地交互诊断页面（原生 HTML/CSS/JS）
 ├── third_party/nlohmann/   供应商锁定 nlohmann/json v3.12.0 单头文件（MIT）
+├── third_party/cpp-httplib/ 固定 cpp-httplib v0.51.0 单头文件（MIT）
 ├── data/
 │   ├── manifest.json       数据集汇总（版本/计数/审查状态）
 │   └── problems/
@@ -184,3 +186,22 @@ hy3_algotrace --help | help          打印用法；退出 0
 - `Hy3ModelClient` 固定使用非流式 Chat Completions 与 JSON object 模式；模型内容仍逐字节交给 `PredictionImporter`，不会绕过严格 JSON/schema/语义校验。
 - 生产 transport 在 Windows 使用系统 WinHTTP，在 Linux 使用系统 libcurl；默认只接受官方 TokenHub HTTPS origin，验证 TLS，禁重定向和自动重试，并设置明确 connect/total timeout。offline/manual 流程继续可用。
 - `call-hy3` 仅从 `TOKENHUB_API_KEY` 环境变量读取凭证，并在发送前原子创建 `model-calls/<trace_id>.json`。任何既存 sidecar/raw/prediction 都会在网络前拒绝重复调用；不得把 `hy3-preview` 或旧平台 `hunyuan-turbos-latest` 当作正式 `hy3`。
+
+### 8.6 本地交互诊断 Demo
+
+```powershell
+$env:TOKENHUB_API_KEY = [Environment]::GetEnvironmentVariable(
+    'TOKENHUB_API_KEY', 'User')
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release --target hy3_algotrace_demo
+.\build\Release\hy3_algotrace_demo.exe --host 127.0.0.1 --port 8080
+```
+
+Linux 或单配置生成器的可执行文件通常位于 `build/hy3_algotrace_demo`。启动后打开
+`http://127.0.0.1:8080/`。服务默认且仅允许 loopback，浏览器不会接触 API Key；每次
+提交最多调用一次且不自动重试。交互 Prompt、请求/响应契约、长度限制、审计目录和安全
+边界见 `docs/interactive-diagnosis-demo.md`。
+
+> Demo 当前只支持贪心题，C++ 代码只做模型静态语义审查，既不编译运行，也不代表形式化
+> 证明。一次真实 CF 160A smoke 的传输与严格解析成功，但模型漏判了 `>=` 的严格边界错误；
+> 该质量失败已如实记录于 `docs/journal/interactive-diagnosis-demo.md`，未重试或修改 raw。

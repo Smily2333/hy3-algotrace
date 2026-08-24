@@ -371,16 +371,7 @@ ModelRunResult runModelForTraceImpl(const std::string& runDir,
     request.normalized_prompt = normalizedPrompt;
     request.prompt_sha256 = promptSha256;
 
-    ModelCallResult callResult;
-    try {
-        callResult = client.invoke(request);
-    } catch (...) {
-        // The interface is noexcept, but retain a defensive boundary in case a
-        // non-conforming adapter is introduced through ABI or future changes.
-        callResult.status = ModelCallStatus::ProviderError;
-        callResult.error_code = model_runner_errc::E_MODEL_PROVIDER;
-        callResult.message = "model client escaped an exception";
-    }
+    ModelCallResult callResult = invokeModelOnce(request, client);
 
     const auto finishAudit = [&](ModelRunResult result) {
         if (!auditStarted) {
@@ -525,6 +516,21 @@ ModelRunResult runModelForTraceImpl(const std::string& runDir,
 }
 
 } // namespace
+
+ModelCallResult invokeModelOnce(const ModelRequest& request,
+                                IModelClient& client) noexcept {
+    try {
+        return client.invoke(request);
+    } catch (...) {
+        // IModelClient is noexcept by contract. Keep a final defensive boundary
+        // for a non-conforming future adapter without copying exception text.
+        ModelCallResult result;
+        result.status = ModelCallStatus::ProviderError;
+        result.error_code = model_runner_errc::E_MODEL_PROVIDER;
+        result.message = "model client escaped an exception";
+        return result;
+    }
+}
 
 ModelRunResult runModelForTrace(const std::string& runDir,
                                 const std::string& traceId,
