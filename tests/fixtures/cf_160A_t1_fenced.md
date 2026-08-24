@@ -1,0 +1,11 @@
+```json
+{
+  "trace_id": "cf_160A_t1",
+  "status": "correct",
+  "primary_category": null,
+  "findings": [],
+  "confidence": null,
+  "confidence_method": null,
+  "calibration_version": null
+}
+```

@@ -76,7 +76,7 @@ Phase 1B 实现了**规划中未来系统的子集**——只做「数据结构�
 | `JsonLoader` | `src/json_loader.cpp` + `json_loader.hpp` | 二进制读取文件 → `nlohmann::json::parse`；失败返回 `E_FILE_READ`/`E_JSON_PARSE`，**无业务规则** | 已实现 |
 | `DatasetValidator` | `src/validator.cpp` + `validator.hpp` | 加载 manifest + 各题文件，执行全部 executable 规则（A–H），收集尽量多诊断，产出 `ValidationSummary` | 已实现 |
 | `CLI` | `src/main.cpp` | `validate <data_dir>` / `--help`；退出码 0/1/2 | 已实现 |
-| `validator_tests` | `tests/validator_tests.cpp` | 16 项正/负向测试 + 真实数据集；仅断言稳定错误码 | 已实现 |
+| `validator_tests` | `tests/validator_tests.cpp` | 56 项正/负向测试 + 真实数据集；仅断言稳定错误码 | 已实现 |
 
 ### 6.2 依赖方向（无循环）
 
@@ -100,6 +100,59 @@ Phase 1B **不**包含以下模块（与第 1–2 节规划一致）：
 
 校验器对 `candidate_solutions` / `verification_results` 只做**结构一致性**检查
 （外键、枚举、`verification_results` 在 Phase 1A 必须为空的不变式），**不会**编译或运行任何代码。
+
+## 6.4 Phase 2B 已落地子集：离线评估管线（导出 → 导入 → 报告）
+
+Phase 2B 在 Phase 1B 契约校验器之上，实现了**完整离线评估管线的三段式 C++ 工具**：导出 Prompt、导入模型原始响应并生成 prediction wrapper、汇总指标生成报告。**全程不调用模型 API、不连接 OJ、不执行候选代码**（这些属 Phase 2C/2D 离线交互或本地受限验证，不在初版自动范围）。
+
+### 6.4.1 已落地模块
+
+| 模块 | 文件 | 职责 | 状态 |
+| --- | --- | --- | --- |
+| `Sha256` | `include/hy3_algotrace/sha256.hpp` + `src/sha256.cpp` | 自包含 FIPS 180-4 SHA-256（NIST 标准向量验证）+ UTF-8 规范化（CRLF/CR→LF、剥离 BOM、拒绝无效 UTF-8 / 嵌入 NUL） | 已实现 |
+| `PromptExporter` | `include/hy3_algotrace/prompt_exporter.hpp` + `src/prompt_exporter.cpp` | `extractTemplateBody`、`projectTraceInput`（显式 allowlist 投影）、`auditStructuralLeakage`、`renderPrompt`（5 占位符）、`exportPrompts`（临时目录+原子发布、run-manifest） | 已实现 |
+| `PredictionImporter` | `include/hy3_algotrace/prediction_importer.hpp` + `src/prediction_importer.cpp` | `saveRawResponse`（逐字节 + raw hash）、`loadPromptSha`、`classifyResponse`（6 态严格判别、无 fence/repair）、`writePredictionWrapper`、`importResponse`、`markNotAttempted`（显式，不推断） | 已实现 |
+| `Reporter` | `include/hy3_algotrace/reporter.hpp` + `src/reporter.cpp` | `loadGoldDiagnosis`、`buildReport`（严格按 `docs/phase-02-metrics.md`：parse/status/primary/micro/macro/pair + 混淆矩阵 + 去重 + 零分母 + N/A 区分）、`writeReport`、`generateReport`（仅当 run 完整时更新 `completed_at`） | 已实现 |
+| `CLI` | `src/main.cpp` | `export-prompts` / `import-response` / `mark-not-attempted` / `report` / `validate` / `--help`；退出码 0/1/2 | 已实现 |
+| `prompt_exporter_tests` | `tests/prompt_exporter_tests.cpp` | 22 项测试（SHA 向量、CRLF/BOM、UTF-8/NUL、模板边界、占位符、allowlist、leakage 非误报、null 候选、cf_160A_t3 关联、9 轨迹字典序、确定性、拒绝覆写、unsafe-id、真实数据集成、validator 回归） | 已实现 |
+| `prediction_importer_tests` | `tests/prediction_importer_tests.cpp` | 空/空白、非 JSON、Markdown fenced、尾随文本、缺键/错类型/额外键/非法枚举、confidence 非 null、correct/incorrect/undetermined 语义、primary 不在 findings、implementation_consistency 无候选拒绝、trace_id 不一致、raw 字节哈希、拒绝覆写、not_attempted、确定性、无 sentinel | 已实现 |
+| `reporter_tests` | `tests/reporter_tests.cpp` | 完美预测、部分解析失败、缺 wrapper→incomplete、同 category 去重、completed_at 仅在完整时更新、report.json/md 一致 | 已实现 |
+| `phase2b_e2e_tests` | `tests/phase2b_e2e_tests.cpp` | 端到端 synthetic smoke：真实数据集导出 9 prompt → 导入合成响应 → 显式 mark 其余 → 报告；断言无 gold 泄漏、report 确定性数值、completed_at 更新；fixtures 标记 `SYNTHETIC_TEST_FIXTURE` | 已实现 |
+
+### 6.4.2 依赖方向（无循环，叠加于 Phase 1B）
+
+```
+
+CLI(main) → PromptExporter / PredictionImporter / Reporter / Sha256
+          → DatasetValidator / Diagnostic → JsonLoader → nlohmann/json
+```
+
+- `Sha256`、`Diagnostic`、`JsonLoader` 是叶子。
+- `PromptExporter` 依赖 `JsonLoader` + `Sha256` + `Diagnostic`，不依赖 `DatasetValidator`。
+- `PredictionImporter` 依赖 `JsonLoader` + `Sha256`，**读取 prompt 但不读 gold**；仅做 schema/语义校验与 wrapper 生成。
+- `Reporter` 是**唯一**读取 gold（`data/problems/*/diagnoses`）的模块；gold 只在内存比较与 `report.json`/`report.md` 中出现，**绝不**写回 prediction 文件。
+- `CLI` 负责参数解析与退出码，不含评估逻辑。
+
+### 6.4.3 明确未实现（属 Phase 2C/2D+）
+
+Phase 2B **不**包含以下模块：
+
+- 模型 API 自动调用（`ProcessEvaluator` 的在线推理循环）；本阶段只有离线 `export` / `import` / `report`。
+- `CandidateRunner` / `CodeVerifier`（候选代码编译、运行、OJ 对比，属 Phase 2D 本地受限版）。
+- 指标中的 `confidence` 校准（Phase 4 前固定为 null，不参与任何指标）。
+- `hallucination_flag_rate` 的自动判定（需人工/规则检查器，本阶段只记录定性信号）。
+
+### 6.4.4 失败安全与审计特性
+
+- `exportPrompts` 拒绝覆写已存在的 `run_dir`；写临时目录后原子 `rename`。
+- `importResponse` 拒绝覆写已存在的 raw / prediction（`E_RAW_EXISTS` / `E_PREDICTION_EXISTS`）；raw 响应**逐字节**保存，`raw_response_sha256` 按原始字节计算，不做规范化/修复；**绝不**静默剥离 Markdown 围栏/前言/尾随文本，也**绝不** repair JSON——无法解析即 `invalid_json`。
+- `classifyResponse` 严格 6 态判别；`parse_status != parsed` 时 `prediction` 必为 null；内部 `__parse_failed__` sentinel 只用于 `Reporter` 内存指标，**绝不**写回任何文件。
+- `Reporter` 在 wrapper 缺失时标记 `run_complete=false`，**绝不**默认 `correct`；`completed_at` 仅在 run 完整且传入合法 ISO-8601 时写回 `run-manifest.json`。
+- gold 隔离：prediction wrapper 结构由协议 §7 固定，无任何 `diagnoses` 字段；`Reporter` 比较后 gold 只进入 `report.*`，不污染 `predictions/`。
+
+## 6.5 冻结文件边界
+
+以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。任何指标/枚举/语义变更必须回到规划方修订这些冻结文件，而非在 C++ 中自行创造类别。
 
 ## 7. 离线模型适配边界（Phase 2A 补充）
 

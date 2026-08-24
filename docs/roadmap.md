@@ -1,6 +1,6 @@
 # 阶段路线图
 
-> 宏观阶段规划。当前处于 **Phase 1B（已完成）**，R2.1 已通过 codex_planner 技术验收，GitHub CI 已在 Windows/Linux 实际验证 canonical CMake/CTest，状态 `phase1b_complete_ci_verified`。
+> 宏观阶段规划。当前处于 **Phase 2B（离线评估管线已整体实现，待统一规划方复审）**，状态 `phase2b_offline_pipeline_implemented_unverified_pending_planner_review`（实现完成；本地 MSVC 因沙箱无 Windows SDK 未跑，完整验证待 GitHub CI 在 `phase2b-integration` 分支执行）。Phase 1B 已完成且 CI 已验证（`phase1b_complete_ci_verified`）；Phase 2A 协议与模板已冻结（`phase2a_complete_planner_reviewed`）。本阶段**不**拆分为 2B-1/2B-2 单独验收，整体完成后一次性复审。
 > 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
 
 ## Phase 0 — 范围与骨架
@@ -40,11 +40,19 @@
 - **状态**：`phase2a_complete_planner_reviewed`（codex_planner 技术验收通过，2026-08-24；不等同 human/expert review）。**未实现 `ProcessEvaluator` / `Reporter`，未运行 9 轨迹 Hy3 实验，未进入 Phase 2B。**
 - **进入下一阶段条件**：规划方复审通过 Phase 2A 协议与 Prompt 模板。
 
-### Phase 2B — C++ PromptExporter / PredictionImporter / Reporter
+### Phase 2B — 离线评估管线：PromptExporter / PredictionImporter / Reporter（整体实现，待统一复审）
 
-- **目标**：实现 C++17 工具，将冻结数据按 allowlist 渲染 prompt、按 denylist 自动检查、保存 raw response、解析并 schema/语义校验、生成 `prediction` wrapper 与 `report`。
-- **主要产物**：`PromptExporter`、`PredictionImporter`、denylist 检查器、`Reporter`；`experiments/phase-02/runs/<run_id>/` 落地结构。
-- **进入下一阶段条件**：管线可对样本产出结构化 prediction 与报告；与 `docs/phase-02-protocol.md` 定义一致。
+- **目标**：实现完整 C++17 离线评估管线三段式：`export-prompts`（确定性导出无泄漏 Prompt）、`import-response` + `mark-not-attempted`（逐字节保存 raw、6 态严格判别、schema/语义校验、生成 prediction wrapper、gold 隔离）、`report`（严格按 `docs/phase-02-metrics.md` 汇总指标、report.json/md 一致、completed_at 仅完整时更新）。**全程不调用模型 API、不连接 OJ、不执行候选代码。**
+- **主要产物**：
+  - `include/hy3_algotrace/sha256.hpp` + `src/sha256.cpp`（FIPS 180-4 SHA-256 + UTF-8 规范化）
+  - `include/hy3_algotrace/prompt_exporter.hpp` + `src/prompt_exporter.cpp`（模板边界提取 / allowlist 投影 / structural leakage audit / 渲染 / run-manifest）
+  - `include/hy3_algotrace/prediction_importer.hpp` + `src/prediction_importer.cpp`（raw 逐字节保存 + 字节哈希、6 态判别、无 fence/repair、schema+语义校验、wrapper、显式 not_attempted）
+  - `include/hy3_algotrace/reporter.hpp` + `src/reporter.cpp`（gold 隔离、全部指标、去重、零分母、N/A 区分、completed_at 控制）
+  - CLI 四命令（`export-prompts` / `import-response` / `mark-not-attempted` / `report`）+ `validate` / `--help`
+  - 测试：`prompt_exporter_tests`(22) + `prediction_importer_tests`(25) + `reporter_tests`(5) + `phase2b_e2e_tests`(synthetic smoke) + `validator_tests`(56 回归)；`CMakeLists.txt` 全部接入 CTest；`tests/fixtures/`（标记 `SYNTHETIC_TEST_FIXTURE`，绝不伪装真实实验）
+  - `docs/journal/phase-02b.md` 统一记录
+- **状态**：`phase2b_offline_pipeline_implemented_unverified_pending_planner_review`（2026-08-24）。在 `phase2b-integration` 分支实现完成；本地 MSVC 因沙箱 Windows SDK(ucrt) 缺失、`cmd.exe`/WSL 被安全策略禁用未跑，**完整验证通过 GitHub CI（推送该分支后 `gh workflow run ci.yml --ref phase2b-integration`）执行**；最多 3 次 CI 修复循环。**未运行真实 Hy3 实验、未创建正式 `experiments/` run、未进入 Phase 2C。**
+- **进入下一阶段条件（Phase 2C）**：规划方统一复审通过 Phase 2B 实现与测试；CI 在 Windows+Linux 全绿；确认无 gold 泄漏、no model/API/OJ/candidate 调用、报告数值一致；然后启动 9 条轨迹离线冒烟实验。
 
 ### Phase 2C — Hy3 9 轨迹冒烟实验
 
