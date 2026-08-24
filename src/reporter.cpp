@@ -372,8 +372,8 @@ ReporterResult buildReport(const std::string& runDir,
     // ---- Aggregate metrics ----
     double parseSuccessRate = safeDiv(parsedCount, N); // N never 0 here
     double statusAccuracy = safeDiv(statusCorrect, N);
-    double primaryAccuracy = (incorrectGoldCount == 0)
-                                 ? nlohmann::json::value_t::null // N/A when no incorrect gold
+    nlohmann::json primaryAccuracy = (incorrectGoldCount == 0)
+                                 ? nlohmann::json() // N/A when no incorrect gold
                                  : nlohmann::json(static_cast<double>(primaryCorrect) /
                                                   static_cast<double>(incorrectGoldCount));
     // micro

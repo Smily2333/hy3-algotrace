@@ -424,7 +424,7 @@ ImporterResult writePredictionWrapper(const std::string& runDir,
     }
     w["errors"] = nlohmann::json(errors);
     w["generated_at"] = generatedAt.empty()
-                            ? nlohmann::json::value_t::null
+                            ? nlohmann::json()
                             : nlohmann::json(generatedAt);
     // Internal sentinel must never leak. Defensive guard:
     std::string text = serializeWrapper(w);
@@ -594,7 +594,7 @@ ImporterResult markNotAttempted(const std::string& runDir,
     w["prediction"] = nlohmann::json::value_t::null;
     w["errors"] = nlohmann::json::array();
     w["generated_at"] = generatedAt.empty()
-                            ? nlohmann::json::value_t::null
+                            ? nlohmann::json()
                             : nlohmann::json(generatedAt);
     std::string text = serializeWrapper(w);
     fs::path outDir = fs::path(runDir) / "predictions";

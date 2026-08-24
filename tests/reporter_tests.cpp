@@ -33,8 +33,9 @@ namespace {
 // Create a synthetic dataset: one problem with two traces, one correct + one
 // incorrect (with two findings of same category to test dedup).
 fs::path makeDataset(const fs::path& base) {
+    std::error_code ec;
     fs::path data = base / "data";
-    fs::create_directories(data / "problems", std::error_code{});
+    fs::create_directories(data / "problems", ec);
     // manifest
     nlohmann::json man;
     man["dataset_version"] = "syn";
@@ -120,9 +121,10 @@ nlohmann::json wrapper(ParseStatus ps, const nlohmann::json& pred,
 } // namespace
 
 int main() {
+    std::error_code ec;
     fs::path tmp = fs::temp_directory_path() / "hy3_rep_tests";
-    fs::remove_all(tmp, std::error_code{});
-    fs::create_directories(tmp, std::error_code{});
+    fs::remove_all(tmp, ec);
+    fs::create_directories(tmp, ec);
     fs::path data = makeDataset(tmp);
 
     // ---- Case A: perfect predictions for both traces ----
@@ -277,7 +279,7 @@ int main() {
               "caseE completed_at updated");
     }
 
-    fs::remove_all(tmp, std::error_code{});
+    fs::remove_all(tmp, ec);
     std::cout << "reporter_tests: " << g_pass << " passed, " << g_fail << " failed\n";
     return g_fail == 0 ? 0 : 1;
 }

@@ -27,6 +27,7 @@
 #include "hy3_algotrace/prediction_importer.hpp"
 #include "hy3_algotrace/reporter.hpp"
 #include "hy3_algotrace/validator.hpp"
+#include "hy3_algotrace/sha256.hpp"
 
 #include <fstream>
 #include <iostream>

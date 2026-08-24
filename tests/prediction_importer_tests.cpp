@@ -39,10 +39,11 @@ namespace {
 // prompt hash. Returns the run dir path.
 fs::path makeRunDir(const std::string& base, const std::string& traceId,
                     bool withCandidate) {
+    std::error_code ec;
     fs::path run = fs::path(base) / ("run_" + traceId);
-    fs::create_directories(run / "prompts", std::error_code{});
-    fs::create_directories(run / "raw-responses", std::error_code{});
-    fs::create_directories(run / "predictions", std::error_code{});
+    fs::create_directories(run / "prompts", ec);
+    fs::create_directories(run / "raw-responses", ec);
+    fs::create_directories(run / "predictions", ec);
     // Prompt text includes candidate_solution marker.
     std::string prompt = "{\"problem\":{},\"reference_verdict\":{},\"test_cases\":[],"
                          "\"reasoning_trace\":{\"id\":\"" + traceId + "\"},\"candidate_solution\":";
@@ -62,10 +63,11 @@ void writeRawFile(const fs::path& p, const std::string& content) {
 
 int main(int argc, char** argv) {
     // Use a temp base dir.
+    std::error_code ec;
     fs::path tmp = fs::temp_directory_path() /
-                   ("hy3_pi_tests_" + std::to_string(std::hash<std::string>{}(std::to_string(argv[0]))));
-    fs::remove_all(tmp, std::error_code{});
-    fs::create_directories(tmp, std::error_code{});
+                   ("hy3_pi_tests_" + std::to_string(std::hash<std::string>{}(std::string(argv[0]))));
+    fs::remove_all(tmp, ec);
+    fs::create_directories(tmp, ec);
 
     const std::string TID = "cf_160A_t1";
 
@@ -470,7 +472,7 @@ int main(int argc, char** argv) {
               "sentinel absent from file");
     }
 
-    fs::remove_all(tmp, std::error_code{});
+    fs::remove_all(tmp, ec);
 
     std::cout << "prediction_importer_tests: " << g_pass << " passed, "
               << g_fail << " failed\n";

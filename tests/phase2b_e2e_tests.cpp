@@ -50,6 +50,7 @@ std::string readFile(const fs::path& p) {
 } // namespace
 
 int main(int argc, char** argv) {
+    std::error_code ec;
     if (argc < 2) {
         std::cerr << "usage: phase2b_e2e_tests <project_root>\n";
         return 2;
@@ -60,7 +61,7 @@ int main(int argc, char** argv) {
     fs::path fixtures = fs::path(root) / "tests" / "fixtures";
 
     fs::path run = fs::temp_directory_path() / "hy3_e2e_run";
-    fs::remove_all(run, std::error_code{});
+    fs::remove_all(run, ec);
 
     // 1) export-prompts
     std::string tmplText = readFile(tmpl);
@@ -179,7 +180,7 @@ int main(int argc, char** argv) {
     CHECK(man2.value("completed_at", "") == "2026-08-24T00:10:00Z",
           "completed_at updated on complete run");
 
-    fs::remove_all(run, std::error_code{});
+    fs::remove_all(run, ec);
     std::cout << "phase2b_e2e_tests: " << g_pass << " passed, " << g_fail
               << " failed\n";
     return g_fail == 0 ? 0 : 1;

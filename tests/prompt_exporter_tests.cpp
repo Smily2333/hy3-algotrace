@@ -106,7 +106,7 @@ static json makeManifest(const std::vector<std::string>& pids) {
     m["dataset_version"] = "phase1a-pilot-001";
     m["problem_count"] = static_cast<int>(pids.size());
     m["trace_count"] = static_cast<int>(pids.size());
-    m["problem_ids"] = json::array(pids);
+    m["problem_ids"] = json(pids);
     return m;
 }
 
