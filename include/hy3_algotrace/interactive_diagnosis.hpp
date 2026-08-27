@@ -19,6 +19,10 @@
 
 namespace hy3 {
 
+inline constexpr const char* kInteractiveRequestVersion = "interactive-request-v2";
+inline constexpr const char* kInteractiveResponseVersion = "interactive-diagnosis-v2";
+inline constexpr const char* kInteractiveTemplateId = "hy3-interactive-diagnosis-v2";
+
 namespace interactive_errc {
 inline constexpr const char* E_REQUEST_SCHEMA = "E_INTERACTIVE_REQUEST_SCHEMA";
 inline constexpr const char* E_REQUEST_INVALID = "E_INTERACTIVE_REQUEST_INVALID";
@@ -39,11 +43,7 @@ inline constexpr const char* E_RESPONSE_INVALID = "E_INTERACTIVE_RESPONSE_INVALI
 
 namespace interactive_limits {
 inline constexpr std::size_t request_id = 128;
-inline constexpr std::size_t title = 256;
-inline constexpr std::size_t statement = 30000;
-inline constexpr std::size_t input_format = 10000;
-inline constexpr std::size_t output_format = 10000;
-inline constexpr std::size_t constraints = 10000;
+inline constexpr std::size_t statement = 60000;
 inline constexpr std::size_t reasoning = 30000;
 inline constexpr std::size_t cpp_solution = 120000;
 inline constexpr std::size_t user_notes = 10000;
@@ -53,25 +53,18 @@ inline constexpr std::size_t rendered_prompt = 300000;
 inline constexpr std::size_t model_response = 1000000;
 } // namespace interactive_limits
 
-struct InteractiveProblem {
-    std::string title;
-    std::string statement;
-    std::string input_format;
-    std::string output_format;
-    std::string constraints;
-};
-
 struct InteractiveTestCase {
     std::string input;
     std::string expected_output;
 };
 
 struct InteractiveDiagnosisRequest {
+    std::string schema_version = kInteractiveRequestVersion;
     std::string request_id;
     std::string algorithm_type = "greedy";
-    InteractiveProblem problem;
-    std::string reasoning;
-    std::optional<std::string> cpp_solution;
+    std::string problem_statement;
+    std::string cpp_solution;
+    std::optional<std::string> reasoning;
     std::vector<InteractiveTestCase> test_cases;
     std::optional<std::string> user_notes;
 };
@@ -84,16 +77,24 @@ struct InteractiveRequestValidation {
 
 // Strictly parses the HTTP JSON body. Unknown keys, wrong JSON types, invalid
 // UTF-8/NUL, over-limit fields, and algorithm_type != "greedy" are rejected.
-// Optional strings may be absent or null; empty optional strings normalize to
-// null. Line endings in accepted user text normalize to LF before hashing.
+// v1 is rejected, never upgraded with invented reasoning. Optional strings
+// absent/null/blank normalize to null. Source indentation and blank lines are
+// preserved; only UTF-8 BOM and CRLF/CR normalization precede hashing/numbering.
 InteractiveRequestValidation parseInteractiveDiagnosisRequest(
     const nlohmann::json& input,
     InteractiveDiagnosisRequest& request) noexcept;
 
+nlohmann::json interactiveDiagnosisRequestJson(
+    const InteractiveDiagnosisRequest& request);
+
+// Exact version header and exactly one request marker; v1 cannot be mislabeled.
+bool validInteractivePromptTemplate(const std::string& text);
+
 struct InteractiveCallMetadata {
-    std::string prompt_template_id = "hy3-interactive-diagnosis-v1";
+    std::string prompt_template_id = kInteractiveTemplateId;
     std::string prompt_template_sha256;
     std::string prompt_sha256;
+    std::string source_code_sha256;
     std::optional<std::string> raw_response_sha256;
     std::string provider;
     std::string model_name;

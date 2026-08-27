@@ -166,7 +166,7 @@ Phase 2C 在不改变冻结 prediction schema 的前提下增加 transport-neutr
 
 网络依赖不 vendoring：Windows 使用随受信任 runner/操作系统交付和维护的 WinHTTP（Microsoft 系统组件）；Ubuntu CI 从 Ubuntu 官方签名 APT 仓库安装 `libcurl4-openssl-dev`（curl license），安装步骤输出精确包版本，包完整性由 APT 仓库签名与 runner 镜像信任链验证。生产部署必须以同等方式记录实际系统组件/包版本。
 
-### 6.4.6 独立交互诊断 Demo
+### 6.4.6 独立交互诊断 v2（M1 已实现）
 
 交互 Demo 不复用冻结数据集投影或 gold-aware Reporter，而是在同一模型基础层之上建立独立契约：
 
@@ -180,18 +180,20 @@ Browser (no key)
 
 | 模块 | 职责 |
 | --- | --- |
-| `InteractiveDiagnosis` | 严格解析临时用户输入、渲染并哈希独立 Prompt、一次性目录/sidecar latch、保存 raw、校验独立响应 schema、只返回脱敏诊断 |
+| `InteractiveDiagnosis` | v2 题面/代码必填、思路可选；渲染并哈希独立 Prompt、一次性目录/sidecar latch、保存 raw、严格 schema/分类条件与步骤/行范围/精确片段校验 |
 | `InteractiveHttpApplication` | `health` / `diagnose` 的无 socket 可测业务面；限制 body/content type 与并发调用，区分 transport 和 diagnosis 错误 |
 | `InteractiveServer` / `hy3_algotrace_demo` | 仅绑定 `127.0.0.1`，校验 Host，提供静态页面与 API；Key 只存在于 C++ 服务进程 |
-| `web/` | 原生中文输入/结果界面；七类中文映射、六阶段 findings、loading/失败/复制 JSON；不保存 Key，不刷新重调 |
+| `web/` | 两框输入与折叠高级选项；静态三态、模型算法概述、逻辑步骤/首次错误、证据；可展开反例和完整解法；textContent 渲染、失败/复制/提交代码快照 |
 
-`runRecordedModelForTrace` 仍专属于带 manifest/PredictionImporter 的冻结评测运行；交互路径只共享其 transport-neutral `invokeModelOnce` 单次调用边界，避免把临时输入伪装成 dataset trace。交互产物写入 Git 忽略目录，绝不回写 `data/` 或进入 Reporter 指标。可选 C++17 只作为模型文本上下文，不被编译或执行。
+`runRecordedModelForTrace` 仍专属于带 manifest/PredictionImporter 的冻结评测运行；交互路径只共享其 transport-neutral `invokeModelOnce` 单次调用边界。v2 默认产物位于 Git 忽略的 `experiments/interactive/runs/v2/`，绝不回写 `data/` 或进入 Reporter。C++17 是必填的模型静态输入，不被编译或执行。
+
+v2 不兼容旧交互请求：schema、默认 Prompt 路径、模板 ID/hash 和 sidecar 同步版本化，启动拒绝 v1 模板。`missing_greedy_proof` 不可用于缺少证明的代码优先输入；`implementation_mismatch` / `invalid_greedy_proof` 仅允许引用实际用户思路。新增的 `code_logic_error` 仅属于交互 v2，不修改冻结 taxonomy。定位只证明输入对应，不是正确性证据；完整说明与反例均为模型生成且未验证。完整契约见 [交互 v2](interactive-diagnosis-demo.md)，测试证据见 [M1 记录](journal/m1-interactive-v2.md)。
 
 本地 server 使用固定 `cpp-httplib v0.51.0`（MIT）单头文件；它只承载 loopback HTTP，TokenHub HTTPS 继续由现有 WinHTTP/libcurl transport 负责。
 
 ## 6.5 冻结文件边界
 
-以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。任何指标/枚举/语义变更必须回到规划方修订这些冻结文件，而非在 C++ 中自行创造类别。
+以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。针对这些冻结评测数据的指标/枚举/语义变更必须另行授权，不能在 C++ 中自行改变。M1 的独立交互 v2 按其自身契约扩展，不回写这些冻结文件或旧指标。
 
 ## 7. 模型适配边界（offline/manual + 可注入 adapter）
 

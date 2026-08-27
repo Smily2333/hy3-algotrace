@@ -8,9 +8,9 @@
 - **提交材料：[项目方案](docs/project-proposal-2026-08-27.md)。** 包含设计思路、目标架构、重点技术、预期效果与建议排期。
 - **历史追溯：[旧 Phase 路线图](docs/roadmap-legacy-phase.md)。** 仅保留历史，不再作为下一步任务入口。
 
-M 表示 Milestone（里程碑）：**M1 做诊断应用，M2 准备评测材料，M3 验证效果，M4 整理交付**。当前下一项开发任务是 M1；四个里程碑均未因文档更新而自动完成。启动开发前以实际代码与工作区复核状态。
+M 表示 Milestone（里程碑）：**M1 做诊断应用，M2 准备评测材料，M3 验证效果，M4 整理交付**。M1 已完成本地程序验收，当前停止等待 M2 授权；模型效果仍未验证。完整证据见 [M1 验收记录](docs/journal/m1-interactive-v2.md)。
 
-**已实现基线：`interactive_greedy_diagnosis_demo_ci_verified`（2026-08-24）。** v1 本地中文 Demo 已由 [CI run 32748016328](https://github.com/Smily2333/hy3-algotrace/actions/runs/32748016328) 在 Windows/Ubuntu 完成构建与测试验证；当前实现要求题面和思路，代码可选，**不编译/运行代码、不连接 OJ、不读取 gold，也不把交互结果计入正式指标。** M1 将其改为题面与代码为主；新模式尚未实现，历史 CI 不能证明新改动已验证。9 条 pilot 保留为历史基线，CandidateRunner WIP 继续暂缓，不是本版前置条件。
+**当前状态：`m1_complete_local_verified_pending_model_evaluation`（2026-08-27）。** 交互 v2 只要求完整题面和 C++ 代码；本次 Windows 本地 CMake 构建、11 项 CTest 与 Fake 网页检查通过。**不编译/运行用户代码、不连接 OJ、不读取 gold，不把交互结果计入旧实验指标。** 本次未运行真实 Hy3 或远端 CI；历史 v1 的双平台 CI 和 9 条 pilot 仅保留追溯，不能作为 v2 效果证据。CandidateRunner 继续暂缓。
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -28,14 +28,14 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 - 复用已有后端、网页和评测管线，不为新目标重写基础设施。
 - 网页只做静态诊断；固定题集的受控离线答案校验在 M2 完成，通用 CandidateRunner、沙箱平台和 OJ 接入暂缓。
 
-## 3. M1 目标输入与输出（待实现）
+## 3. M1 输入与输出（交互 v2 已实现）
 
 - **必填输入：** 完整题面（包含约束、输入输出说明）和 C++ 代码。
 - **可选输入：** 用户思路、测试数据、补充说明；标题和 I/O 不必拆开填写。
 - **默认输出：** 算法概述、未发现明确错误 / 发现错误 / 无法确定、首次错误步骤、代码位置、原因与修改建议。
 - **展开输出：** 反例候选、完整参考 / 修正解法（策略、正确性理由、复杂度、边界）；未经执行时明确标为未验证。
 
-以上为交互 v2 目标，当前程序仍实现 v1。旧数据契约见 `docs/data-contract.md`，旧分类见 `docs/error-taxonomy.md`；其冻结版本与实验保持不变，不能直接假定它们就是新模式契约。
+当前默认使用 `hy3-interactive-diagnosis-v2`，v1/未版本化请求明确拒绝。最小请求、完整响应示例与位置校验规则见 [交互契约](docs/interactive-diagnosis-demo.md)。旧数据契约、taxonomy 与实验保持冻结；v2 的 `code_logic_error` 只用于交互，不映射成旧指标。
 
 ## 4. 为什么先测试贪心题
 
@@ -60,7 +60,7 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 
 | 阶段 | 内容 | 当前状态 |
 | --- | --- | --- |
-| M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 待开始；当前下一项开发任务 |
+| M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 本地技术验收通过；未验证真实模型效果 |
 | M2 | 分层样本、独立 gold、最小答案校验与评测适配 | 待开始 |
 | M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | 待开始 |
 | M4 | 运行说明、公开材料、分析报告与两分钟 Demo | 待开始 |
@@ -70,7 +70,7 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 ```
 hy3-algotrace/
 ├── README.md               本文件（项目说明 + 当前阶段状态）
-├── CMakeLists.txt          C++17 校验器 + 测试（canonical 构建；本机未用 CMake 验证）
+├── CMakeLists.txt          C++17 校验器 + 测试（canonical；M1 本地 Windows 已验证）
 ├── build-msvc/             本地 MSVC 编译产物（git 忽略，非 CMake 产出）
 ├── docs/
 │   ├── architecture.md     系统架构与处理流程（含 Phase 1B 落地模块）
@@ -109,18 +109,18 @@ hy3-algotrace/
 计数等。它**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码，也**不**实现
 `ProcessEvaluator` / `CandidateRunner`（这些属于 Phase 2+）。
 
-### 8.2 CMake（canonical，跨平台，GitHub CI 已实际验证）
+### 8.2 CMake（canonical；本轮 Windows 本地已验证）
 
 ```bash
 cmake -S . -B build
-cmake --build build
-ctest --test-dir build        # 运行 validator_tests（56 项）
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
 ./build/hy3_algotrace validate data
 ```
 
-> 本地机器未安装 CMake，故本机未运行上述 canonical 流程；但 GitHub CI 已在 `windows-latest` 与 `ubuntu-latest` 实际运行成功（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`）。完整 CI 结果见 [run 32656643095](https://github.com/Smily2333/hy3-algotrace/actions/runs/32656643095)：两个平台的 Configure / Build / CTest / Run CLI 均 success。macOS 尚未验证。
+> 本轮已使用官方便携 CMake 4.3.4 与 MSVC 完成 Windows 本地完整构建及 11/11 CTest，实际命令见 M1 记录。Ubuntu 与远端 CI 未为本轮重跑；历史 CI 不替代当前验证。Windows 多配置生成器的 CLI 路径为 `build/Release/hy3_algotrace.exe`。
 
-### 8.3 本地 MSVC 直接编译（已验证，无 CMake）
+### 8.3 历史 MSVC 直接编译记录（当前请使用 8.2 CMake）
 
 本机已用现有 MSVC `cl.exe`（经 `vcvars64.bat` 初始化）完成功能验证：
 
@@ -143,7 +143,7 @@ build-msvc\hy3_algotrace.exe export-prompts data prompts\hy3-evaluator-v1.md bui
 ```
 
 > `build-msvc/` 由 `build-msvc/build.bat` 生成，已加入 `.gitignore`，不纳入版本管理。
-> 注意：本会话沙箱中 Windows SDK(ucrt) 缺失且 `cmd.exe`/WSL 被安全策略禁用，故上述本地编译步骤**未能在本会话内执行**；MSVC 验证待规划方在具备 SDK 的环境运行 `build-msvc/build.bat`，或通过 GitHub CI（commit/push 后）验证。
+> 这些是历史构建方式，不包含当前全部模块。M1 的本机工具链已实际验证；未修改旧实验或重跑付费调用。
 
 ### 8.4 CLI 用法与退出码
 
@@ -195,6 +195,8 @@ Linux 或单配置生成器的可执行文件通常位于 `build/hy3_algotrace_d
 `http://127.0.0.1:8080/`。服务默认且仅允许 loopback，浏览器不会接触 API Key；每次
 提交最多调用一次且不自动重试。交互 Prompt、请求/响应契约、长度限制、审计目录和安全
 边界见 `docs/interactive-diagnosis-demo.md`。
+
+零费用网页验收请使用该文档的 `interactive_server_tests --serve-fake` 流程；顶部明确标注 Mock/Fake，不能将预设结果当作模型质量证据。
 
 > Demo 当前只支持贪心题，C++ 代码只做模型静态语义审查，既不编译运行，也不代表形式化
 > 证明。一次真实 CF 160A smoke 的传输与严格解析成功，但模型漏判了 `>=` 的严格边界错误；

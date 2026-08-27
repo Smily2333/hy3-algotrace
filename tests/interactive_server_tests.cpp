@@ -1,169 +1,102 @@
 #include "hy3_algotrace/interactive_server.hpp"
-#include "hy3_algotrace/model_client.hpp"
-
-#include <filesystem>
+#include "interactive_v2_fixture.hpp"
 #include <iostream>
-#include <string>
-#include <vector>
-
-#include <nlohmann/json.hpp>
 
 namespace {
-
-namespace fs = std::filesystem;
-using json = nlohmann::json;
 using namespace hy3;
+using namespace interactive_fixture;
+int passed=0,failed=0;
+#define CHECK(c,m) do { if(c) ++passed; else { ++failed; std::cerr<<"FAIL "<<__LINE__<<": "<<m<<'\n'; } } while(0)
 
-int gPassed = 0;
-int gFailed = 0;
-int gSequence = 0;
-
-#define CHECK(condition, message)                                             \
-    do {                                                                       \
-        if (condition) {                                                       \
-            ++gPassed;                                                         \
-        } else {                                                               \
-            ++gFailed;                                                         \
-            std::cerr << "FAIL [" << __LINE__ << "]: " << (message) << '\n'; \
-        }                                                                      \
-    } while (0)
-
-fs::path tempRoot(const std::string& tag) {
-    return fs::temp_directory_path() /
-           ("hy3_interactive_http_" + tag + "_" +
-            std::to_string(++gSequence));
-}
-
-void cleanup(const fs::path& path) {
-    std::error_code ec;
-    fs::remove_all(path, ec);
-}
-
-std::vector<std::uint8_t> bytes(const std::string& value) {
-    return std::vector<std::uint8_t>(value.begin(), value.end());
-}
-
-ModelCallResult successfulCall(const std::string& requestId) {
-    const json diagnosis{
-        {"schema_version", "interactive-diagnosis-v1"},
-        {"request_id", requestId},
-        {"status", "incorrect"},
-        {"primary_category", "implementation_mismatch"},
-        {"findings",
-         json::array({{{"stage", "implementation_consistency"},
-                       {"category", "implementation_mismatch"},
-                       {"evidence", "思路要求严格大于，但代码使用 >=。"},
-                       {"input_excerpt", "if (sum >= rest)"},
-                       {"suggestion", "将停止条件改为严格大于。"}}})},
-        {"assessments",
-         {{"complexity", {{"status", "ok"}, {"summary", "排序复杂度正确。"}}},
-          {"boundary_conditions",
-           {{"status", "issue"}, {"summary", "相等边界处理错误。"}}},
-          {"implementation_consistency",
-           {{"status", "issue"}, {"summary", "代码条件与思路不一致。"}}}}},
-        {"short_suggestion", "修正比较条件并复查相等边界。"},
-    };
-    ModelCallResult result;
-    result.status = ModelCallStatus::Succeeded;
-    result.raw_response = bytes(diagnosis.dump());
-    result.provider = "synthetic-test";
-    result.model_name = "fake-hy3";
-    result.model_version = "test-v1";
-    result.http_status = 200;
-    result.request_id = "provider-request-1";
-    result.token_usage = ModelTokenUsage{100, 50, 150};
-    result.started_at = "2026-08-24T00:00:00Z";
-    result.finished_at = "2026-08-24T00:00:01Z";
-    result.duration_ms = 12;
-    return result;
-}
-
-json validRequest(const std::string& requestId) {
-    return json{
-        {"request_id", requestId},
-        {"algorithm_type", "greedy"},
-        {"problem",
-         {{"title", "Twins"},
-          {"statement", "选取最少硬币，使所选和严格大于剩余和。"},
-          {"input_format", "n 和 n 个硬币面值"},
-          {"output_format", "最少硬币数"},
-          {"constraints", "1 <= n <= 100"}}},
-        {"reasoning", "降序取硬币，直到所选和严格大于剩余和。"},
-        {"cpp_solution", "if (sum >= rest) break;"},
-        {"test_cases", json::array()},
-        {"user_notes", nullptr},
-    };
-}
-
-} // namespace
-
-int main() {
-    const std::string prompt =
-        "interactive greedy diagnosis\n{{interactive_request_json}}\n";
-
-    {
-        const fs::path root = tempRoot("success");
-        cleanup(root);
-        FakeModelClient client(successfulCall("request-http-1"));
-        InteractiveHttpApplication app(client, prompt, root.string(), true);
-
-        const InteractiveHttpReply health = app.health();
-        const json healthJson = json::parse(health.body);
-        CHECK(health.status == 200 && healthJson.at("ok") == true,
-              "health endpoint is available without a model call");
-        CHECK(healthJson.at("tokenhub_status") == "configured" &&
-                  client.callCount() == 0,
-              "health reports configuration without probing TokenHub");
-
-        const InteractiveHttpReply media = app.diagnose("text/plain", "{}");
-        CHECK(media.status == 415 && client.callCount() == 0,
-              "non-JSON content type is rejected before invocation");
-        const InteractiveHttpReply malformed =
-            app.diagnose("application/json", "{");
-        CHECK(malformed.status == 400 && client.callCount() == 0,
-              "malformed JSON is rejected before invocation");
-
-        const std::string requestBody = validRequest("request-http-1").dump();
-        const InteractiveHttpReply diagnosed =
-            app.diagnose("application/json; charset=utf-8", requestBody);
-        const json browser = json::parse(diagnosed.body);
-        CHECK(diagnosed.status == 200 && browser.at("ok") == true,
-              "valid request returns a successful browser response");
-        CHECK(browser.at("diagnosis").at("primary_category") ==
-                  "implementation_mismatch",
-              "strict diagnosis is exposed to the UI");
-        CHECK(client.callCount() == 1,
-              "one accepted HTTP request invokes the model once");
-
-        const InteractiveHttpReply duplicate =
-            app.diagnose("application/json", requestBody);
-        CHECK(duplicate.status == 409 && client.callCount() == 1,
-              "duplicate request id is latched without another model call");
-        cleanup(root);
+// Only the explicitly invoked test harness uses this fixed script. No analysis,
+// source-pattern matching, network client or API credential is involved.
+class ScriptedBrowserFake final : public IModelClient {
+    std::size_t sequence_=0;
+public:
+    ModelCallResult invoke(const ModelRequest& request) noexcept override {
+        try {
+            const auto scene=sequence_++ % 6;
+            std::cout<<"Fake fixture invocation "<<sequence_<<std::endl;
+            auto d=diagnosis(request.trace_id,scene==1?"correct":scene==2?"undetermined":"incorrect");
+            if(scene==5) d["summary"]="<img src=x onerror=alert('unsafe')> Fake text must not become HTML.";
+            auto call=success(d);
+            if(scene==3) call.raw_response={'{'};
+            if(scene==4) {call.status=ModelCallStatus::Timeout;call.raw_response.clear();call.http_status.reset();}
+            FakeModelClient fake(call);
+            return fake.invoke(request);
+        } catch(...) {
+            ModelCallResult call;call.status=ModelCallStatus::ProviderError;return call;
+        }
     }
-
-    {
-        const fs::path root = tempRoot("auth");
-        cleanup(root);
-        ModelCallResult failure;
-        failure.status = ModelCallStatus::AuthenticationError;
-        failure.provider = "synthetic-test";
-        failure.model_name = "fake-hy3";
-        failure.message = "Authorization: Bearer synthetic-secret";
-        failure.error_code = "provider-secret-detail";
-        FakeModelClient client(failure);
-        InteractiveHttpApplication app(client, prompt, root.string(), true);
-        const InteractiveHttpReply reply = app.diagnose(
-            "application/json", validRequest("request-http-auth").dump());
-        CHECK(reply.status == 502 && client.callCount() == 1,
-              "provider authentication failure stays separate from diagnosis");
-        CHECK(reply.body.find("synthetic-secret") == std::string::npos &&
-                  reply.body.find("Bearer") == std::string::npos,
-              "browser error never includes unsafe provider detail");
-        cleanup(root);
-    }
-
-    std::cout << "interactive_server_tests: " << gPassed << " passed, "
-              << gFailed << " failed\n";
-    return gFailed == 0 ? 0 : 1;
+};
+}
+int main(int argc,char** argv) {
+    try {
+        if(argc==5 && std::string(argv[1])=="--serve-fake") {
+            const fs::path repo=argv[2];
+            const auto port=std::stoul(argv[4]);
+            if(port==0 || port>65535) return 2;
+            ScriptedBrowserFake fake;
+            InteractiveServerConfig config;config.port=static_cast<std::uint16_t>(port);
+            config.web_root=repo/"web";config.artifacts_root=argv[3];
+            InteractiveHttpApplication app(fake,readText(repo/"prompts/hy3-interactive-diagnosis-v2.md"),
+                                           config.artifacts_root.string(),false,true);
+            std::cout<<"MOCK / FAKE ONLY - no model, credentials, or code execution\n"
+                     <<"Scenes: incorrect / correct / undetermined / invalid JSON / timeout / HTML-as-text\n"
+                     <<"URL: http://127.0.0.1:"<<port<<"/\n"<<std::flush;
+            std::string error;
+            if(!serveInteractiveDemo(config,app,error)){std::cerr<<error<<'\n';return 1;}
+            return 0;
+        }
+        if(argc!=2){std::cerr<<"repo root required, or --serve-fake <repo> <local-artifacts-root> <port>\n";return 2;}
+        const auto prompt=readText(fs::path(argv[1])/"prompts/hy3-interactive-diagnosis-v2.md");
+        OwnedRoot root;FakeModelClient fake(success(diagnosis("http")));
+        InteractiveHttpApplication app(fake,prompt,root.path.string(),false,true);
+        const auto health=json::parse(app.health().body);
+        CHECK(health["ok"]==true && health["model_mode"]=="mock_fixture" && fake.callCount()==0,"health honest/no call");
+        CHECK(health["prompt_template_id"]==kInteractiveTemplateId &&
+              health["request_schema_version"]==kInteractiveRequestVersion,"health v2 identity");
+        CHECK(app.diagnose("text/plain","{}").status==415 && fake.callCount()==0,"content type");
+        CHECK(app.diagnose("application/json","{").status==400 && fake.callCount()==0,"invalid JSON before call");
+        CHECK(app.diagnose("application/json",std::string(256*1024+1,'x')).status==413 &&
+              fake.callCount()==0,"body limit before call");
+        for(const char* field:{"cpp_solution","problem_statement"}) {
+            for(const json& value:std::vector<json>{nullptr,""," \n\t",json::array(),7}) {
+                auto invalid=request("http");invalid[field]=value;
+                CHECK(app.diagnose("application/json",invalid.dump()).status==400 && fake.callCount()==0,
+                      "invalid input before model");
+            }
+            auto invalid=request("http");invalid.erase(field);
+            CHECK(app.diagnose("application/json",invalid.dump()).status==400 && fake.callCount()==0,"missing before call");
+            invalid=request("http");invalid[field]=std::string(120001,'x');
+            CHECK(app.diagnose("application/json",invalid.dump()).status==400 && fake.callCount()==0,"field limit before call");
+        }
+        const auto reply=app.diagnose("application/json; charset=utf-8",request("http").dump());
+        const auto body=json::parse(reply.body);
+        CHECK(reply.status==200 && body["ok"]==true && fake.callCount()==1,"minimal HTTP Fake chain");
+        CHECK(body["diagnosis"]==diagnosis("http"),"all new fields through browser JSON");
+        CHECK(!body.contains("raw_response") && body["metadata"]["response_schema_version"]==kInteractiveResponseVersion,"safe wrapper v2");
+        CHECK(app.diagnose("application/json",request("http").dump()).status==409 && fake.callCount()==1,"duplicate single call");
+        for(const auto status:{ModelCallStatus::AuthenticationError,ModelCallStatus::Timeout,
+                               ModelCallStatus::RateLimited,ModelCallStatus::TransportError}) {
+            OwnedRoot errors;ModelCallResult call;call.status=status;
+            call.message="Authorization: Bearer synthetic-secret";FakeModelClient f(call);
+            InteractiveHttpApplication failing(f,prompt,errors.path.string(),true);
+            const auto error=failing.diagnose("application/json",request("failure").dump());
+            const auto e=json::parse(error.body);
+            CHECK(error.status>=400 && !e["ok"].get<bool>() && e["diagnosis"].is_null() && f.callCount()==1,"failure never success");
+            CHECK(error.body.find("synthetic-secret")==std::string::npos &&
+                  error.body.find("Bearer")==std::string::npos,"secret detail not returned");
+        }
+        OwnedRoot invalidRoot;auto call=success(diagnosis("invalid"));call.raw_response={'{'};
+        FakeModelClient invalid(call);InteractiveHttpApplication invalidApp(invalid,prompt,invalidRoot.path.string(),false);
+        const auto error=json::parse(invalidApp.diagnose("application/json",request("invalid").dump()).body);
+        CHECK(error["parse_status"]=="invalid_json" && invalid.callCount()==1,"invalid JSON unchanged/no retry");
+        InteractiveHttpApplication v1(fake,"# hy3-interactive-diagnosis-v1\n{{interactive_request_json}}",root.path.string(),false);
+        CHECK(json::parse(v1.health().body)["ok"]==false,"v1 template not healthy");
+        InteractiveServerConfig config;config.host="0.0.0.0";std::string safe;
+        CHECK(!serveInteractiveDemo(config,app,safe),"public bind prohibited before socket");
+    } catch(const std::exception& e){++failed;std::cerr<<e.what()<<'\n';}
+    std::cout<<"interactive_server_tests: "<<passed<<" passed, "<<failed<<" failed\n";
+    return failed==0?0:1;
 }

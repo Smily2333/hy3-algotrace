@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iterator>
+#include <map>
 #include <set>
 #include <sstream>
 #include <ctime>
@@ -30,12 +31,29 @@ namespace fs = std::filesystem;
 
 const std::set<std::string> kCategories{
     "problem_misunderstanding", "wrong_greedy_choice",
-    "missing_greedy_proof", "invalid_greedy_proof", "complexity_error",
-    "boundary_omission", "implementation_mismatch"};
-const std::set<std::string> kStages{
-    "problem_understanding", "greedy_choice", "greedy_proof", "complexity",
-    "boundary", "implementation_consistency"};
-const std::set<std::string> kAssessmentStatuses{"ok", "issue", "not_assessed"};
+    "invalid_greedy_proof", "complexity_error", "boundary_omission",
+    "implementation_mismatch", "code_logic_error"};
+
+// Unicode White_Space (+ BOM) detection is separate from normalization: never
+// trim source code merely to determine whether it contains meaningful input.
+bool blank(const std::string& value) {
+    for (std::size_t i = 0; i < value.size();) {
+        const unsigned char lead = static_cast<unsigned char>(value[i++]);
+        std::uint32_t cp = lead;
+        int continuation = 0;
+        if (lead >= 0xF0) { cp = lead & 7U; continuation = 3; }
+        else if (lead >= 0xE0) { cp = lead & 15U; continuation = 2; }
+        else if (lead >= 0xC0) { cp = lead & 31U; continuation = 1; }
+        while (continuation-- > 0 && i < value.size()) {
+            cp = (cp << 6U) | (static_cast<unsigned char>(value[i++]) & 63U);
+        }
+        if (!((cp >= 9 && cp <= 13) || cp == 32 || cp == 0x85 ||
+              cp == 0xA0 || cp == 0x1680 || (cp >= 0x2000 && cp <= 0x200A) ||
+              cp == 0x2028 || cp == 0x2029 || cp == 0x202F || cp == 0x205F ||
+              cp == 0x3000 || cp == 0xFEFF)) return false;
+    }
+    return true;
+}
 
 std::string utcNow() {
     const std::time_t value = std::time(nullptr);
@@ -91,8 +109,8 @@ bool normalizeField(const json& value, std::size_t limit, bool required,
         return false;
     }
     output.assign(normalized.begin(), normalized.end());
-    if (required && output.empty()) {
-        errors.push_back(path + " must not be empty");
+    if (required && blank(output)) {
+        errors.push_back(path + " must not be blank");
         return false;
     }
     return true;
@@ -119,9 +137,9 @@ void optionalField(const json& input, const char* key, std::size_t limit,
     }
     std::string text;
     if (normalizeField(input.at(key), limit, false, key, text, errors) &&
-        !text.empty()) {
+        !blank(text)) {
         output = std::move(text);
-    } else if (text.empty()) {
+    } else {
         output.reset();
     }
 }
@@ -133,16 +151,12 @@ json requestJson(const InteractiveDiagnosisRequest& request) {
                          {"expected_output", test.expected_output}});
     }
     return json{
+        {"schema_version", request.schema_version},
         {"request_id", request.request_id},
-        {"algorithm_type", "greedy"},
-        {"problem",
-         {{"title", request.problem.title},
-          {"statement", request.problem.statement},
-          {"input_format", request.problem.input_format},
-          {"output_format", request.problem.output_format},
-          {"constraints", request.problem.constraints}}},
-        {"reasoning", request.reasoning},
-        {"cpp_solution", request.cpp_solution ? json(*request.cpp_solution) : json(nullptr)},
+        {"algorithm_type", request.algorithm_type},
+        {"problem_statement", request.problem_statement},
+        {"reasoning", request.reasoning ? json(*request.reasoning) : json(nullptr)},
+        {"cpp_solution", request.cpp_solution},
         {"test_cases", std::move(tests)},
         {"user_notes", request.user_notes ? json(*request.user_notes) : json(nullptr)},
     };
@@ -229,7 +243,11 @@ json sidecar(const InteractiveDiagnosisResult& result,
              const std::string& startedAt,
              const std::string& finishedAt) {
     json value{
-        {"schema_version", "interactive-model-call-0.1.0"},
+        {"schema_version", "interactive-model-call-v2"},
+        {"request_schema_version", kInteractiveRequestVersion},
+        {"response_schema_version", kInteractiveResponseVersion},
+        {"source_code_sha256", result.metadata.source_code_sha256},
+        {"code_location_basis", "lf_1_based_inclusive"},
         {"request_id", result.request_id},
         {"outcome", result.outcome},
         {"parse_status", result.parse_status},
@@ -294,135 +312,218 @@ bool replaceJson(const fs::path& path, const json& value) {
     return true;
 }
 
-bool stageMatchesCategory(const std::string& stage, const std::string& category) {
-    if (stage == "problem_understanding") return category == "problem_misunderstanding";
-    if (stage == "greedy_choice") return category == "wrong_greedy_choice";
-    if (stage == "greedy_proof") {
-        return category == "missing_greedy_proof" || category == "invalid_greedy_proof";
-    }
-    if (stage == "complexity") return category == "complexity_error";
-    if (stage == "boundary") return category == "boundary_omission";
-    if (stage == "implementation_consistency") {
-        return category == "implementation_mismatch";
-    }
-    return false;
+bool boundedString(const json& value, std::size_t limit, bool allowBlank = false) {
+    if (!value.is_string()) return false;
+    const auto& text = value.get_ref<const std::string&>();
+    return text.size() <= limit && (allowBlank || !blank(text)) &&
+           text.find('\0') == std::string::npos && text.find('\r') == std::string::npos;
 }
 
-bool nonemptyBoundedString(const json& value, std::size_t limit) {
-    return value.is_string() && !value.get_ref<const std::string&>().empty() &&
-           value.get_ref<const std::string&>().size() <= limit;
-}
-
-std::string searchableInput(const InteractiveDiagnosisRequest& request) {
-    std::ostringstream value;
-    value << request.problem.title << '\n' << request.problem.statement << '\n'
-          << request.problem.input_format << '\n' << request.problem.output_format
-          << '\n' << request.problem.constraints << '\n' << request.reasoning;
-    if (request.cpp_solution) value << '\n' << *request.cpp_solution;
-    for (const auto& test : request.test_cases) {
-        value << '\n' << test.input << '\n' << test.expected_output;
+std::vector<std::string> sourceLines(const std::string& source) {
+    // The terminal LF is a separator, not an extra source line. Interior and
+    // leading empty lines are real lines and must be included in snippets.
+    std::vector<std::string> lines;
+    std::size_t pos = 0;
+    while (pos < source.size()) {
+        const auto next = source.find('\n', pos);
+        lines.push_back(source.substr(pos, next == std::string::npos
+                                              ? std::string::npos : next - pos));
+        if (next == std::string::npos) break;
+        pos = next + 1;
     }
-    if (request.user_notes) value << '\n' << *request.user_notes;
-    return value.str();
+    return lines;
 }
 
-bool validateAssessment(const json& value) {
-    return exactKeys(value, {"status", "summary"}) &&
-           value.at("status").is_string() &&
-           kAssessmentStatuses.count(value.at("status").get<std::string>()) != 0 &&
-           nonemptyBoundedString(value.at("summary"), 4000);
-}
-
-std::string validateDiagnosis(const json& diagnosis,
-                              const InteractiveDiagnosisRequest& request) {
-    const std::set<std::string> topKeys{
-        "schema_version", "request_id", "status", "primary_category",
-        "findings", "assessments", "short_suggestion"};
-    if (!exactKeys(diagnosis, topKeys)) return "top-level schema is invalid";
-    if (diagnosis.at("schema_version") != "interactive-diagnosis-v1" ||
-        diagnosis.at("request_id") != request.request_id ||
-        !diagnosis.at("status").is_string()) {
-        return "identity fields are invalid";
+bool validLocation(const json& location, const std::vector<std::string>& lines) {
+    if (!exactKeys(location, {"start_line", "end_line", "snippet"}) ||
+        !location.at("start_line").is_number_integer() ||
+        !location.at("end_line").is_number_integer() ||
+        !boundedString(location.at("snippet"), interactive_limits::cpp_solution)) {
+        return false;
     }
-    const std::string status = diagnosis.at("status").get<std::string>();
-    if (status != "correct" && status != "incorrect" && status != "undetermined") {
+    // Check JSON values before converting (including huge unsigned integers).
+    if (location.at("start_line") < 1 ||
+        location.at("end_line") < location.at("start_line") ||
+        location.at("end_line") > lines.size()) return false;
+    const auto first = location.at("start_line").get<std::size_t>();
+    const auto last = location.at("end_line").get<std::size_t>();
+    std::string expected;
+    for (std::size_t i = first; i <= last; ++i) {
+        if (i != first) expected += '\n';
+        expected += lines[i - 1];
+    }
+    // Exact whole-line match at the declared range, not global substring match.
+    return location.at("snippet") == expected;
+}
+
+bool validId(const json& value) {
+    if (!boundedString(value, 64)) return false;
+    const auto& id = value.get_ref<const std::string&>();
+    return std::all_of(id.begin(), id.end(), [](unsigned char ch) {
+        return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+               (ch >= '0' && ch <= '9') || ch == '_' || ch == '-';
+    });
+}
+
+std::string validateDiagnosis(const json& d, const InteractiveDiagnosisRequest& request) {
+    if (!exactKeys(d, {"schema_version", "request_id", "status", "summary",
+                      "limitations", "algorithm_overview", "steps", "first_error",
+                      "primary_category", "findings", "counterexample",
+                      "reference_solution"})) return "top-level schema is invalid";
+    if (d.at("schema_version") != kInteractiveResponseVersion ||
+        d.at("request_id") != request.request_id) return "identity fields are invalid";
+    if (!d.at("status").is_string() || !boundedString(d.at("summary"), 4000))
+        return "status/summary schema is invalid";
+    const std::string status = d.at("status").get<std::string>();
+    if (status != "correct" && status != "incorrect" && status != "undetermined")
         return "status is invalid";
+    if (!d.at("limitations").is_array() || d.at("limitations").empty() ||
+        d.at("limitations").size() > 10) return "limitations schema is invalid";
+    for (const auto& item : d.at("limitations"))
+        if (!boundedString(item, 2000)) return "limitation schema is invalid";
+    const auto& overview = d.at("algorithm_overview");
+    if (!exactKeys(overview, {"origin", "summary"}) ||
+        overview.at("origin") != "model_code_interpretation" ||
+        !boundedString(overview.at("summary"), 4000)) return "overview schema is invalid";
+
+    const auto lines = sourceLines(request.cpp_solution);
+    const auto& steps = d.at("steps");
+    if (!steps.is_array() || steps.size() > 30 ||
+        (status != "undetermined" && steps.empty())) return "steps schema is invalid";
+    std::map<std::string, std::size_t> stepIndexes;
+    for (std::size_t i = 0; i < steps.size(); ++i) {
+        const auto& step = steps.at(i);
+        if (!exactKeys(step, {"id", "summary", "code_location"}) ||
+            !validId(step.at("id")) || !boundedString(step.at("summary"), 2000))
+            return "step schema is invalid";
+        if (!stepIndexes.emplace(step.at("id").get<std::string>(), i).second)
+            return "step IDs must be unique";
+        if (!validLocation(step.at("code_location"), lines))
+            return "step source location is invalid";
     }
-    if (!diagnosis.at("findings").is_array() ||
-        diagnosis.at("findings").size() > 50) {
-        return "findings is invalid";
-    }
+    const auto& first = d.at("first_error");
+    if (!exactKeys(first, {"step_id", "explanation"}) ||
+        (!first.at("step_id").is_null() && !validId(first.at("step_id"))) ||
+        !boundedString(first.at("explanation"), 4000)) return "first error schema is invalid";
 
     std::optional<std::string> primary;
-    if (diagnosis.at("primary_category").is_string()) {
-        primary = diagnosis.at("primary_category").get<std::string>();
+    if (d.at("primary_category").is_string()) {
+        primary = d.at("primary_category").get<std::string>();
         if (kCategories.count(*primary) == 0) return "primary category is invalid";
-    } else if (!diagnosis.at("primary_category").is_null()) {
-        return "primary category type is invalid";
-    }
-
+    } else if (!d.at("primary_category").is_null()) return "primary category type is invalid";
+    const auto& findings = d.at("findings");
+    if (!findings.is_array() || findings.size() > 20) return "findings schema is invalid";
     bool primarySeen = false;
-    bool anyIssue = false;
-    const std::string haystack = searchableInput(request);
-    for (const json& finding : diagnosis.at("findings")) {
-        if (!exactKeys(finding, {"stage", "category", "evidence",
-                                 "input_excerpt", "suggestion"}) ||
-            !finding.at("stage").is_string() ||
-            !finding.at("category").is_string() ||
-            !nonemptyBoundedString(finding.at("evidence"), 8000) ||
-            !nonemptyBoundedString(finding.at("input_excerpt"), 2000) ||
-            !nonemptyBoundedString(finding.at("suggestion"), 4000)) {
+    bool unlocated = false;
+    std::size_t earliest = steps.size();
+    std::set<std::string> findingIds;
+    for (const auto& f : findings) {
+        if (!exactKeys(f, {"id", "step_id", "category", "reason", "input_evidence",
+                          "code_location", "location_reason", "suggestion"}) ||
+            !validId(f.at("id")) || !boundedString(f.at("category"), 64) ||
+            !boundedString(f.at("reason"), 8000) ||
+            !boundedString(f.at("suggestion"), 8000))
             return "finding schema is invalid";
-        }
-        const std::string stage = finding.at("stage").get<std::string>();
-        const std::string category = finding.at("category").get<std::string>();
-        if (kStages.count(stage) == 0 || kCategories.count(category) == 0 ||
-            !stageMatchesCategory(stage, category)) {
-            return "finding taxonomy is invalid";
-        }
-        if ((!request.cpp_solution &&
-             (stage == "implementation_consistency" ||
-              category == "implementation_mismatch"))) {
-            return "implementation finding requires source code";
-        }
-        const std::string excerpt = finding.at("input_excerpt").get<std::string>();
-        if (haystack.find(excerpt) == std::string::npos) {
-            return "finding excerpt is not present in user input";
-        }
+        if (!findingIds.insert(f.at("id").get<std::string>()).second)
+            return "finding IDs must be unique";
+        const std::string category = f.at("category").get<std::string>();
+        if (kCategories.count(category) == 0) return "finding category is invalid";
+        const bool reasoningOnly = category == "implementation_mismatch" ||
+                                   category == "invalid_greedy_proof";
+        if (reasoningOnly && !request.reasoning)
+            return "finding requires explicit user reasoning";
         primarySeen = primarySeen || (primary && category == *primary);
-        anyIssue = true;
-    }
-
-    const json& assessments = diagnosis.at("assessments");
-    if (!exactKeys(assessments, {"complexity", "boundary_conditions",
-                                 "implementation_consistency"}) ||
-        !validateAssessment(assessments.at("complexity")) ||
-        !validateAssessment(assessments.at("boundary_conditions")) ||
-        !validateAssessment(assessments.at("implementation_consistency")) ||
-        !nonemptyBoundedString(diagnosis.at("short_suggestion"), 4000)) {
-        return "assessment schema is invalid";
-    }
-    if (!request.cpp_solution &&
-        assessments.at("implementation_consistency").at("status") !=
-            "not_assessed") {
-        return "implementation assessment requires source code";
-    }
-
-    if (status == "incorrect") {
-        if (!primary || !anyIssue || !primarySeen) {
-            return "incorrect diagnosis semantics are invalid";
+        const auto& location = f.at("code_location");
+        if (location.is_null()) {
+            if (!f.at("step_id").is_null() || !boundedString(f.at("location_reason"), 2000))
+                return "unlocated finding requires a reason and null step";
+        } else if (!validLocation(location, lines) || !f.at("location_reason").is_null()) {
+            return "finding source location is invalid";
         }
-    } else if (primary || anyIssue) {
+        if (f.at("step_id").is_null()) {
+            unlocated = true;
+            if (!location.is_null()) return "located finding requires a step";
+        } else {
+            if (!validId(f.at("step_id"))) return "step reference type is invalid";
+            const auto it = stepIndexes.find(f.at("step_id").get<std::string>());
+            if (it == stepIndexes.end()) return "finding step reference does not exist";
+            const auto& scope = steps.at(it->second).at("code_location");
+            if (location.at("start_line") < scope.at("start_line") ||
+                location.at("end_line") > scope.at("end_line"))
+                return "finding location is outside its referenced step";
+            earliest = std::min(earliest, it->second);
+        }
+        const auto& evidence = f.at("input_evidence");
+        if (!exactKeys(evidence, {"source", "excerpt"}) ||
+            !boundedString(evidence.at("source"), 64) ||
+            !boundedString(evidence.at("excerpt"), 8000))
+            return "input evidence schema is invalid";
+        const auto evidenceSource = evidence.at("source").get<std::string>();
+        const auto excerpt = evidence.at("excerpt").get<std::string>();
+        std::string input;
+        if (evidenceSource == "problem_statement") input = request.problem_statement;
+        else if (evidenceSource == "reasoning" && request.reasoning) input = *request.reasoning;
+        else if (evidenceSource == "user_notes" && request.user_notes) input = *request.user_notes;
+        else if (evidenceSource == "cpp_solution" && !location.is_null())
+            input = location.at("snippet").get<std::string>();
+        else return "evidence source is unavailable";
+        if (input.find(excerpt) == std::string::npos)
+            return "evidence excerpt does not match its declared input";
+        if (reasoningOnly && evidenceSource != "reasoning")
+            return "reasoning finding must quote actual user reasoning";
+    }
+    if (status == "incorrect") {
+        if (!primary || findings.empty() || !primarySeen)
+            return "incorrect diagnosis semantics are invalid";
+        if (!first.at("step_id").is_null()) {
+            const auto it = stepIndexes.find(first.at("step_id").get<std::string>());
+            if (unlocated || it == stepIndexes.end() || it->second != earliest)
+                return "first error must reference the first located finding in logical step order";
+        }
+    } else if (primary || !findings.empty() || !first.at("step_id").is_null()) {
         return "correct/undetermined diagnosis semantics are invalid";
     }
-    if (status == "correct") {
-        for (const char* key : {"complexity", "boundary_conditions",
-                                "implementation_consistency"}) {
-            if (assessments.at(key).at("status") == "issue") {
-                return "correct diagnosis cannot contain an issue assessment";
-            }
-        }
-    }
+
+    const auto& counter = d.at("counterexample");
+    if (!exactKeys(counter, {"availability", "input", "expected_output",
+                             "predicted_candidate_output", "candidate_output_basis",
+                             "explanation", "provenance"}) ||
+        counter.at("provenance") != "model_proposed_not_executed" ||
+        !boundedString(counter.at("explanation"), 8000))
+        return "counterexample schema is invalid";
+    if (counter.at("availability") == "provided") {
+        if (status != "incorrect" ||
+            !boundedString(counter.at("input"), 20000, true) ||
+            !boundedString(counter.at("expected_output"), 20000, true))
+            return "counterexample contradicts diagnosis";
+        if (counter.at("predicted_candidate_output").is_null()) {
+            if (!counter.at("candidate_output_basis").is_null())
+                return "absent candidate output must have null basis";
+        } else if (!boundedString(counter.at("predicted_candidate_output"), 20000, true) ||
+                   counter.at("candidate_output_basis") != "static_inference")
+            return "candidate output must be marked as static inference";
+    } else if (counter.at("availability") == "unavailable") {
+        for (const char* key : {"input", "expected_output", "predicted_candidate_output",
+                                "candidate_output_basis"})
+            if (!counter.at(key).is_null()) return "unavailable counterexample must be null";
+    } else return "counterexample availability is invalid";
+
+    const auto& solution = d.at("reference_solution");
+    if (!exactKeys(solution, {"availability", "strategy", "correctness",
+                              "complexity", "boundaries", "unavailable_reason", "provenance"}) ||
+        solution.at("provenance") != "model_generated_unverified")
+        return "reference solution schema is invalid";
+    if (solution.at("availability") == "provided") {
+        if (status == "undetermined" || !solution.at("unavailable_reason").is_null())
+            return "reference solution contradicts uncertainty";
+        for (const char* key : {"strategy", "correctness", "complexity", "boundaries"})
+            if (!boundedString(solution.at(key), 16000)) return "complete solution schema is invalid";
+    } else if (solution.at("availability") == "unavailable") {
+        if (!boundedString(solution.at("unavailable_reason"), 4000))
+            return "unavailable solution requires explanation";
+        for (const char* key : {"strategy", "correctness", "complexity", "boundaries"})
+            if (!solution.at(key).is_null()) return "unavailable solution must not invent content";
+    } else return "reference solution availability is invalid";
     return {};
 }
 
@@ -444,17 +545,41 @@ std::string errorKind(const InteractiveDiagnosisResult& result) {
 
 } // namespace
 
+json interactiveDiagnosisRequestJson(const InteractiveDiagnosisRequest& request) {
+    return requestJson(request);
+}
+
+bool validInteractivePromptTemplate(const std::string& text) {
+    std::vector<std::uint8_t> normalized;
+    std::string error;
+    if (!normalizeUtf8(std::vector<std::uint8_t>(text.begin(), text.end()), normalized, error))
+        return false;
+    const std::string value(normalized.begin(), normalized.end());
+    const std::string header = std::string("# ") + kInteractiveTemplateId + "\n";
+    const std::string marker = "{{interactive_request_json}}";
+    const auto pos = value.find(marker);
+    return value.compare(0, header.size(), header) == 0 &&
+           pos != std::string::npos &&
+           value.find(marker, pos + marker.size()) == std::string::npos;
+}
+
 InteractiveRequestValidation parseInteractiveDiagnosisRequest(
     const json& input, InteractiveDiagnosisRequest& request) noexcept {
     InteractiveRequestValidation result;
     result.error_code = interactive_errc::E_REQUEST_SCHEMA;
     try {
+        request = InteractiveDiagnosisRequest{};
         if (!allowedAndRequiredKeys(
                 input,
-                {"request_id", "algorithm_type", "problem", "reasoning",
-                 "cpp_solution", "test_cases", "user_notes"},
-                {"request_id", "algorithm_type", "problem", "reasoning"})) {
-            result.errors.push_back("request keys do not match the interactive contract");
+                {"schema_version", "request_id", "algorithm_type", "problem_statement",
+                 "reasoning", "cpp_solution", "test_cases", "user_notes"},
+                {"schema_version", "request_id", "algorithm_type", "problem_statement",
+                 "cpp_solution"})) {
+            result.errors.push_back("request keys must match interactive-request-v2; v1 is unsupported");
+            return result;
+        }
+        if (input.at("schema_version") != kInteractiveRequestVersion) {
+            result.errors.push_back("schema_version must be interactive-request-v2");
             return result;
         }
         normalizeField(input.at("request_id"), interactive_limits::request_id,
@@ -467,31 +592,12 @@ InteractiveRequestValidation parseInteractiveDiagnosisRequest(
         if (request.algorithm_type != "greedy") {
             result.errors.push_back("algorithm_type must be greedy");
         }
-
-        const json& problem = input.at("problem");
-        if (!exactKeys(problem, {"title", "statement", "input_format",
-                                 "output_format", "constraints"})) {
-            result.errors.push_back("problem keys do not match the interactive contract");
-        } else {
-            normalizeField(problem.at("title"), interactive_limits::title, true,
-                           "problem.title", request.problem.title, result.errors);
-            normalizeField(problem.at("statement"), interactive_limits::statement,
-                           true, "problem.statement", request.problem.statement,
-                           result.errors);
-            normalizeField(problem.at("input_format"), interactive_limits::input_format,
-                           true, "problem.input_format", request.problem.input_format,
-                           result.errors);
-            normalizeField(problem.at("output_format"), interactive_limits::output_format,
-                           true, "problem.output_format", request.problem.output_format,
-                           result.errors);
-            normalizeField(problem.at("constraints"), interactive_limits::constraints,
-                           true, "problem.constraints", request.problem.constraints,
-                           result.errors);
-        }
-        normalizeField(input.at("reasoning"), interactive_limits::reasoning,
-                       true, "reasoning", request.reasoning, result.errors);
-        optionalField(input, "cpp_solution", interactive_limits::cpp_solution,
-                      request.cpp_solution, result.errors);
+        normalizeField(input.at("problem_statement"), interactive_limits::statement,
+                       true, "problem_statement", request.problem_statement, result.errors);
+        normalizeField(input.at("cpp_solution"), interactive_limits::cpp_solution,
+                       true, "cpp_solution", request.cpp_solution, result.errors);
+        optionalField(input, "reasoning", interactive_limits::reasoning,
+                      request.reasoning, result.errors);
         optionalField(input, "user_notes", interactive_limits::user_notes,
                       request.user_notes, result.errors);
 
@@ -536,10 +642,10 @@ InteractiveDiagnosisResult runInteractiveDiagnosis(
     result.request_id = request.request_id;
     result.outcome = "artifact_error";
     try {
-        const json canonicalRequest = requestJson(request);
+        const json inputRequest = requestJson(request);
         InteractiveDiagnosisRequest checked;
         const InteractiveRequestValidation validation =
-            parseInteractiveDiagnosisRequest(canonicalRequest, checked);
+            parseInteractiveDiagnosisRequest(inputRequest, checked);
         if (!validation.ok) {
             result = failed(request.request_id, "invalid_request",
                             interactive_errc::E_REQUEST_INVALID,
@@ -548,6 +654,13 @@ InteractiveDiagnosisResult runInteractiveDiagnosis(
             return result;
         }
 
+        const json canonicalRequest = requestJson(checked);
+        result.metadata.source_code_sha256 = sha256_hex(checked.cpp_solution);
+        if (!validInteractivePromptTemplate(promptTemplateText)) {
+            return failed(request.request_id, "artifact_error",
+                          interactive_errc::E_TEMPLATE_INVALID,
+                          "interactive v2 prompt template header or marker is invalid");
+        }
         std::vector<std::uint8_t> templateRaw(promptTemplateText.begin(),
                                               promptTemplateText.end());
         std::vector<std::uint8_t> templateNormalized;
@@ -660,7 +773,7 @@ InteractiveDiagnosisResult runInteractiveDiagnosis(
                     result.error_code = interactive_errc::E_RESPONSE_INVALID;
                     result.message = "model response is not valid JSON";
                 } else {
-                    const std::string semanticError = validateDiagnosis(diagnosis, request);
+                    const std::string semanticError = validateDiagnosis(diagnosis, checked);
                     if (!semanticError.empty()) {
                         result.outcome = "invalid_model_response";
                         result.parse_status = semanticError.find("schema") != std::string::npos ||
@@ -703,6 +816,10 @@ InteractiveDiagnosisResult runInteractiveDiagnosis(
 
 json interactiveDiagnosisBrowserJson(const InteractiveDiagnosisResult& result) {
     json metadata{
+        {"request_schema_version", kInteractiveRequestVersion},
+        {"response_schema_version", kInteractiveResponseVersion},
+        {"source_code_sha256", result.metadata.source_code_sha256},
+        {"code_location_basis", "lf_1_based_inclusive"},
         {"prompt_template_id", result.metadata.prompt_template_id},
         {"prompt_template_sha256", result.metadata.prompt_template_sha256},
         {"prompt_sha256", result.metadata.prompt_sha256},

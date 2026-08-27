@@ -8,3 +8,16 @@
 @media(max-width:980px){.workspace{grid-template-columns:1fr}.result-panel{position:static;max-height:none}.topbar{align-items:flex-start}.topbar-meta{max-width:50%}.empty-state,.loading-state{min-height:350px}}
 @media(max-width:620px){.topbar{flex-direction:column}.topbar-meta{max-width:none;justify-content:flex-start}.workspace{padding:14px 10px 25px}.panel{border-radius:14px}.input-panel,.result-panel{padding:17px}.field-grid,.assessment-grid{grid-template-columns:1fr}.form-actions{grid-template-columns:1fr 1fr}.button.primary{grid-column:1/-1;grid-row:1}.status-card{grid-template-columns:1fr}.status-card .primary-category{border-left:0;border-top:1px solid rgba(50,70,58,.16);padding:13px 0 0}.optional-block summary small{display:none}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.radar span,.scan:after,.spinner{animation:none!important}}
+[hidden]{display:none!important}
+.mock-notice{padding:13px clamp(18px,4vw,56px);background:#fff1bc;color:#6c4a00;border-bottom:1px solid #e7d58c;font-weight:700;font-size:13px}
+.hint{color:var(--muted);font-size:12px;line-height:1.6;margin:9px 0}.optional-block>.hint{padding:0 14px}
+.prose{font-size:13px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.limitations{color:var(--muted);font-size:12px;line-height:1.6;padding-left:20px}
+details.result-section{border-top:1px solid var(--line);margin-top:20px;padding-top:14px}
+details.result-section>summary{cursor:pointer;font-size:13px;font-weight:750;line-height:1.6;color:var(--green)}
+.steps{padding-left:25px;display:grid;gap:14px}.steps li{font-size:13px;padding:10px;border:1px solid var(--line);border-radius:9px}.steps li.first-error{border-color:#cc7770;background:#fff8f6}
+.steps strong{display:block;line-height:1.6}.location-label{display:block;color:var(--muted);font-size:11px;margin-top:8px}
+.code-snippet{margin:8px 0 12px;padding:12px;border-radius:8px;background:#f1f4f2;color:#20392b;font:12px/1.65 "Cascadia Code",Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4;max-height:360px;overflow:auto}
+.finding-card{border:1px solid var(--line);border-radius:10px}.finding-card h4,.detail-content h4{font-size:12px;margin:14px 0 5px}.finding-card p{margin:5px 0}.detail-content{padding-top:4px}
+#firstErrorStep{display:block;margin-bottom:8px}#jsonText{width:100%;margin-top:12px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:8px;font:11px/1.5 Consolas,monospace}
+.status-card strong{font-size:18px}.metadata-section dl{margin-top:10px}.metadata-section dt{overflow-wrap:anywhere;max-width:180px}

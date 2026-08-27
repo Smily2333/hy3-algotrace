@@ -20,8 +20,8 @@ void printUsage() {
     std::cout
         << "hy3_algotrace_demo --host 127.0.0.1 --port 8080\n"
         << "  [--web-root web]\n"
-        << "  [--prompt-template prompts/hy3-interactive-diagnosis-v1.md]\n"
-        << "  [--artifacts-root experiments/interactive/runs]\n\n"
+        << "  [--prompt-template prompts/hy3-interactive-diagnosis-v2.md]\n"
+        << "  [--artifacts-root experiments/interactive/runs/v2]\n\n"
         << "The server is loopback-only. TOKENHUB_API_KEY is read from the\n"
         << "server process environment and is never sent to the browser.\n";
 }
@@ -74,7 +74,7 @@ bool apiKeyConfigured() {
 int main(int argc, char** argv) {
     try {
         hy3::InteractiveServerConfig serverConfig;
-        fs::path promptPath = "prompts/hy3-interactive-diagnosis-v1.md";
+        fs::path promptPath = "prompts/hy3-interactive-diagnosis-v2.md";
 
         const std::vector<std::string> args(argv, argv + argc);
         for (std::size_t i = 1; i < args.size(); ++i) {
@@ -110,6 +110,10 @@ int main(int argc, char** argv) {
         std::string promptTemplate;
         if (!readTextFile(promptPath, promptTemplate)) {
             std::cerr << "E_FILE_READ: cannot load the interactive prompt template\n";
+            return 1;
+        }
+        if (!hy3::validInteractivePromptTemplate(promptTemplate)) {
+            std::cerr << "E_TEMPLATE_INVALID: expected interactive v2 header and marker\n";
             return 1;
         }
 

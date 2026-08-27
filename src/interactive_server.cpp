@@ -101,26 +101,30 @@ void setStatic(httplib::Response& response, const std::string& body,
 
 InteractiveHttpApplication::InteractiveHttpApplication(
     IModelClient& client, std::string promptTemplateText,
-    std::string artifactsRoot, bool tokenHubConfigured)
+    std::string artifactsRoot, bool tokenHubConfigured, bool mockMode)
     : client_(client),
       prompt_template_text_(std::move(promptTemplateText)),
       artifacts_root_(std::move(artifactsRoot)),
-      token_hub_configured_(tokenHubConfigured) {}
+      token_hub_configured_(tokenHubConfigured), mock_mode_(mockMode) {}
 
 InteractiveHttpReply InteractiveHttpApplication::health() const {
     std::vector<std::uint8_t> input(prompt_template_text_.begin(),
                                     prompt_template_text_.end());
     std::vector<std::uint8_t> normalized;
     std::string normalizationError;
-    const bool templateValid = normalizeUtf8(input, normalized, normalizationError);
+    const bool templateValid = normalizeUtf8(input, normalized, normalizationError) &&
+                               validInteractivePromptTemplate(prompt_template_text_);
     const std::string normalizedText(normalized.begin(), normalized.end());
     const json document{
-        {"ok", true},
+        {"ok", templateValid},
         {"service", "hy3-algotrace-interactive-demo"},
-        {"model_name", "hy3"},
+        {"model_name", mock_mode_ ? "fake-model" : "hy3"},
+        {"model_mode", mock_mode_ ? "mock_fixture" : "hy3"},
         {"algorithm_scope", "greedy"},
         {"tokenhub_status", token_hub_configured_ ? "configured" : "not_configured"},
-        {"prompt_template_id", "hy3-interactive-diagnosis-v1"},
+        {"request_schema_version", kInteractiveRequestVersion},
+        {"response_schema_version", kInteractiveResponseVersion},
+        {"prompt_template_id", kInteractiveTemplateId},
         {"prompt_template_sha256",
          templateValid ? json(sha256_hex(normalizedText)) : json(nullptr)},
         {"code_execution", false},

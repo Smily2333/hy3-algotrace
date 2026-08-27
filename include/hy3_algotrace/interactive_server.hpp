@@ -21,7 +21,7 @@ struct InteractiveServerConfig {
     std::string host = "127.0.0.1";
     std::uint16_t port = 8080;
     std::filesystem::path web_root = "web";
-    std::filesystem::path artifacts_root = "experiments/interactive/runs";
+    std::filesystem::path artifacts_root = "experiments/interactive/runs/v2";
     std::size_t request_body_limit_bytes = 256U * 1024U;
 };
 
@@ -32,7 +32,8 @@ public:
     InteractiveHttpApplication(IModelClient& client,
                                std::string promptTemplateText,
                                std::string artifactsRoot,
-                               bool tokenHubConfigured);
+                               bool tokenHubConfigured,
+                               bool mockMode = false);
 
     InteractiveHttpReply health() const;
     InteractiveHttpReply diagnose(const std::string& contentType,
@@ -43,6 +44,7 @@ private:
     std::string prompt_template_text_;
     std::string artifacts_root_;
     bool token_hub_configured_ = false;
+    bool mock_mode_ = false; // Test harness only; production never enables it.
     std::atomic_flag call_active_ = ATOMIC_FLAG_INIT;
 };
 
