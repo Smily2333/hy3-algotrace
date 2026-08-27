@@ -1,113 +1,266 @@
-# 阶段路线图
+# 当前执行路线图：M1–M4
 
-> 宏观阶段规划。Phase 2B 已完成 Windows/Ubuntu CI 技术验收；Phase 2C production transport 与 `model-calls` 侧车已通过 CI run `32734561463`，冻结的 9 条 Hy3 pilot 已完成并脱敏报告。当前状态 `interactive_greedy_diagnosis_demo_ci_verified`：本地交互 Demo 已通过 CI run `32748016328` 的 Windows/Ubuntu canonical 验证；正式 Prompt、指标和数据保持冻结，交互结果不进入实验指标。
-> 关联文档：架构见 `architecture.md`；数据契约见 `data-contract.md`；错误分类见 `error-taxonomy.md`。
+> 更新日期：2026-08-27。本文是 hy3-algotrace 后续开发的统一执行入口，独立于任何聊天记录。接手者应先读本文，再检查实际代码与工作区；不要求读取或采纳其他聊天中的计划。本文写明目标、基线、每阶段任务、验收和停止条件。
 
-## Phase 0 — 范围与骨架
+## 1. M1–M4 是什么
 
-- **目标**：冻结范围，建立项目骨架与文档约定。
-- **主要产物**：目录骨架、README、architecture、data-contract、error-taxonomy、roadmap、journal/phase-00；最小 C++17 占位。
-- **进入下一阶段条件**：范围获规划方确认；文档术语 / 阶段编号一致；未越界实现后续功能。
+**M 是 Milestone（里程碑）的缩写。** M1–M4 是本项目为后续交付划分的四个阶段，不是 Hy3 的功能名称、任务书中的官方编号，也不是已经完成的四项工作。
 
-## Phase 1 — 数据契约及少量人工样本
+| 编号 | 名称 | 要做什么 | 本次核查状态 |
+| --- | --- | --- | --- |
+| M1 | 轻量诊断应用 | 用户只填题面和 C++ 代码，得到错误位置、原因及完整修正解法 | 待开始；已有 v1 基础可复用 |
+| M2 | 评测材料准备 | 准备分层题集、标准答案、错误标注和最小自动校验工具 | 待开始；旧 9 条 pilot 不等于完成 |
+| M3 | 效果验证与分析 | 通过真实 Hy3 实验、独立答案检查和人工抽检验证有效性 | 待开始；不沿用旧指标冒充新结果 |
+| M4 | 最终交付 | 整理源码、运行说明、实验报告和两分钟以内 Demo | 待开始；方案文档已提交 |
 
-> Phase 1 拆分为 **1A（数据）** 与 **1B（C++17 校验器）** 两个落地子阶段。
+执行顺序为 **M1 → M2 → M3 → M4**。当前下一项开发任务是 **M1**。本次更新路线图不代表 M1 已开始或完成，也不自动授权付费模型调用、执行候选代码、合并主分支或发布 Release。
 
-### Phase 1A — 数据格式冻结与首批样本（已完成，2026-08-23）
+## 2. 项目目标与范围
 
-- **目标**：冻结数据契约 0.3.0，产出并复核首批模型生成样本。
-- **主要产物**：`data/manifest.json` + 3 题 × 3 轨迹 = 9 条样本；通过 Codex 规划方（codex_planner）技术复核（review_status=planner_reviewed）；journal/phase-01a。
-- **状态**：已完成。
+### 2.1 最终要做什么
 
-### Phase 1B — C++17 数据契约校验器（已完成，CI 已验证）
+面向使用 C++ 学习算法的用户，完成基于 Hy3 的本地中文网页应用：
 
-- **目标**：实现纯 C++17 命令行工具 `hy3_algotrace validate`，加载并校验数据集对照 0.3.0 契约。
-- **主要产物**：`include/hy3_algotrace/*`、`src/*`、`tests/validator_tests.cpp`（56 项测试全过）、`third_party/nlohmann/json.hpp`（v3.12.0，SHA-256 校验）、`CMakeLists.txt`（canonical，含 `hy3_algotrace_core` 静态库 + SYSTEM PUBLIC third_party）、`docs/journal/phase-01b.md`。
-- **状态**：`phase1b_complete_ci_verified`。codex_planner 技术验收已通过（**不等同**人工 human_reviewed 或专家 expert-reviewed 审查）；实现 commit `8145b4f1b894101a8cbb1a302c6028b4fe8b3a01` 已推送 GitHub main；GitHub CI run 32656643095 在 `windows-latest` 与 `ubuntu-latest` 上 Configure / Build / CTest / Run CLI 全部 success（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`；macOS 未验证）。本地 MSVC 56/56 保持通过。
-- **进入下一阶段条件（Phase 2）**：
-  - 规划方技术验收：已完成（codex_planner，2026-08-24）。
-  - main 推送：已完成（commit `8145b4f…`）。
-  - canonical CMake/CTest：已完成（GitHub CI 验证）。
-  - Windows/Linux CI：已完成（run 32656643095，双平台 success）。
-  - Phase 2 尚未开始，等待规划方对 Phase 1B 的最终确认与 Phase 2 启动授权。
+```text
+完整题面 + C++ 代码
+        ↓
+Hy3 静态分析
+        ↓
+算法概述 → 总体判断 → 首次错误步骤 / 代码位置
+        → 原因与证据 → 反例候选 → 完整参考 / 修正解法
+```
 
-## Phase 2 — 离线评估协议与基础评测管线（拆分为 2A–2D）
+用户思路、测试数据和补充说明可选。题面应包含输入输出与约束，但不强迫用户拆成多个字段。用户没有填写思路或证明，不能成为自动判错的原因。
 
-### Phase 2A — 离线评估协议与 Prompt 模板（已完成）
+本项目对应参与者提供的《犀牛鸟开源-实战任务-混元大语言模型项目》PDF 第 3～4 页任务 2，必须保留：可运行应用、完整解答过程、标准答案与自动校验、难度分层、过程正确性、首次错误定位、错误分类、答案正确但过程不成立的识别，以及定位、误报、人工抽检和 Demo。第 1 页的公开仓库、运行说明、个人作品声明和密钥保护要求同样保留。
 
-- **目标**：冻结公平、可复现、无标签泄漏的 Hy3 离线评估协议：研究问题、`reference_assisted` 输入模式、allowlist/denylist、单条处理流程、失败状态、实验运行目录、`prediction` wrapper、输出契约、评价指标与可复用 Prompt 模板。
-- **主要产物**：`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`、`prompts/hy3-evaluator-v1.md`、`docs/journal/phase-02a.md`；同步 `README.md` / `roadmap.md` / `architecture.md`。
-- **状态**：`phase2a_complete_planner_reviewed`（codex_planner 技术验收通过，2026-08-24；不等同 human/expert review）。该阶段未运行 9 轨迹 Hy3 实验；后续 Phase 2B 已另行完成。
-- **进入下一阶段条件**：规划方复审通过 Phase 2A 协议与 Prompt 模板。
+本路线图将必要要求落实为执行任务；[8/27 项目方案](project-proposal-2026-08-27.md)解释设计理由、架构和建议日历排期。接手者不必读其他聊天才能理解本文。
 
-### Phase 2B — 离线评估管线：PromptExporter / PredictionImporter / Reporter（已完成）
+### 2.2 本版边界
 
-- **目标**：实现完整 C++17 离线评估管线三段式：`export-prompts`（确定性导出无泄漏 Prompt）、`import-response` + `mark-not-attempted`（逐字节保存 raw、6 态严格判别、schema/语义校验、生成 prediction wrapper、gold 隔离）、`report`（严格按 `docs/phase-02-metrics.md` 汇总指标、report.json/md 一致、completed_at 仅完整时更新）。**全程不调用模型 API、不连接 OJ、不执行候选代码。**
-- **主要产物**：
-  - `include/hy3_algotrace/sha256.hpp` + `src/sha256.cpp`（FIPS 180-4 SHA-256 + UTF-8 规范化）
-  - `include/hy3_algotrace/prompt_exporter.hpp` + `src/prompt_exporter.cpp`（模板边界提取 / allowlist 投影 / structural leakage audit / 渲染 / run-manifest）
-  - `include/hy3_algotrace/prediction_importer.hpp` + `src/prediction_importer.cpp`（raw 逐字节保存 + 字节哈希、6 态判别、无 fence/repair、schema+语义校验、wrapper、显式 not_attempted）
-  - `include/hy3_algotrace/reporter.hpp` + `src/reporter.cpp`（gold 隔离、全部指标、去重、零分母、N/A 区分、completed_at 控制）
-  - CLI 四命令（`export-prompts` / `import-response` / `mark-not-attempted` / `report`）+ `validate` / `--help`
-  - 测试：`prompt_exporter_tests`(22) + `prediction_importer_tests`(25) + `reporter_tests`(5) + `phase2b_e2e_tests`(synthetic smoke) + `validator_tests`(56 回归)；`CMakeLists.txt` 全部接入 CTest；`tests/fixtures/`（标记 `SYNTHETIC_TEST_FIXTURE`，绝不伪装真实实验）
-  - `docs/journal/phase-02b.md` 统一记录
-- **状态**：`phase2b_complete_ci_verified_pending_planner_release_decision`（commit `385c48e`；Windows/Ubuntu CI run `32712043144` 全绿）。该状态不等同 human/expert review；未创建 tag/Release。
-- **进入下一阶段条件（Phase 2C）**：规划方统一复审通过 Phase 2B 实现与测试；CI 在 Windows+Linux 全绿；确认无 gold 泄漏、no model/API/OJ/candidate 调用、报告数值一致；然后启动 9 条轨迹离线冒烟实验。
+- 首先只支持贪心题，不做通用算法类型识别。
+- 复用 C++17 后端、CMake 和原生 HTML/CSS/JavaScript，不换语言、不换框架。
+- 网页只做模型静态审查，不执行任意用户代码、不连接 OJ、不开放公网服务。
+- 保留固定评测题集的最小离线答案校验；它属于 M2，不等于恢复通用 CandidateRunner。
+- 不预设未经实验支持的准确率、完成百分比或评审通过保证。
 
-### Phase 2C — Hy3 9 轨迹冒烟实验
+### 2.3 文档关系与旧计划处理
 
-- **目标**：用冻结的 `hy3-evaluator-v1` 模板与 `reference_assisted` 模式，对 Phase 1A 的 9 条贪心轨迹做离线推理（人工/脚本交给 Hy3），运行 Reporter，记录指标。
-- **主要产物**：`experiments/phase-02/runs/<run_id>/` 完整产物（prompts / raw-responses / predictions / report）；冒烟级指标（见 `docs/phase-02-metrics.md` 第 12 节规模限制）。
-- **状态**：`phase2c_pilot_complete_reported`。9 条 trace 均单次调用、HTTP success、`parsed`；status / primary category accuracy `1.0000`，finding micro F1 `0.7619`。脱敏指标、hash 清单与限制见 `docs/journal/phase-02c.md`；raw response 和完整运行目录未提交。
-- **进入下一阶段条件**：9 条样本全部产生 `parsed` 或明确失败状态；指标可复现；不宣称代表总体能力。
+1. **当前执行范围、阶段状态和验收：本文件 `docs/roadmap.md`。**
+2. **方案说明：** `docs/project-proposal-2026-08-27.md`，用于提交与解释设计。
+3. **实现细节：** 当前代码、交互契约及后续 v2 说明；缺少的新文件列为待创建，不能当作已存在。
+4. **历史追溯：** [旧 Phase 路线图](roadmap-legacy-phase.md)和 `docs/journal/`，保存旧状态与证据，不作为下一步任务清单。
 
-### Phase 2C 产品化检查点 — 交互式贪心诊断 Demo
+旧文档中“恢复 CandidateRunner”“扩展 72 条样本”等历史安排不能覆盖本文。父目录的 `HY3_MCP_PROJECT_PLAN.md` 属于另一条 MCP 项目路线，也不是本项目执行入口。
 
-- **目标**：用独立、无 gold 的交互契约和 Prompt，把 Hy3 静态诊断能力封装为仅监听 loopback 的中文本地网页；与冻结评测管线及指标完全隔离。
-- **主要产物**：`InteractiveDiagnosisRequest` / 严格响应校验、本地一次性审计、`hy3_algotrace_demo`、原生 `web/` 页面、FakeModelClient 测试、版本锁定的 MIT HTTP server 依赖。
-- **边界**：只支持已知贪心题；C++ 仅供模型静态审查，不编译/运行，不连接 OJ，不代表形式化证明。一次真实 smoke 只验证调用链；模型输出质量仍可能错误。
-- **当前状态**：`interactive_greedy_diagnosis_demo_ci_verified`；本地 Fake/loopback smoke 与 CI run `32748016328` 的 Windows/Ubuntu canonical Configure/Build/全部 CTest/CLI 均通过。
-- **进入下一阶段条件**：双平台 CI 通过、凭证/冻结文件检查通过、分支工作区干净；随后由 Planner 决定恢复 CandidateRunner 或优先扩展正式贪心数据集。
+用户后续调整目标时，应同步更新本文和受影响方案段落，避免只在聊天里口头修改。
 
-### Phase 2D — CandidateRunner 与代码验证扩展
+## 3. 接手基线、已有成果与复用边界
 
-- **目标**：引入本地受限的候选代码编译与运行（`CandidateRunner` / `CodeVerifier`），为 `implementation_consistency` 提供实证信号。Phase 2D 初版仅进行**本地受限**的 C++ 编译与运行，包含超时控制、stdin/stdout 对比与 `verification_result` 生成；**不连接、不提交外部 OJ**；OJ 对接只能作为未来可选扩展，必须另行授权。
-- **主要产物**：`CandidateRunner`、`CodeVerifier` 增强；与 `code_test_verification` 职责线对齐。
-- **当前状态**：因交互 Demo 优先级调整而暂停；WIP 接口已在 `codex/phase2d-candidate-runner` 的 `a03fa9f` 安全保存并推送，UI 分支不含该未完成实现。
-- **进入下一阶段条件**：候选解法可被编译/运行并产出 `verification_result`；`implementation_consistency` 环节具备实证依据。
+### 3.1 接手前检查
 
-## Phase 3 — 贪心题小规模实验
+- 本次代码基线为 `f21359f915769e027196d214f5cf92b87070aeaa`，来自 `codex/interactive-diagnosis-ui`；仅用于解释状态，**不是回退指令**。
+- 开始时检查实际分支、HEAD 和未提交修改。若已有后续工作，先核对并保留，不 reset、clean 或覆盖未知改动。
+- 在实际开发 checkout 中确认本文件标题为“当前执行路线图：M1–M4”；不要只看到 GitHub 文档就假定本地已同步。
+- 本次路线图编写属于文档工作，未执行 M1 业务开发。
 
-- **目标**：用 ~12 题 / ~72 样本跑通实验并记录。
-- **主要产物**：完整 72 样本集；experiments 记录；基线结果。
-- **进入下一阶段条件**：样本齐备且可复现；结果可追溯。
+### 3.2 已有成果
 
-## Phase 4 — 错误定位与评分校准
+| 内容 | 代码 / 证据 | 后续处理 |
+| --- | --- | --- |
+| Hy3 API、transport、单次调用与审计 | `src/hy3_model_client.cpp`、`src/production_http_transport.cpp`、`src/model_runner.cpp` | 复用，不重建 |
+| v1 网页与 HTTP 服务 | `web/`、`src/interactive_server.cpp`、`src/interactive_demo_main.cpp` | M1 调整交互与默认模板 |
+| v1 请求与响应校验 | `include/hy3_algotrace/interactive_diagnosis.hpp`、`src/interactive_diagnosis.cpp` | M1 升级代码优先契约 |
+| 数据校验与旧评测管线 | validator、PromptExporter、PredictionImporter、Reporter | 保留旧行为；新模式按需适配 |
+| 3 题、9 条真实 pilot | [Phase 2C 记录](journal/phase-02c.md) | 保留历史，不冒充新模式验证 |
+| 历史双平台 CI 与 Demo 调用 | [交互 Demo 记录](journal/interactive-diagnosis-demo.md) | 保留证据；新改动重新验证 |
 
-- **目标**：提升定位精度，校准评分 / 置信度。
-- **主要产物**：评分规则；置信度标定；定位准确率评估。
-- **进入下一阶段条件**：定位与人工标注一致率达到预定义阈值（阈值待规划方定）。
+已知问题：v1 强制填写题目信息分栏和 `reasoning`，代码为可选；主要检查思路，仅有粗粒度阶段定位；一次真实 Demo 漏判了 CF 160A 的 `>=` 边界错误。因此接口成功或历史 CI 通过不代表 M1 完成。
 
-## Phase 5 — 扩大数据规模
+### 3.3 不得破坏的内容
 
-- **目标**：扩充贪心题样本量与多样性。
-- **主要产物**：更大样本集；难度 / 类型分层。
-- **进入下一阶段条件**：规模与多样性达标，管线稳定。
+- 冻结的 `data/manifest.json`、`data/problems/`、`prompts/hy3-evaluator-v1.md`。
+- 旧 Phase 2 协议、指标定义、gold 标签和结果；不得为改善新结果而修改。
+- v1 Prompt 与历史调用记录。新模式明确版本，不冒充 v1。
+- loopback、服务端 Key 隔离、输入限制、无自动重试、重复请求保护与浏览器安全文本渲染。
 
-## Phase 6 — 自动算法类型路由
+不得提交凭证、原始用户输入、未脱敏模型响应或私人运行目录。必要改动只触及当前里程碑涉及的模块。
 
-- **目标**：用 `algorithm_type_identification` 自动识别算法类型，替代人工标注透传。
-- **主要产物**：TypeRouter 自动实现；类型分布统计。
-- **进入下一阶段条件**：路由准确率达阈值；greedy 之外至少可区分 search / dp / graph 雏形。
+## 4. M1：轻量诊断应用
 
-## Phase 7 — 扩展到搜索、动态规划等类型
+**目标：** 跑通“题面 + 代码 → 结构化诊断与完整解法”的产品闭环。验收输入、输出、定位契约和程序行为，不在本阶段宣称模型准确率提高。
 
-- **目标**：将过程评估与验证扩展到其它算法类型。
-- **主要产物**：各类型错误子分类；对应评估规则；跨类型报告。
-- **进入下一阶段条件**：每类有可用样本与评估规则；与 greedy 共用框架。
+### 4.1 必做任务
 
-## Phase 8 — 总结、复现实验与最终交付
+- [ ] **两框输入。** 默认展示完整题面、C++ 代码；思路、测试与补充信息折叠为可选。后端接受真实最小请求，不用虚构思路或占位字段绕过校验。
+- [ ] **一致的输入规则。** 必填字段拒绝缺失、null、纯空白和超限输入；可选项的缺失/null/空字符串行为明确。统一 LF 时保留缩进与空行，不能 trim 后改变代码行号。
+- [ ] **交互 v2。** 新增版本化 Prompt（建议 `prompts/hy3-interactive-diagnosis-v2.md`），同步请求解析/序列化、响应校验、默认模板路径、模板 ID、哈希与审计元数据；明确旧交互请求的兼容或拒绝规则，不建设通用多版本框架。
+- [ ] **代码优先语义。** 以代码和题意为主。无证明不能仅据此报告 `missing_greedy_proof`；无用户思路不能拿模型概括的思路报告 `implementation_mismatch`。模型算法概述标明来源，不作独立正确性依据。必要分类扩展只放在 v2 并记录映射。
+- [ ] **完整结果。** 包含算法概述、三态判断、简短有序步骤及 ID、首次错误步骤引用、代码位置、原因/证据/建议、反例候选和完整参考/修正解法说明。完整说明覆盖策略、正确性理由、复杂度和关键边界；评测需要的可运行输出形式在 M2 冻结。
+- [ ] **可核对定位。** 使用 LF 规范化后的 1-based 行号/范围，检查范围、片段与步骤引用。重复片段需对应具体位置，不只检查全文包含。首次错误按逻辑顺序解释，不简单取最小行号；无可靠证据时可为空并说明原因。
+- [ ] **诚实展示。** 显示“未发现明确错误 / 发现错误 / 无法确定”；解法与反例标为模型生成，未执行时不得声称已验证或取得 AC/WA/CE/RE/TLE。信息不足或超范围时不强行得出结论。
+- [ ] **文档与回归。** 更新交互契约、示例、清空按钮、错误提示和启动说明；复用已有测试，不新增无关依赖或框架。
 
-- **目标**：汇总方法、复现全部实验、产出最终交付物。
-- **主要产物**：总结文档；复现脚本；最终评测器与示例；验收材料。
-- **进入下一阶段条件**：可一键复现；文档与代码一致；通过验收。
+### 4.2 主要涉及文件
+
+- `include/hy3_algotrace/interactive_diagnosis.hpp`、`src/interactive_diagnosis.cpp`。
+- `src/interactive_demo_main.cpp`，必要时涉及 `src/interactive_server.cpp` 及头文件。
+- `web/index.html`、`web/app.js`、`web/styles.css`。
+- `tests/interactive_diagnosis_tests.cpp`、`tests/interactive_server_tests.cpp`，必要时调整 CMake 测试接入。
+- 新 v2 Prompt、`docs/interactive-diagnosis-demo.md`、README 与本路线图状态。
+
+### 4.3 验收条件
+
+| 检查项 | 必须提交的证据 |
+| --- | --- |
+| 最小输入可用 | 不含思路和独立标题/I/O/约束字段的请求，通过解析及 FakeModelClient 链路 |
+| 非法输入与响应 | 类型、空白、超限、非法 JSON/schema 和矛盾状态等拒绝测试 |
+| 定位一致性 | CRLF、空行、重复片段、越界行号及无效步骤引用回归 |
+| 分类适用条件 | 无思路时，不接受仅因缺失证明或虚构思路不一致产生的诊断 |
+| 页面完整展示 | 三态、定位、反例、完整解法、错误提示与复制结果的可复现检查或截图 |
+| 安全与调用保护 | 重复请求不多次调用、错误不泄漏凭证、模型文本安全展示 |
+| 集成与冻结保护 | 受影响测试通过；完成一次可用的完整回归；冻结文件未改动 |
+
+保留 CF 160A 的 `>=` / `>` 边界问题，同时覆盖正确代码和其他错误类型；禁止按题号或字符串硬编码诊断。FakeModelClient 只证明程序能处理预设响应，不证明真实 Hy3 会发现同样错误。
+
+**停止条件：** M1 实现与验证后汇报结果、缺项和风险，等待 M2 启动指令。本阶段不调用真实付费模型、不执行候选代码、不扩展正式数据集。未验证项必须单列，不能用历史 CI 代替。
+
+## 5. M2：评测材料准备
+
+**目标：** 建立可独立校验的小规模材料与流程，使 M3 结论有依据。约 **8 题、24～30 条候选**是暂定规模，不是官方门槛；调整时说明理由与覆盖变化。
+
+### 5.1 必做任务
+
+- [ ] **题目与分层。** 覆盖基础、中等、困难，记录来源、构造方式、约束、参考解法与分层依据，不只挑容易识别的错误。
+- [ ] **候选类型。** 包含正确代码、策略错误、边界/比较符错误、复杂度问题，以及测试通过或某输入答案正确但算法逻辑/附带证明不成立的情况。
+- [ ] **独立 gold。** 每条候选有答案测试结果、过程标签、首次错误步骤和代码范围、主要/附加错误、来源与审查状态；保留争议，不以 Hy3 自己的输出作金标准。
+- [ ] **按题拆分。** 同题变体不跨开发/保留测试集；保留集不调 Prompt。冻结样本、Prompt、纳入规则、位置匹配规则，保存版本和哈希。
+- [ ] **最小答案校验。** 用参考实现与固定测试自动比较输出，记录编译/执行/超时/未验证。只处理预先审查批准的材料，在无凭证、无网络、权限受限的隔离环境执行；不在日常主机自动运行模型代码，不恢复通用 CandidateRunner。
+- [ ] **新模式评测适配。** 复用管线思想，实现 v2 的最小批量输入、输出记录与指标计算；新协议/结果独立版本，不改旧协议/gold/指标。诊断输入不含目标错误标签或位置提示。
+- [ ] **分清评估对象。** 候选诊断表现与 Hy3 完整参考/修正解答质量分开统计。可复用同次响应的完整解法；只选部分输出时事前固定规则，不事后选优。
+- [ ] **人工与额度计划。** 确定真实人工审查者、抽样方式、拟调用数量与额度，记录隔离执行条件。预算计划不等于已获得付费调用授权。
+
+新材料分为分层题集与样本、v2 评测协议、校验与报告工具三部分；具体路径由 Planner 按仓库结构选择并在本文登记，未创建前不得宣称存在。
+
+### 5.2 预先冻结的指标
+
+| 指标 | 口径 |
+| --- | --- |
+| Hy3 完整解答最终答案准确率 | 通过全部指定测试的解答数 / 预先纳入解答数；不把候选集正确比例当作模型解题准确率 |
+| Hy3 完整解答过程正确率 | 经独立审查确认完整解法成立的数量 / 纳入解答数；不用模型自报状态 |
+| 候选诊断一致率 | 与预先标注过程状态一致的候选数 / 纳入候选数 |
+| 首次错误定位准确率 | 答案错误且首次错误可标注的候选中，同时识别过程错误并命中预定义位置的数量 / 该类候选总数 |
+| 过程正确样本误报率 | 独立确认过程正确的候选被判过程有误的数量 / 过程正确候选总数 |
+| 答案正确告警复核 | 测试答案正确但被判过程有误的样本中，人工确认真实问题、误报、未决各自的数量与比例 |
+| 分类与难度分层 | 分别报告 gold 和预测错误分布；分层列出样本数、失败数、无法确定数和上述指标 |
+
+零分母记 N/A。调用/解析失败不能静默剔除；未动态验证的答案不计已验证正确，并报告验证覆盖率。成功响应条件下的指标可另列但不替代总体指标。定位映射到预先标注的逻辑步骤与代码范围，不能直接比较模型生成的步骤 ID。
+
+### 5.3 验收与停止条件
+
+- 每道题有标准答案、自动判定方式和分层依据，每条样本有独立标签及来源。
+- 拆分与指标冻结，无显式或自由文本 gold 泄漏。
+- 校验工具已在批准环境中用受控材料验证；环境不可用时记未完成，不跳过后宣布 M2 完成。
+- 新适配通过离线/synthetic 测试；人工安排、预算和执行条件有记录。
+
+**停止条件：** 提交冻结清单、验证结果、拟调用数量和风险，取得 M3 启动及真实调用授权后再实验。
+
+## 6. M3：效果验证与分析
+
+**目标：** 完成一次可追溯的真实 Hy3 实验，检验过程评估与错误定位的可靠性。
+
+### 6.1 必做任务
+
+- [ ] 按批准的数量与额度调用冻结模型/Prompt；一次提交至多一次调用，不自动重试或筛选有利输出。
+- [ ] 保存请求、样本、模板与代码版本标识，以及模型元数据、耗时和 token 用量；原始材料仅留在受控本地目录。
+- [ ] 独立答案校验与指标统计；调用失败、解析失败、无法确定、未验证分别记录。
+- [ ] 分别输出候选诊断表与 Hy3 完整解答质量表，不混淆答案正确、过程成立和诊断一致。
+- [ ] 人工优先复核全部答案正确告警，再抽查漏判、正确判定和难题；如仅抽样，说明抽样方法与覆盖。
+- [ ] 记录人工依据、首次错误、真实问题/误报/未决、审查者和日期。智能体复核不得标为 human_reviewed。
+- [ ] 分析根因、连锁影响、错误类型、难度、漏判与过诊断，并说明公开题记忆和小样本限制。
+
+### 6.2 验收与停止条件
+
+- 所有纳入样本有输出或明确失败状态，指标能对应逐条结果。
+- 有独立答案验证、定位数据、误报证据与真实人工抽检。
+- 有分层结论和失败案例；没有观察到明显临界点时如实说明，不制造趋势。
+- 不将旧 9 条 pilot 或 Fake 数据合并为新实验结果。
+
+**停止条件：** 提交报告和可发布材料清单。效果不足时说明缺陷及是否需要另一个版本实验；不得改写冻结结果或反复调用到满意为止。结果及限制确认后进入 M4。
+
+## 7. M4：最终交付
+
+**目标：** 让其他人可以找到成果、按说明运行，并检查实验依据。
+
+### 7.1 必做任务
+
+- [ ] 整理源码、当前契约、无密钥配置示例和清晰启动步骤。
+- [ ] 公开允许分发的题集、来源、标准答案、校验/过程评估工具和脱敏结果。
+- [ ] 报告包含设计依据、分类与定位规则、答案/过程指标、人工抽检、案例、能力边界和局限。
+- [ ] 录制两分钟以内视频或 GIF，展示输入、诊断、完整解法及验证证据入口。Mock 演示必须标明，不能冒充真实 Hy3。
+- [ ] 做一次集中验证，检查文档链接、敏感信息、依赖许可与复现说明；文案小改不反复全量测试。
+- [ ] 对照任务 2 形成最终清单，记录剩余限制，不把有 README 当作整体完成。
+
+### 7.2 完成条件
+
+公开仓库可找到源码、运行说明、评测材料、结果、有效性验证与人工抽检、分析报告和 Demo；明确实际支持平台及验证范围。保留个人/活动作品声明，不包含凭证与私人数据。
+
+是否合并 `main`、创建 Release 或正式提交活动链接，按用户授权执行，不能达到 M4 后自动进行未授权发布。
+
+## 8. 暂缓事项与旧 Phase 映射
+
+| 旧规划 | 当前处理 |
+| --- | --- |
+| Phase 0～2C 基础与 pilot | 作为 M1–M3 的已有成果，不重新做一遍 |
+| Phase 2D 通用 CandidateRunner | 暂缓；WIP 保留原分支，不为本版合并 |
+| Phase 3 约 12 题 / 72 样本 | 改为 M2 约 8 题 / 24～30 条候选，强调覆盖与标注 |
+| Phase 4 定位与评分校准 | 必要定位放入 M1/M3；评分/置信度校准暂缓 |
+| Phase 5 扩大规模 | 非本版交付前置条件 |
+| Phase 6～7 路由及其他算法 | 暂缓 |
+| Phase 8 总结 | 纳入 M4 |
+
+没有明确范围调整，不恢复暂缓内容，不因工具可用或智能体建议就自动扩大任务。
+
+## 9. 排期与状态维护
+
+| 阶段 | 建议专注工作量 | 依赖 |
+| --- | --- | --- |
+| M1 | 约 2 天 | 当前 v1 基础与本文 |
+| M2 | 约 2 天 | v2 输入输出稳定，人工和隔离执行条件可落实 |
+| M3 | 约 1～2 天 | M2 冻结、真实调用授权和人工审查可用 |
+| M4 | 约 1 天 | M3 结果及限制明确 |
+
+工作量为估算，日历日期见方案建议排期，不是官方截止日期。环境、网络、人工和额度等待时间另计，不删除必要验证来凑进度。
+
+每阶段完成后更新本文状态表，在 `docs/journal/` 留下对应记录，至少包含：
+
+```text
+里程碑与本次目标：
+实际分支 / HEAD / 工作区状态：
+完成项与修改文件：
+执行的验证命令及结果：
+未执行的验证及原因：
+真实模型调用数量（没有则写 0）：
+人工审查情况（没有则写未开展）：
+冻结文件检查结果：
+剩余风险、下一步及需要的授权：
+```
+
+任务和验收证据都齐备才标完成；有代码但未验证应分别记录。计划、子任务汇报、提交成功或历史测试都不能单独作为完成证据。
+
+## 10. 可直接交给接手 Planner 的入口
+
+```text
+请先读取当前仓库 docs/roadmap.md，再读取 docs/project-proposal-2026-08-27.md。
+两份文件提供完整背景，不需要读取或采纳其他聊天记录。
+
+确认 roadmap 标题为“当前执行路线图：M1–M4”，并检查实际分支、HEAD 和未提交修改。
+若本地仍是旧 Phase 路线图，先同步文档，不要依据旧计划开始开发。
+
+本次开发仅执行路线图第 4 节 M1：题面 + C++ 代码的轻量诊断应用。
+先核对已有实现，再完成第 4 节任务和验收；已有 M1 成果则审查复用，不重复覆盖。
+保留冻结数据、旧实验与历史记录；不启动 M2–M4，不付费调用模型或执行候选代码。
+完成后按第 9 节汇报并更新状态，不要只返回新的计划。
+```
+
+此入口供用户决定启动 M1 时复制给 Planner。路线图编写与同步不触发其他任务，也不代替用户向 Planner 下达开发指令。
