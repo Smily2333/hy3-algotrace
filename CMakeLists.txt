@@ -64,6 +64,7 @@ add_library(hy3_algotrace_core STATIC
     src/hy3_model_client.cpp
     src/production_http_transport.cpp
     src/interactive_diagnosis.cpp
+    src/evaluation.cpp
     include/hy3_algotrace/diagnostic.hpp
     include/hy3_algotrace/json_loader.hpp
     include/hy3_algotrace/validator.hpp
@@ -207,6 +208,20 @@ target_compile_options(interactive_server_tests PRIVATE ${HY3_WARN_FLAGS})
 
 # ---- Tests -----------------------------------------------------------------
 enable_testing()
+add_executable(hy3_evaluate src/evaluation_main.cpp)
+target_link_libraries(hy3_evaluate PRIVATE hy3_algotrace_core)
+target_compile_options(hy3_evaluate PRIVATE ${HY3_WARN_FLAGS})
+add_executable(evaluation_tests tests/evaluation_tests.cpp)
+target_link_libraries(evaluation_tests PRIVATE hy3_algotrace_core)
+target_compile_options(evaluation_tests PRIVATE ${HY3_WARN_FLAGS})
+add_test(NAME evaluation_tests COMMAND evaluation_tests "${CMAKE_CURRENT_SOURCE_DIR}")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # Compile-only in CI. Execution requires the separately approved isolated launcher.
+  add_executable(fixed_answer_worker evaluation/tools/fixed_answer_worker.cpp src/sha256.cpp)
+  target_include_directories(fixed_answer_worker PRIVATE include)
+  target_include_directories(fixed_answer_worker SYSTEM PRIVATE third_party)
+  target_compile_options(fixed_answer_worker PRIVATE ${HY3_WARN_FLAGS})
+endif()
 # Pass the canonical data path explicitly so the real-dataset case is never
 # silently skipped via ../data or CWD guessing.
 add_test(NAME validator_tests

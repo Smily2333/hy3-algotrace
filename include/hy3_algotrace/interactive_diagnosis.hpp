@@ -90,6 +90,11 @@ nlohmann::json interactiveDiagnosisRequestJson(
 // Exact version header and exactly one request marker; v1 cannot be mislabeled.
 bool validInteractivePromptTemplate(const std::string& text);
 
+// Shared strict validator for offline evaluation. Empty means structurally and
+// semantically consistent with the input, not a proof of model correctness.
+std::string validateInteractiveDiagnosis(const nlohmann::json& diagnosis,
+    const InteractiveDiagnosisRequest& request) noexcept;
+
 struct InteractiveCallMetadata {
     std::string prompt_template_id = kInteractiveTemplateId;
     std::string prompt_template_sha256;

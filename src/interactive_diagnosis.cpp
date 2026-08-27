@@ -549,6 +549,16 @@ json interactiveDiagnosisRequestJson(const InteractiveDiagnosisRequest& request)
     return requestJson(request);
 }
 
+std::string validateInteractiveDiagnosis(const json& diagnosis,
+    const InteractiveDiagnosisRequest& request) noexcept {
+    try {
+        InteractiveDiagnosisRequest checked;
+        if (!parseInteractiveDiagnosisRequest(requestJson(request), checked).ok)
+            return "request schema is invalid";
+        return validateDiagnosis(diagnosis, checked);
+    } catch (...) { return "diagnosis schema is invalid"; }
+}
+
 bool validInteractivePromptTemplate(const std::string& text) {
     std::vector<std::uint8_t> normalized;
     std::string error;

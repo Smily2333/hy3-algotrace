@@ -306,6 +306,16 @@ ModelCallResult Hy3ModelClient::invoke(const ModelRequest& request) noexcept {
             {{"role", "user"}, {"content", request.normalized_prompt}}
         });
         body["stream"] = false;
+        if (config_.max_tokens) {
+            if (*config_.max_tokens == 0 || *config_.max_tokens > 131072) {
+                result.status = ModelCallStatus::ConfigurationError;
+                result.error_code = "E_HY3_OUTPUT_LIMIT";
+                result.message = "invalid bounded output limit";
+                finishTiming(result, wallStart, steadyStart);
+                return result;
+            }
+            body["max_tokens"] = *config_.max_tokens;
+        }
         body["response_format"] = {{"type", "json_object"}};
         const std::string bodyText = body.dump();
 

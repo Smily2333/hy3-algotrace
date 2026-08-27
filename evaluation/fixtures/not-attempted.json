@@ -1,0 +1,130 @@
+{
+  "data_kind": "synthetic",
+  "records": [
+    {
+      "sample_id": "s001",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s002",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s003",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s004",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s005",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s006",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s007",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s008",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s009",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s010",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s011",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s012",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s013",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s014",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s015",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s016",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s017",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s018",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s019",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s020",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s021",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s022",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s023",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s024",
+      "parse_status": "not_attempted",
+      "response": null
+    },
+    {
+      "sample_id": "s025",
+      "parse_status": "not_attempted",
+      "response": null
+    }
+  ]
+}

@@ -56,6 +56,8 @@ public:
 struct Hy3ModelClientConfig {
     std::string base_url = "https://tokenhub.tencentmaas.com/v1";
     std::string model = "hy3";
+    // Opt-in for bounded evaluation; unset preserves historical requests.
+    std::optional<std::uint64_t> max_tokens;
 
     // Explicit configuration takes precedence. If empty, the adapter reads
     // api_key_env when invoke() starts. Neither value is ever included in an

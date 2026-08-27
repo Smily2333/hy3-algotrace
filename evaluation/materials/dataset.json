@@ -1,0 +1,752 @@
+{
+  "schema_version": "greedy-dataset-v1",
+  "version": "m2-draft-20260827",
+  "frozen": false,
+  "provenance": "Planner original statements and controlled mutations; classic greedy ideas, no copied OJ statements. Agent-authored, not human-reviewed.",
+  "problems": [
+    {
+      "id": "p01",
+      "title": "数额选择",
+      "statement": "输入 n 和 n 个正整数价值（1<=n<=100000，价值<=1000000）。选最少项，使所选总和严格大于其余总和。输出最少项数。",
+      "difficulty": "basic",
+      "difficulty_basis": "O(n log n) 时间、O(n) 空间；正数确保全选可行。",
+      "split": "development",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);long long sum=0,s=0;for(auto&x:a){cin>>x;sum+=x;}\nsort(a.rbegin(),a.rend());\nint k=0;for(auto x:a){s+=x;++k;if(2*s>sum)break;}cout<<k<<\"\\n\";}\n",
+      "correctness": "任意 k 项总和不超过最大的 k 项；最大前缀首次严格过半即最小 k。",
+      "complexity": "O(n log n) 时间、O(n) 空间；正数确保全选可行。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "2\n5 5\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "3\n8 1 1\n",
+          "expected_output": "1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "1\n7\n",
+          "expected_output": "1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p02",
+      "title": "等待安排",
+      "statement": "输入 n（1<=n<=100000）和 n 个正任务时长（<=1000000）。单机依次执行所有任务，求所有任务开始前等待时长之和的最小值，输出整数。",
+      "difficulty": "basic",
+      "difficulty_basis": "O(n log n)，O(n)；总等待需 64 位。",
+      "split": "holdout",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.begin(),a.end());\nlong long t=0,ans=0;for(auto x:a){ans+=t;t+=x;}cout<<ans<<\"\\n\";}\n",
+      "correctness": "相邻 a>b 时交换使等待总和减少 a-b，不断交换得到升序最优。",
+      "complexity": "O(n log n)，O(n)；总等待需 64 位。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "3\n3 1 2\n",
+          "expected_output": "4\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "1\n9\n",
+          "expected_output": "0\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "4\n2 2 2 2\n",
+          "expected_output": "12\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p03",
+      "title": "单厅预约",
+      "statement": "输入 n（1<=n<=100000），随后 n 行 s e，0<=s<e<=1000000000。选择最多不重叠预约，时间区间为 [s,e)，相接允许。输出最大数量。",
+      "difficulty": "medium",
+      "difficulty_basis": "O(n log n)、O(n)；相接可选，初始 end=-1。",
+      "split": "development",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<int,int>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\nint end=-1,k=0;for(auto x:a)if(x.second>=end){end=x.first;++k;}cout<<k<<\"\\n\";}\n",
+      "correctness": "最早结束者可替换任意最优方案首项而不减少后续空间，再归纳。",
+      "complexity": "O(n log n)、O(n)；相接可选，初始 end=-1。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "3\n0 2\n2 3\n0 5\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "3\n0 10\n1 2\n2 3\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "1\n0 1\n",
+          "expected_output": "1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p04",
+      "title": "合并账单",
+      "statement": "输入 n（1<=n<=100000）和 n 个正重量（<=1000000）。每步合并任意两堆，付出重量之和并得到同重一堆，直至一堆。输出最小总费用。",
+      "difficulty": "medium",
+      "difficulty_basis": "O(n log n)、O(n)；n=1 不合并，费用 64 位。",
+      "split": "holdout",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;priority_queue<long long,vector<long long>,greater<long long>>q;while(n--){long long x;cin>>x;q.push(x);}\nlong long ans=0;while(q.size()>1){auto a=q.top();q.pop();auto b=q.top();q.pop();ans+=a+b;q.push(a+b);}cout<<ans<<\"\\n\";}\n",
+      "correctness": "合并树费用等于各叶重量乘深度。最小两权可交换到最深兄弟叶，合并缩约后归纳。",
+      "complexity": "O(n log n)、O(n)；n=1 不合并，费用 64 位。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "3\n1 2 8\n",
+          "expected_output": "14\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "1\n9\n",
+          "expected_output": "0\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "4\n1 1 1 1\n",
+          "expected_output": "8\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p05",
+      "title": "递增补齐",
+      "statement": "输入 n（1<=n<=100000）和 n 个整数（0<=a[i]<=1000000000），保持顺序，仅允许给各项加非负整数，使序列严格递增。输出最少总增量。",
+      "difficulty": "medium",
+      "difficulty_basis": "O(n)、O(1)；0 和连续相等、长下降序列用64位。",
+      "split": "holdout",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;long long prev=-1,ans=0;for(int i=0;i<n;++i){long long x;cin>>x;\nlong long y=max(x,prev+1);\nans+=y-x;prev=y;}cout<<ans<<\"\\n\";}\n",
+      "correctness": "逐项取 max(原值,前项+1)；任何可行序列逐项不小于此序列，故增量和最小。",
+      "complexity": "O(n)、O(1)；0 和连续相等、长下降序列用64位。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "3\n3 1 1\n",
+          "expected_output": "7\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "3\n0 1 2\n",
+          "expected_output": "0\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "2\n2 2\n",
+          "expected_output": "1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p06",
+      "title": "期限内任务",
+      "statement": "输入 n（1<=n<=100000），随后 n 行正时长 t 和期限 d（均<=1000000000）。单机从0开始，可选择并排序任务，完成时刻<=各自期限。求最多完成数量。",
+      "difficulty": "hard",
+      "difficulty_basis": "O(n log n)、O(n)；时间总和64位，困难在交换与删除不变量。",
+      "split": "holdout",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\npriority_queue<long long>q;long long now=0;for(auto x:a){q.push(x.second);now+=x.second;if(now>x.first){now-=q.top();q.pop();}}cout<<q.size()<<\"\\n\";}\n",
+      "correctness": "按期限处理，超时删除最长项；在相同保留数量下最小化总时长，使未来选择空间最大。删除一次足够：上一前缀可行且最长不短于新项。",
+      "complexity": "O(n log n)、O(n)；时间总和64位，困难在交换与删除不变量。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "3\n3 3\n2 4\n2 4\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "2\n1 1\n1 2\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "2\n5 1\n6 2\n",
+          "expected_output": "0\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p07",
+      "title": "最低补给次数",
+      "statement": "输入 n L F（0<=n<=100000，1<=L<=1000000000，0<=F<=1000000000），随后 n 行位置 p 与补给量 f（0<p<L，1<=f<=1000000000），位置互异。每走单位距离消耗1，初始油量 F，容量无限。可在经过站点获得其全部油量，每站最多一次。求到达 L 最少补给次数，不可达输出-1。",
+      "difficulty": "hard",
+      "difficulty_basis": "O(n log n)、O(n)；初始可达0次、空堆不可达，困难在回溯式贪心解释。",
+      "split": "holdout",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long L,reach;cin>>n>>L>>reach;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.first>>x.second;sort(a.begin(),a.end());\npriority_queue<long long>q;int i=0,k=0;while(reach<L){while(i<n&&a[i].first<=reach){q.push(a[i].second);++i;}if(q.empty()){cout<<-1<<\"\\n\";return 0;}reach+=q.top();q.pop();++k;}cout<<k<<\"\\n\";}\n",
+      "correctness": "可达站中最大补给可替换任何下一次补给而不缩短可达距离；延迟决定仅是记账，实际经过时可选，归纳得最少次数。",
+      "complexity": "O(n log n)、O(n)；初始可达0次、空堆不可达，困难在回溯式贪心解释。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "2 10 3\n3 4\n6 3\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "0 10 10\n",
+          "expected_output": "0\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "1 10 2\n3 9\n",
+          "expected_output": "-1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t4",
+          "input": "3 15 5\n1 1\n2 10\n4 1\n",
+          "expected_output": "1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    },
+    {
+      "id": "p08",
+      "title": "容量配对",
+      "statement": "输入 n B（1<=n<=100000，1<=B<=1000000000）及 n 个重量（1<=w[i]<=B）。每箱最多两件且重量和<=B。输出装下全部物件的最少箱数。",
+      "difficulty": "hard",
+      "difficulty_basis": "参考 O(n log n)、O(n)；困难在交换论证而非代码长度，复杂度样本小测试可通过。",
+      "split": "holdout",
+      "source": "original_project_statement_classic_algorithm",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long B;cin>>n>>B;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.begin(),a.end());\nint l=0,r=n-1,k=0;while(l<=r){if(l<r&&a[l]+a[r]<=B)++l;--r;++k;}cout<<k<<\"\\n\";}\n",
+      "correctness": "最重若与最轻也不合则必须单独；否则可交换最轻到最重箱而不增加箱数，归纳。",
+      "complexity": "参考 O(n log n)、O(n)；困难在交换论证而非代码长度，复杂度样本小测试可通过。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "4 10\n2 3 7 8\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "1 10\n10\n",
+          "expected_output": "1\n",
+          "oracle": "hand_derived_pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "3 10\n5 5 5\n",
+          "expected_output": "2\n",
+          "oracle": "hand_derived_pending_independent_check"
+        }
+      ],
+      "comparison": "crlf_lf_optional_one_terminal_lf_v1",
+      "review_status": "agent_authored_pending_human"
+    }
+  ],
+  "samples": [
+    {
+      "id": "s001",
+      "problem_id": "p01",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);long long sum=0,s=0;for(auto&x:a){cin>>x;sum+=x;}\nsort(a.rbegin(),a.rend());\nint k=0;for(auto x:a){s+=x;++k;if(2*s>sum)break;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s002",
+      "problem_id": "p01",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);long long sum=0,s=0;for(auto&x:a){cin>>x;sum+=x;}\nsort(a.rbegin(),a.rend());\nint k=0;for(auto x:a){s+=x;++k;if(2*s>=sum)break;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "严格超过不能接受相等",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s003",
+      "problem_id": "p01",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);long long sum=0,s=0;for(auto&x:a){cin>>x;sum+=x;}\nsort(a.begin(),a.end());\nint k=0;for(auto x:a){s+=x;++k;if(2*s>sum)break;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "小项优先不能最小化选取数量",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s004",
+      "problem_id": "p02",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.begin(),a.end());\nlong long t=0,ans=0;for(auto x:a){ans+=t;t+=x;}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s005",
+      "problem_id": "p02",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.rbegin(),a.rend());\nlong long t=0,ans=0;for(auto x:a){ans+=t;t+=x;}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "长任务提前增加后续等待",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s006",
+      "problem_id": "p02",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.begin(),a.end());\nlong long t=0,ans=0;for(auto x:a){t+=x;ans+=t;}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "problem_misunderstanding",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "累加完成时刻而非等待时长",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s007",
+      "problem_id": "p03",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<int,int>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\nint end=-1,k=0;for(auto x:a)if(x.second>=end){end=x.first;++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s008",
+      "problem_id": "p03",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<int,int>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\nint end=-1,k=0;for(auto x:a)if(x.second>end){end=x.first;++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "允许相接却拒绝端点相等",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s009",
+      "problem_id": "p03",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<int,int>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end(),[](auto x,auto y){return x.second<y.second;});\nint end=-1,k=0;for(auto x:a)if(x.second>=end){end=x.first;++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "按开始时间选择会占用过长区间",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s010",
+      "problem_id": "p04",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;priority_queue<long long,vector<long long>,greater<long long>>q;while(n--){long long x;cin>>x;q.push(x);}\nlong long ans=0;while(q.size()>1){auto a=q.top();q.pop();auto b=q.top();q.pop();ans+=a+b;q.push(a+b);}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s011",
+      "problem_id": "p04",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;priority_queue<long long,vector<long long>,less<long long>>q;while(n--){long long x;cin>>x;q.push(x);}\nlong long ans=0;while(q.size()>1){auto a=q.top();q.pop();auto b=q.top();q.pop();ans+=a+b;q.push(a+b);}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "最大堆令重项重复付费",
+          "start_line": 7,
+          "end_line": 7
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s012",
+      "problem_id": "p04",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;priority_queue<long long,vector<long long>,greater<long long>>q;while(n--){long long x;cin>>x;q.push(x);}\nlong long ans=0;while(q.size()>1){auto a=q.top();q.pop();auto b=q.top();q.pop();ans=a+b;q.push(a+b);}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "code_logic_error",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "覆盖累计费用",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s013",
+      "problem_id": "p05",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;long long prev=-1,ans=0;for(int i=0;i<n;++i){long long x;cin>>x;\nlong long y=max(x,prev+1);\nans+=y-x;prev=y;}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s014",
+      "problem_id": "p05",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;long long prev=-1,ans=0;for(int i=0;i<n;++i){long long x;cin>>x;\nlong long y=max(x,prev);\nans+=y-x;prev=y;}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "非降不等于严格递增",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s015",
+      "problem_id": "p05",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;long long prev=-1,ans=0;for(int i=0;i<n;++i){long long x;cin>>x;\nlong long y=max(x,prev+1);\nans+=y-x;prev=x;}cout<<ans<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "code_logic_error",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "后续基准忘记已增加的值",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s016",
+      "problem_id": "p06",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\npriority_queue<long long>q;long long now=0;for(auto x:a){q.push(x.second);now+=x.second;if(now>x.first){now-=q.top();q.pop();}}cout<<q.size()<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s017",
+      "problem_id": "p06",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\npriority_queue<long long>q;long long now=0;for(auto x:a){q.push(x.second);now+=x.second;if(now>=x.first){now-=q.top();q.pop();}}cout<<q.size()<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "恰好截止应保留",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s018",
+      "problem_id": "p06",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.second>>x.first;\nsort(a.begin(),a.end());\npriority_queue<long long,vector<long long>,greater<long long>>q;long long now=0;for(auto x:a){q.push(x.second);now+=x.second;if(now>x.first){now-=q.top();q.pop();}}cout<<q.size()<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "超时时删除最短不能最小化保留时长",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s019",
+      "problem_id": "p07",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long L,reach;cin>>n>>L>>reach;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.first>>x.second;sort(a.begin(),a.end());\npriority_queue<long long>q;int i=0,k=0;while(reach<L){while(i<n&&a[i].first<=reach){q.push(a[i].second);++i;}if(q.empty()){cout<<-1<<\"\\n\";return 0;}reach+=q.top();q.pop();++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s020",
+      "problem_id": "p07",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long L,reach;cin>>n>>L>>reach;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.first>>x.second;sort(a.begin(),a.end());\npriority_queue<long long>q;int i=0,k=0;while(reach<L){while(i<n&&a[i].first<reach){q.push(a[i].second);++i;}if(q.empty()){cout<<-1<<\"\\n\";return 0;}reach+=q.top();q.pop();++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "油量恰好可达站点应可补给",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s021",
+      "problem_id": "p07",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long L,reach;cin>>n>>L>>reach;vector<pair<long long,long long>>a(n);for(auto&x:a)cin>>x.first>>x.second;sort(a.begin(),a.end());\npriority_queue<long long,vector<long long>,greater<long long>>q;int i=0,k=0;while(reach<L){while(i<n&&a[i].first<=reach){q.push(a[i].second);++i;}if(q.empty()){cout<<-1<<\"\\n\";return 0;}reach+=q.top();q.pop();++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "先取小补给会增加次数",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s022",
+      "problem_id": "p08",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long B;cin>>n>>B;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.begin(),a.end());\nint l=0,r=n-1,k=0;while(l<=r){if(l<r&&a[l]+a[r]<=B)++l;--r;++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "有限测试不证明所有输入正确"
+      }
+    },
+    {
+      "id": "s023",
+      "problem_id": "p08",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long B;cin>>n>>B;vector<long long>a(n);for(auto&x:a)cin>>x;\nsort(a.begin(),a.end());\nint l=0,r=n-1,k=0;while(l<=r){if(l<r&&a[l]+a[r]<B)++l;--r;++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "恰好装满的配对应接受",
+          "start_line": 9,
+          "end_line": 9
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s024",
+      "problem_id": "p08",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;long long B;cin>>n>>B;vector<long long>a(n);for(auto&x:a)cin>>x;\nfor(int i=0;i<n;++i)for(int j=0;j+1<n-i;++j)if(a[j]>a[j+1])swap(a[j],a[j+1]);\nint l=0,r=n-1,k=0;while(l<=r){if(l<r&&a[l]+a[r]<=B)++l;--r;++k;}cout<<k<<\"\\n\";}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "complexity_error",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "平方排序在十万规模不可接受",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "需人工确认主类别与定位；小测试通过不能否定复杂度问题"
+      }
+    },
+    {
+      "id": "s025",
+      "problem_id": "p01",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;vector<long long>a(n);long long sum=0,s=0;for(auto&x:a){cin>>x;sum+=x;}\nsort(a.rbegin(),a.rend());\nint k=0;for(auto x:a){s+=x;++k;if(2*s>sum)break;}cout<<k<<\"\\n\";}\n",
+      "reasoning": "按最大价值优先。正确性理由：任意选取的 k 枚总和都相同，所以取哪些无所谓。",
+      "construction": "correct_code_with_invalid_explicit_proof",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "invalid_greedy_proof",
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "dispute": "代码算法成立但显式证明为假；错误位于 reasoning，不强配代码行。独立标签评价代码和附带证明整体。"
+      }
+    }
+  ]
+}
