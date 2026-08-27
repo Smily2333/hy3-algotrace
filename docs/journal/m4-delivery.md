@@ -9,8 +9,12 @@
 - M2材料/工具：ca2d7ba53ae10b61681ae7423489fedf988a2ffe，已push；
   [CI 33083711638](https://github.com/Smily2333/hy3-algotrace/actions/runs/33083711638)，Windows/Ubuntu success。
 - 后续跨平台修复：59a7689，评测扩展模板与hash统一LF，37项评测回归通过。
-  该修复不修改Prompt语义、材料或历史结果。最终CI将针对包含该修复的交付检查点触发；
-  不把ca2d7ba的成功冒充后续改动已验证。
+  该修复不修改Prompt语义、材料或历史结果。
+- 最终代码及交付检查点：dc26ed30e4eca1e5f3d1e18dbd06a00486ad1bd7，已push；
+  [CI 33084266081](https://github.com/Smily2333/hy3-algotrace/actions/runs/33084266081)
+  对应此SHA，Windows（2m25s）/Ubuntu（1m23s）均success，configure/build/12项CTest/CLI全部通过。
+  本记录随后仅做文档补记，不将文档补记SHA冒充已跑CI的SHA；没有重复同等全量测试。
+  CI有既有checkout@v4的Node20弃用提示，不影响本次成功，未扩大修改workflow。
 
 ## 实际交付
 
@@ -33,6 +37,7 @@ evaluation_tests37/37。JavaScript语法通过。M1六场景浏览器Fake记录�
 25候选10通过、15输出不符。原始运行材料只留build忽略目录。
 
 冻结集合：data/、旧evaluator/interactive-v1 Prompt、Phase2协议指标和pilot结果与接手基线零diff。
+最终检查6份当前入口文档的本地文件链接：0个断链（不包含远端可用性或锚点逐项检查）。
 未新增Python文件、未提交真实模型raw或Key；项目新增源码/材料未含用户绝对路径。
 M2仅有synthetic占位密钥测试，账户确认示例默认为拒绝；真实Key未加载，真实调用0。
 本轮没有OJ、main合并、tag、Release或活动链接提交。
