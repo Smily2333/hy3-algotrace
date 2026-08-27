@@ -1,0 +1,81 @@
+{
+  "schema_version": "greedy-development-summary-v1",
+  "data_kind": "development_real_not_formal",
+  "code_commit": "f28f384998694d796b46f8ed02918acce69a2b4e",
+  "model": "hy3",
+  "model_version": null,
+  "dataset_version": "m2-draft-20260827",
+  "dataset_sha256_canonical_json": "f9fa185011a0a903ccae8348b80215b901531b242ebf90e862c3b59165ce9dc6",
+  "prompt_template_id": "hy3-greedy-evaluation-v1",
+  "base_template_sha256": "a58623d7543e717f49ebf681044506736ff0e86acfea8c27b79e66dcd32d6d93",
+  "extension_template_sha256": "e679574b104e192f33c125ea0b2b475075695731c2cc37b5751c41a0f2778556",
+  "max_tokens": 16384,
+  "requests": 3,
+  "retries": 0,
+  "http_success": 3,
+  "parsed": 0,
+  "schema_invalid": 3,
+  "usable_solution_code": 0,
+  "token_usage": {
+    "prompt_tokens": 6154,
+    "completion_tokens": 30266,
+    "total_tokens": 36420
+  },
+  "unknown_reserved": 0,
+  "remaining_token_budget": 263580,
+  "remaining_request_budget": 35,
+  "formal_included": 0,
+  "reviewer": "project_owner",
+  "human_review_status": "pending",
+  "decision": "stop_expansion_protocol_unstable",
+  "records": [
+    {
+      "sample_id": "s001",
+      "outcome": "succeeded",
+      "http_status": 200,
+      "parse_status": "schema_invalid",
+      "duration_ms": 88710,
+      "token_usage": {
+        "completion_tokens": 9720,
+        "prompt_tokens": 2052,
+        "total_tokens": 11772
+      },
+      "raw_sha256": "2cb69644d1877e6dfa38adcfddfc21208f12a43753394381a54587438db2e666",
+      "prompt_sha256": "532ebaea667a90c5429f82fc4adcaf89391195cc92c6a066242c09f7db309d61",
+      "started_at": "2026-08-27T15:31:21Z",
+      "finished_at": "2026-08-27T15:32:50Z"
+    },
+    {
+      "sample_id": "s002",
+      "outcome": "succeeded",
+      "http_status": 200,
+      "parse_status": "schema_invalid",
+      "duration_ms": 85697,
+      "token_usage": {
+        "completion_tokens": 8993,
+        "prompt_tokens": 2052,
+        "total_tokens": 11045
+      },
+      "raw_sha256": "a856e9290d7de2c510dcbf51ff722960e3e03f739edb790847ef27576b525ca7",
+      "prompt_sha256": "2299d49da41a8a61ef05a42d8e0c768e510c95c33a2eefe219b3873171b21127",
+      "started_at": "2026-08-27T15:33:58Z",
+      "finished_at": "2026-08-27T15:35:23Z"
+    },
+    {
+      "sample_id": "s003",
+      "outcome": "succeeded",
+      "http_status": 200,
+      "parse_status": "schema_invalid",
+      "duration_ms": 99584,
+      "token_usage": {
+        "completion_tokens": 11553,
+        "prompt_tokens": 2050,
+        "total_tokens": 13603
+      },
+      "raw_sha256": "1f7606bbdf524a2ecc353009854acda2b63bcea86ea38736d07b710c753150ee",
+      "prompt_sha256": "a6b2a1ed56e5c35f3263cf8a30f2a4ad3416bc0d37ae85d1442ff1a2978093c2",
+      "started_at": "2026-08-27T15:36:11Z",
+      "finished_at": "2026-08-27T15:37:51Z"
+    }
+  ]
+}

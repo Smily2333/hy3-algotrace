@@ -1,5 +1,7 @@
 {
   "schema_version": "human-review-queue-v1",
+  "assigned_reviewer": "project_owner",
+  "assignment_basis": "User explicitly volunteered; actual review remains pending",
   "status": "not_reviewed",
   "entries": [
     {

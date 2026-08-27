@@ -7,11 +7,12 @@
   "dataset_version": "m2-draft-20260827",
   "formal_frozen": false,
   "code_commit": "59a7689",
-  "requests": 0,
-  "actual_tokens": 0,
+  "requests": 3,
+  "actual_tokens": 36420,
   "unknown_reserved_tokens": 0,
   "token_limit": 300000,
-  "remaining_tokens": 300000,
+  "remaining_tokens": 263580,
+  "latest_development_summary": "evaluation/results/development-pilot-summary.json",
   "call_limit": 38,
   "files": [
     {

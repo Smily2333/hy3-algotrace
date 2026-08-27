@@ -101,7 +101,7 @@ tmpfs 256 MiB、每进程地址空间512 MiB、文件2 MiB、进程数128、core
 ## 真实调用预算与阻塞
 
 已授权本轮合计300000 token、38次，失败也计次，所有开发/正式/演示共用同一账本。
-当前**0次、0 token**。官方查核：
+最新开发试跑**3次、36420 token**，未知0，剩余263580；全部schema_invalid，停止扩大。用户已确认账户条件并承担人工审核，实际审查待完成。详见[journal](journal/m3-development-pilot.md)。官方查核：
 - [协议字段](https://cloud.tencent.com/document/product/1823/135872)：max_tokens 是输出上限；思考计入 completion_tokens。
 - [Hy3 指南](https://cloud.tencent.com/document/product/1823/132252)：最大输入192k，推理与回答共享输出额度。
 - [计费方式](https://cloud.tencent.com/document/product/1823/130054)：输入、输出、缓存输入计费，后付费结算存在延迟。
@@ -112,8 +112,8 @@ tmpfs 256 MiB、每进程地址空间512 MiB、文件2 MiB、进程数128、core
 缺失/不一致保留整个预留，报出越界即 halt。追加式 reserve/done 文件和目录锁，
 崩溃后不自动释放、不重发；最多38次；开发入口另限3次。
 
-在真实调用前，需项目作者确认**当前账户可用额度和不会产生额度外扣费**。
-公开资料不能证明账户余额；本轮未读取真实 Key、未发出测试请求猜余额。
+真实调用前已由项目作者确认**当前账户可用额度和不会产生额度外扣费**。
+公开资料不能证明账户余额；凭证只在服务进程安全加载，没有发请求猜余额。
 evaluation/account-confirmation.example.json 默认拒绝调用。确认文件应只保存在忽略目录；
 服务端从已配置 TOKENHUB_API_KEY 环境读取，不在命令/网页/日志显示密钥。
 现有 call 入口仅开发集三次试跑；正式自动调用在冻结与预算方案完成前明确关闭。
