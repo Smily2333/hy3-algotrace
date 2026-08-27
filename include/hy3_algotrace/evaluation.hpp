@@ -4,13 +4,15 @@
 namespace hy3::evaluation {
 using json = nlohmann::json;
 inline constexpr const char* version = "greedy-evaluation-v1";
+inline constexpr const char* version2 = "greedy-evaluation-v2";
 json load(const std::filesystem::path&);
 void saveNew(const std::filesystem::path&, const json&);
 void validateDataset(const json&);
 InteractiveDiagnosisRequest requestFor(const json&, const std::string& sampleId);
 std::string render(const InteractiveDiagnosisRequest&, const std::string& v2Template,
                    const std::string& extension);
-json parse(const std::string& raw, const InteractiveDiagnosisRequest&);
+std::string renderV2(const InteractiveDiagnosisRequest&, const std::string& standaloneTemplate);
+json parse(const std::string& raw, const InteractiveDiagnosisRequest&, const std::string& expectedVersion = version);
 json report(const json& dataset, const json& records, bool synthetic);
 json attachAnswerEvidence(const json& dataset, const json& records, const json& evidence);
 std::string normalizeOutput(std::string);

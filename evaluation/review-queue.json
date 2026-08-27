@@ -1,49 +1,50 @@
 {
   "schema_version": "human-review-queue-v1",
   "assigned_reviewer": "project_owner",
-  "assignment_basis": "User explicitly volunteered; actual review remains pending",
-  "status": "not_reviewed",
+  "assignment_basis": "User supplied independent s001-s003 gold and pilot-response review; remaining 22 pending",
+  "status": "partially_reviewed",
+  "date_basis": "recorded_on, not inferred review timestamp",
   "entries": [
     {
       "sample_id": "s001",
       "problem_id": "p01",
-      "reviewer": null,
-      "date": null,
-      "decision": "pending",
+      "reviewer": "project_owner",
+      "date": "2026-08-28",
+      "decision": "gold_confirmed",
       "review_scope": [
         "gold_process",
         "first_error",
-        "reference_correctness"
+        "pilot_response_contract"
       ],
-      "evidence": null,
+      "evidence": "evaluation/reviews/s001-s003-20260828.json",
       "disagreement": null
     },
     {
       "sample_id": "s002",
       "problem_id": "p01",
-      "reviewer": null,
-      "date": null,
-      "decision": "pending",
+      "reviewer": "project_owner",
+      "date": "2026-08-28",
+      "decision": "gold_confirmed",
       "review_scope": [
         "gold_process",
         "first_error",
-        "reference_correctness"
+        "pilot_response_contract"
       ],
-      "evidence": null,
+      "evidence": "evaluation/reviews/s001-s003-20260828.json",
       "disagreement": null
     },
     {
       "sample_id": "s003",
       "problem_id": "p01",
-      "reviewer": null,
-      "date": null,
-      "decision": "pending",
+      "reviewer": "project_owner",
+      "date": "2026-08-28",
+      "decision": "gold_confirmed",
       "review_scope": [
         "gold_process",
         "first_error",
-        "reference_correctness"
+        "pilot_response_contract"
       ],
-      "evidence": null,
+      "evidence": "evaluation/reviews/s001-s003-20260828.json",
       "disagreement": null
     },
     {

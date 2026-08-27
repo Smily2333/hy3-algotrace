@@ -18,6 +18,43 @@ int main(int argc,char**argv){
  json response={{"schema_version",version},{"diagnosis",interactive_fixture::diagnosis("input")},
     {"solution_code",{{"availability","provided"},{"language","cpp"},{"standard","c++17"},{"source_code",interactive_fixture::code(true)},{"unavailable_reason",nullptr}}}};
  check(parse(response.dump(),r)["parse_status"]=="parsed","complete response");
+ auto ex=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/fixtures/evaluation-v2-example.json");
+ InteractiveDiagnosisRequest example;
+ check(parseInteractiveDiagnosisRequest(ex["request"],example).ok,"v2 example request");
+ check(parse(ex["response"].dump(),example,version2)["parse_status"]=="parsed","full v2 example same validator");
+ check(parse(ex["response"].dump(),example)["parse_status"]=="schema_invalid","v2 cannot masquerade as v1");
+ auto standalone=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-greedy-evaluation-v2.md");
+ check(renderV2(example,standalone).find("{{evaluation_request_json}}")==std::string::npos,"standalone render");
+ check(throws([&]{renderV2(example,standalone+"{{evaluation_request_json}}");}),"duplicate marker rejected");
+ check(throws([&]{renderV2(example,base);}),"interactive template cannot replace standalone v2");
+ check(parse("{}",example,version2)["expected_schema_version"]==version2,"invalid response retains campaign version");
+ for(const std::string state:{"correct","undetermined"}) {
+    InteractiveDiagnosisRequest input;
+    parseInteractiveDiagnosisRequest(interactive_fixture::request("input",state=="correct"),input);
+    auto value=response;value["schema_version"]=version2;value["diagnosis"]=interactive_fixture::diagnosis("input",state);
+    if(state=="undetermined")value["solution_code"]={{"availability","unavailable"},{"language","cpp"},{"standard","c++17"},{"source_code",nullptr},{"unavailable_reason","insufficient information"}};
+    check(parse(value.dump(),input,version2)["parse_status"]=="parsed","v2 non-error states retain semantics");
+ }
+ auto crlf=example;crlf.cpp_solution.clear();for(char c:example.cpp_solution){if(c=='\n')crlf.cpp_solution+='\r';crlf.cpp_solution+=c;}
+ check(parse(ex["response"].dump(),crlf,version2)["parse_status"]=="parsed","CRLF exact decoded snippet");
+ auto duplicateSource=example;auto located=ex["response"];
+ const auto snippet=located["diagnosis"]["steps"][0]["code_location"]["snippet"].get<std::string>();
+ duplicateSource.cpp_solution="#include <iostream>\n\n"+snippet+"\n\n"+snippet+"\n";
+ for(const char* group:{"steps","findings"})for(const char* key:{"start_line","end_line"})located["diagnosis"][group][0]["code_location"][key]=3;
+ check(parse(located.dump(),duplicateSource,version2)["parse_status"]=="parsed","blank lines preserve numbering");
+ for(const char* key:{"start_line","end_line"})located["diagnosis"]["steps"][0]["code_location"][key]=4;
+ check(parse(located.dump(),duplicateSource,version2)["parse_status"]=="schema_invalid","repeated snippet elsewhere does not validate declared blank line");
+ // Both embedded JSON blocks must be real JSON and match the tested fixture.
+ auto fence=std::string(3,char(96));auto at=standalone.find(fence+"json\n");
+ if(at==std::string::npos){auto cr=standalone;standalone.clear();for(char c:cr)if(c!='\r')standalone+=c;at=standalone.find(fence+"json\n");}
+ auto end=standalone.find(fence,at+8);auto embedded=json::parse(standalone.substr(at+8,end-at-8));
+ check(embedded==ex["request"],"prompt example request exact");
+ at=standalone.find(fence+"json\n",end+3);end=standalone.find(fence,at+8);
+ check(json::parse(standalone.substr(at+8,end-at-8))==ex["response"],"prompt example response exact");
+ auto malformed=ex["response"];malformed["diagnosis"]["steps"].push_back({{"first_error",malformed["diagnosis"]["first_error"]}});
+ check(parse(malformed.dump(),example,version2)["validation_errors"][0]["path"]=="/diagnosis/steps/1/id","specific nested field path");
+ malformed=ex["response"];malformed["diagnosis"]["steps"][0]["code_location"]["snippet"]="wrong";
+ check(parse(malformed.dump(),example,version2)["validation_errors"][0]["path"]=="/diagnosis/steps/0/code_location/snippet","specific decoded snippet path");
  check(parse(std::string(3,char(96))+"json\n"+response.dump(),r)["parse_status"]=="invalid_json","no fence repair");
  check(parse("",r)["parse_status"]=="empty_response","empty");
  auto bad=response;bad["solution_code"]["source_code"]=" \n";
@@ -80,6 +117,14 @@ int main(int argc,char**argv){
  Hy3ModelClient client(t,cfg);client.invoke({"x","test","hash"});
  auto body=json::parse(t.last.body);check(body["max_tokens"]==4096,"output cap transmitted");
  cfg.max_tokens=0;Hy3ModelClient invalid(t,cfg);invalid.invoke({"x","test","hash"});check(t.calls==1,"invalid cap pre-call");
+ struct MetadataTransport:IHttpTransport {json envelope;HttpResponse perform(const HttpRequest&)override{HttpResponse h;h.transport_status=HttpTransportStatus::Completed;h.status_code=200;auto body=envelope.dump();h.body.assign(body.begin(),body.end());return h;}} mt;
+ mt.envelope={{"choices",json::array({{{"finish_reason","length"},{"message",{{"content","{}"}}}}})},
+  {"usage",{{"prompt_tokens",10},{"completion_tokens",20},{"total_tokens",30},{"prompt_tokens_details",{{"cached_tokens",3}}},{"completion_tokens_details",{{"reasoning_tokens",15}}}}}};
+ cfg.max_tokens=4096;Hy3ModelClient metadata(mt,cfg);auto meta=metadata.invoke({"x","test","hash"});
+ check(meta.finish_reason=="length"&&meta.token_usage->reasoning_tokens==15&&meta.token_usage->cached_tokens==3,"safe finish and usage detail");
+ check(meta.token_usage->total_tokens==30,"usage subsets not double counted");
+ mt.envelope["choices"][0]["finish_reason"]="Bearer synthetic-secret";
+ check(!metadata.invoke({"x","test","hash"}).finish_reason,"unsafe finish reason omitted");
  }catch(const std::exception&e){std::cerr<<e.what()<<"\n";++failed;}
  std::cout<<passed<<" passed, "<<failed<<" failed\n";return failed?1:0;
 }

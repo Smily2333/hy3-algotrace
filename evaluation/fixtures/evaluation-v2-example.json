@@ -1,0 +1,86 @@
+{
+  "data_kind": "SYNTHETIC_CONTRACT_EXAMPLE",
+  "request": {
+    "schema_version": "interactive-request-v2",
+    "request_id": "example-only",
+    "algorithm_type": "greedy",
+    "problem_statement": "只有一枚正整数价值的物品。输入价值x（1<=x<=100），选最少件使所选总价值严格大于剩余价值，输出件数。",
+    "cpp_solution": "#include <iostream>\nint main(){int x;std::cin>>x;std::cout<<0<<\"\\n\";}\n"
+  },
+  "response": {
+    "schema_version": "greedy-evaluation-v2",
+    "diagnosis": {
+      "schema_version": "interactive-diagnosis-v2",
+      "request_id": "example-only",
+      "status": "incorrect",
+      "summary": "程序固定输出零，不能满足严格大于剩余价值。",
+      "limitations": [
+        "仅静态审查，未编译或执行。"
+      ],
+      "algorithm_overview": {
+        "origin": "model_code_interpretation",
+        "summary": "读取价值后输出零。"
+      },
+      "steps": [
+        {
+          "id": "s1",
+          "summary": "读取价值并固定输出零件",
+          "code_location": {
+            "start_line": 2,
+            "end_line": 2,
+            "snippet": "int main(){int x;std::cin>>x;std::cout<<0<<\"\\n\";}"
+          }
+        }
+      ],
+      "first_error": {
+        "step_id": "s1",
+        "explanation": "输出零件使所选价值为零，小于正的剩余价值。"
+      },
+      "primary_category": "code_logic_error",
+      "findings": [
+        {
+          "id": "f1",
+          "step_id": "s1",
+          "category": "code_logic_error",
+          "reason": "至少需要唯一一件物品，零件不满足题意。",
+          "input_evidence": {
+            "source": "problem_statement",
+            "excerpt": "所选总价值严格大于剩余价值"
+          },
+          "code_location": {
+            "start_line": 2,
+            "end_line": 2,
+            "snippet": "int main(){int x;std::cin>>x;std::cout<<0<<\"\\n\";}"
+          },
+          "location_reason": null,
+          "suggestion": "输出1。"
+        }
+      ],
+      "counterexample": {
+        "availability": "provided",
+        "input": "5\n",
+        "expected_output": "1\n",
+        "predicted_candidate_output": "0\n",
+        "candidate_output_basis": "static_inference",
+        "explanation": "选零件时0不大于5。",
+        "provenance": "model_proposed_not_executed"
+      },
+      "reference_solution": {
+        "availability": "provided",
+        "strategy": "读入价值，输出1。",
+        "correctness": "零件不可行；选唯一物品后所选价值为正而剩余为零，因此一件必要且足够。",
+        "complexity": "时间O(1)，空间O(1)。",
+        "boundaries": "正整数约束下均成立，包括1和100。",
+        "unavailable_reason": null,
+        "provenance": "model_generated_unverified"
+      }
+    },
+    "solution_code": {
+      "availability": "provided",
+      "language": "cpp",
+      "standard": "c++17",
+      "source_code": "#include <iostream>\nint main(){int x;std::cin>>x;std::cout<<1<<\"\\n\";}\n",
+      "unavailable_reason": null
+    }
+  }
+}

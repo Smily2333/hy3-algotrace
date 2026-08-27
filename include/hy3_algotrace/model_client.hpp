@@ -36,6 +36,9 @@ struct ModelTokenUsage {
     std::optional<std::uint64_t> prompt_tokens;
     std::optional<std::uint64_t> completion_tokens;
     std::optional<std::uint64_t> total_tokens;
+    // Subsets of prompt/completion, never added again to the total.
+    std::optional<std::uint64_t> cached_tokens;
+    std::optional<std::uint64_t> reasoning_tokens;
 };
 
 // Stable lower-case spelling for diagnostics, tests, and future audit records.
@@ -58,6 +61,7 @@ struct ModelCallResult {
     std::optional<int> http_status;
     std::optional<std::string> request_id;
     std::optional<ModelTokenUsage> token_usage;
+    std::optional<std::string> finish_reason; // Allowlisted provider enum, not arbitrary text.
 
     // UTC wall-clock timestamps describe when the call started and finished.
     // duration_ms is measured independently with a monotonic clock by a real

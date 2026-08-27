@@ -146,6 +146,10 @@ std::optional<ModelTokenUsage> safeTokenUsage(const json& document) {
     result.prompt_tokens = optionalTokenCount(usage, "prompt_tokens");
     result.completion_tokens = optionalTokenCount(usage, "completion_tokens");
     result.total_tokens = optionalTokenCount(usage, "total_tokens");
+    if (usage.contains("prompt_tokens_details"))
+        result.cached_tokens = optionalTokenCount(usage.at("prompt_tokens_details"), "cached_tokens");
+    if (usage.contains("completion_tokens_details"))
+        result.reasoning_tokens = optionalTokenCount(usage.at("completion_tokens_details"), "reasoning_tokens");
     if (!result.prompt_tokens && !result.completion_tokens &&
         !result.total_tokens) {
         return std::nullopt;
@@ -409,6 +413,15 @@ ModelCallResult Hy3ModelClient::invoke(const ModelRequest& request) noexcept {
             }
         }
         result.token_usage = safeTokenUsage(responseDocument);
+        if (responseDocument.contains("choices") && responseDocument.at("choices").is_array() &&
+            !responseDocument.at("choices").empty()) {
+            const auto& choice = responseDocument.at("choices").at(0);
+            if (choice.is_object() && choice.contains("finish_reason") && choice.at("finish_reason").is_string()) {
+                const auto reason = choice.at("finish_reason").get<std::string>();
+                if (reason == "stop" || reason == "length" || reason == "content_filter" ||
+                    reason == "tool_calls" || reason == "function_call") result.finish_reason = reason;
+            }
+        }
 
         const bool validEnvelope = responseDocument.is_object() &&
             responseDocument.contains("choices") &&

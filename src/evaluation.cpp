@@ -98,19 +98,100 @@ std::string render(const InteractiveDiagnosisRequest& r,const std::string& base,
     need(text.size()<=interactive_limits::rendered_prompt,"prompt too large");
     return text;
 }
-json parse(const std::string& raw,const InteractiveDiagnosisRequest& r) {
-    json result={{"parse_status","invalid_json"},{"response",nullptr}};
+namespace {
+struct ContractError {std::string path,message;};
+void keys(const json& j,std::initializer_list<const char*> names,const std::string& path) {
+    if(!j.is_object())throw ContractError{path,"expected object"};
+    std::set<std::string> allowed;
+    for(const auto name:names){allowed.insert(name);if(!j.contains(name))throw ContractError{path+"/"+name,"required field missing"};}
+    for(auto i=j.begin();i!=j.end();++i)if(!allowed.count(i.key()))throw ContractError{path,"unexpected field"};
+}
+void locations(const json& j,const std::string& path) {
+    keys(j,{"start_line","end_line","snippet"},path);
+}
+void structure(const json& j) {
+    keys(j,{"schema_version","diagnosis","solution_code"},"");
+    const auto& d=j.at("diagnosis");const std::string p="/diagnosis";
+    keys(d,{"schema_version","request_id","status","summary","limitations","algorithm_overview","steps","first_error","primary_category","findings","counterexample","reference_solution"},p);
+    keys(d.at("algorithm_overview"),{"origin","summary"},p+"/algorithm_overview");
+    keys(d.at("first_error"),{"step_id","explanation"},p+"/first_error");
+    for(const char* name:{"steps","findings"}) {
+        if(!d.at(name).is_array())throw ContractError{p+"/"+name,"expected array"};
+        for(std::size_t i=0;i<d.at(name).size();++i) {
+            const auto& item=d.at(name).at(i);auto path=p+"/"+name+"/"+std::to_string(i);
+            if(std::string(name)=="steps")keys(item,{"id","summary","code_location"},path);
+            else {keys(item,{"id","step_id","category","reason","input_evidence","code_location","location_reason","suggestion"},path);
+                keys(item.at("input_evidence"),{"source","excerpt"},path+"/input_evidence");}
+            if(!item.at("code_location").is_null())locations(item.at("code_location"),path+"/code_location");
+        }
+    }
+    keys(d.at("counterexample"),{"availability","input","expected_output","predicted_candidate_output","candidate_output_basis","explanation","provenance"},p+"/counterexample");
+    keys(d.at("reference_solution"),{"availability","strategy","correctness","complexity","boundaries","unavailable_reason","provenance"},p+"/reference_solution");
+    keys(j.at("solution_code"),{"availability","language","standard","source_code","unavailable_reason"},"/solution_code");
+}
+void locationPaths(const json& d,const InteractiveDiagnosisRequest& r) {
+    InteractiveDiagnosisRequest checked;
+    if(!parseInteractiveDiagnosisRequest(interactiveDiagnosisRequestJson(r),checked).ok)
+        throw ContractError{"/request","invalid input"};
+    std::vector<std::string> lines;
+    const auto& source=checked.cpp_solution;std::size_t pos=0;
+    while(pos<source.size()) {
+        auto end=source.find('\n',pos);
+        lines.push_back(source.substr(pos,end==std::string::npos?end:end-pos));
+        if(end==std::string::npos)break;
+        pos=end+1;
+    }
+    for(const char* group:{"steps","findings"})for(std::size_t i=0;i<d.at(group).size();++i) {
+        const auto& item=d.at(group).at(i);const auto& loc=item.at("code_location");
+        const std::string path=std::string("/diagnosis/")+group+"/"+std::to_string(i)+"/code_location";
+        if(loc.is_null())continue;
+        for(const char* key:{"start_line","end_line"})
+            if(!loc.at(key).is_number_integer()||loc.at(key)<1||loc.at(key)>lines.size())
+                throw ContractError{path+"/"+key,"line outside source"};
+        const auto first=loc.at("start_line").get<std::size_t>(),last=loc.at("end_line").get<std::size_t>();
+        if(first>last)throw ContractError{path,"inverted range"};
+        std::string snippet;
+        for(auto line=first;line<=last;++line){if(line>first)snippet+='\n';snippet+=lines.at(line-1);}
+        if(loc.at("snippet")!=snippet)throw ContractError{path+"/snippet","decoded snippet differs from declared source lines"};
+    }
+}
+}
+std::string renderV2(const InteractiveDiagnosisRequest& r,const std::string& input) {
+    InteractiveDiagnosisRequest checked;
+    need(parseInteractiveDiagnosisRequest(interactiveDiagnosisRequestJson(r),checked).ok,"invalid request");
+    std::vector<std::uint8_t> bytes;std::string error;
+    need(normalizeUtf8({input.begin(),input.end()},bytes,error),"template encoding");
+    std::string text(bytes.begin(),bytes.end());
+    need(text.rfind("# hy3-greedy-evaluation-v2\n",0)==0,"standalone v2 template required");
+    const std::string marker="{{evaluation_request_json}}";auto at=text.find(marker);
+    need(at!=std::string::npos&&text.find(marker,at+marker.size())==std::string::npos,"exactly one request marker required");
+    text.replace(at,marker.size(),interactiveDiagnosisRequestJson(checked).dump());
+    need(text.size()<=interactive_limits::rendered_prompt,"prompt too large");
+    return text;
+}
+json parse(const std::string& raw,const InteractiveDiagnosisRequest& r,const std::string& expectedVersion) {
+    json result={{"parse_status","invalid_json"},{"response",nullptr},{"expected_schema_version",expectedVersion},{"validation_errors",json::array()}};
     if(raw.empty()){result["parse_status"]="empty_response";return result;}
-    if(raw.size()>interactive_limits::model_response){result["parse_status"]="schema_invalid";return result;}
+    if(raw.size()>interactive_limits::model_response){result["parse_status"]="schema_invalid";
+        result["validation_errors"].push_back({{"path",""},{"message","response exceeds byte limit"}});return result;}
     auto j=json::parse(raw,nullptr,false);
-    if(j.is_discarded())return result;
+    if(j.is_discarded()){result["validation_errors"].push_back({{"path",""},{"message","invalid JSON syntax; not repaired"}});return result;}
+    std::string path="";
     try {
-        need(j.is_object()&&j.size()==3&&j.at("schema_version")==version,"envelope");
-        need(validateInteractiveDiagnosis(j.at("diagnosis"),r).empty(),"diagnosis");
+        need(expectedVersion==version||expectedVersion==version2,"unsupported expected version");
+        structure(j);
+        path="/schema_version";
+        need(j.at("schema_version")==expectedVersion,"response version mismatch");
+        path="/diagnosis";
+        locationPaths(j.at("diagnosis"),r);
+        const auto diagnostic=validateInteractiveDiagnosis(j.at("diagnosis"),r);
+        if(!diagnostic.empty())throw ContractError{path,diagnostic};
+        path="/solution_code";
         const auto& c=j.at("solution_code");
         need(c.is_object()&&c.size()==5,"solution schema");
         need(c.at("language")=="cpp"&&c.at("standard")=="c++17","language");
         if(c.at("availability")=="provided") {
+            path="/solution_code/source_code";
             need(c.at("source_code").is_string()&&c.at("unavailable_reason").is_null(),"code fields");
             InteractiveDiagnosisRequest code=r;
             code.cpp_solution=c.at("source_code").get<std::string>();
@@ -122,7 +203,8 @@ json parse(const std::string& raw,const InteractiveDiagnosisRequest& r) {
                  c.at("unavailable_reason").is_string()&&!c.at("unavailable_reason").get<std::string>().empty(),"unavailable");
         }
         result["parse_status"]="parsed";result["response"]=j;
-    } catch(...) {result["parse_status"]="schema_invalid";}
+    } catch(const ContractError& e) {result["parse_status"]="schema_invalid";result["validation_errors"].push_back({{"path",e.path},{"message",e.message}});
+    } catch(const std::exception&) {result["parse_status"]="schema_invalid";result["validation_errors"].push_back({{"path",path},{"message","field type, value or condition invalid"}});}
     return result;
 }
 std::string normalizeOutput(std::string s) {
