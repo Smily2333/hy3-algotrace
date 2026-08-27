@@ -44,4 +44,6 @@ v1的0/3与v2的2/3只能作开发观察；样本复用、单题、单次随机�
 
 本地执行 `cmake --build build/m1 --config Release --parallel 4`、`ctest --test-dir build/m1 -C Release --output-on-failure`：完整构建成功、12/12 CTest通过；evaluation_tests为75/75。受控worker在WSL GNU C++13.3.0下构建，先按独立oracle核对expected再在bubblewrap内执行；新增16个作业、64次测试结果完整保存。文档本地链接及精确Key/凭证/私人绝对路径检查通过；没有新增Python文件。
 
-当前集成CI证据在收尾时追加。M1保持已完成；M2增加独立草案，待人工与正式冻结；M3开发验证有结果但契约仍失败1/3，不能宣称完成；M4更新公开摘要，视频与最终审核仍未完成。
+集成检查点 `47634bc5299745860c2cf41e8203d32db7ed018b` 对应 [CI 33093371830](https://github.com/Smily2333/hy3-algotrace/actions/runs/33093371830)：Windows/Ubuntu configure、build、全部CTest、CLI数据校验均成功。此后仅补写本段CI证据，不重复CI。旧冻结集合零diff，原始响应与运行目录未提交。
+
+M1保持已完成；M2增加独立草案，待人工与正式冻结；M3开发验证有结果但契约仍失败1/3，不能宣称完成；M4更新公开摘要，视频与最终审核仍未完成。下一步优先由真人复核两份模型解法论证及s003的失败/定位分歧，再复核新增gold；不能将剩余额度视为绕过六次开发上限的许可。
