@@ -1,0 +1,394 @@
+{
+  "compiler": "GNU C++ 13.3.0",
+  "compiler_path": "redacted",
+  "dataset_sha256": "b2cd080d3d3c1018dff63aa7096b28fd132c3d78bf7cb2f55bc66803d0111e7e",
+  "environment": "cleared",
+  "flags": [
+    "-std=c++17",
+    "-O2",
+    "-pipe"
+  ],
+  "network": "unshared",
+  "results": [
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 503,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "p01_reference",
+      "independent_oracle_checked": true,
+      "source_sha256": "414afcabb96220d0ab7f3e782ab6e9ea09b524e18d57a2c1f1b52c85537dbeb0",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "2\n",
+          "first_difference_byte": null,
+          "input_sha256": "8e2caa17025d27380b35a0a0121c6faec8c9843e6b81f92111d8b94510537705",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "2\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "b33f15763df1029045a18b6d2afdd2bff1b198ddae9f5219b06c69daac0be8a4",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "45708af5e9d6cef5f5835f27be4d8ccf48fc2730ada940f94cf9632bd19a6bc5",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "passed"
+    },
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 283,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s001",
+      "independent_oracle_checked": true,
+      "source_sha256": "414afcabb96220d0ab7f3e782ab6e9ea09b524e18d57a2c1f1b52c85537dbeb0",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "2\n",
+          "first_difference_byte": null,
+          "input_sha256": "8e2caa17025d27380b35a0a0121c6faec8c9843e6b81f92111d8b94510537705",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "2\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "b33f15763df1029045a18b6d2afdd2bff1b198ddae9f5219b06c69daac0be8a4",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "45708af5e9d6cef5f5835f27be4d8ccf48fc2730ada940f94cf9632bd19a6bc5",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "passed"
+    },
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 293,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s002",
+      "independent_oracle_checked": true,
+      "source_sha256": "4811585d28a0a406ec85dcc5c49403a70a52a4798478c1ea368a02cce28c17d0",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "2\n",
+          "first_difference_byte": 0,
+          "input_sha256": "8e2caa17025d27380b35a0a0121c6faec8c9843e6b81f92111d8b94510537705",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "wrong_answer"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "b33f15763df1029045a18b6d2afdd2bff1b198ddae9f5219b06c69daac0be8a4",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "45708af5e9d6cef5f5835f27be4d8ccf48fc2730ada940f94cf9632bd19a6bc5",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "wrong_answer"
+    },
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 282,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s003",
+      "independent_oracle_checked": true,
+      "source_sha256": "1019a1fcd5793cf125b23b39dcaed39ed37d034499da8a5559134953db3c41f8",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "2\n",
+          "first_difference_byte": null,
+          "input_sha256": "8e2caa17025d27380b35a0a0121c6faec8c9843e6b81f92111d8b94510537705",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "2\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": 0,
+          "input_sha256": "b33f15763df1029045a18b6d2afdd2bff1b198ddae9f5219b06c69daac0be8a4",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "3\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "wrong_answer"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "45708af5e9d6cef5f5835f27be4d8ccf48fc2730ada940f94cf9632bd19a6bc5",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "wrong_answer"
+    },
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 281,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s001_solution",
+      "independent_oracle_checked": true,
+      "source_sha256": "b7538e26af258739ae130c1c858c7f204799068699ff767eaa6a5b66ef5923d8",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "2\n",
+          "first_difference_byte": null,
+          "input_sha256": "8e2caa17025d27380b35a0a0121c6faec8c9843e6b81f92111d8b94510537705",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "2\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "b33f15763df1029045a18b6d2afdd2bff1b198ddae9f5219b06c69daac0be8a4",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "45708af5e9d6cef5f5835f27be4d8ccf48fc2730ada940f94cf9632bd19a6bc5",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "passed"
+    },
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 242,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s002_solution",
+      "independent_oracle_checked": true,
+      "source_sha256": "2aa408d9624a6f48ae28eb77d5a6f06de99e3a83b8ba1bb8de7054544b7a349e",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "2\n",
+          "first_difference_byte": null,
+          "input_sha256": "8e2caa17025d27380b35a0a0121c6faec8c9843e6b81f92111d8b94510537705",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "2\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "b33f15763df1029045a18b6d2afdd2bff1b198ddae9f5219b06c69daac0be8a4",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "1\n",
+          "first_difference_byte": null,
+          "input_sha256": "45708af5e9d6cef5f5835f27be4d8ccf48fc2730ada940f94cf9632bd19a6bc5",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "1\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "passed"
+    }
+  ],
+  "schema_version": "fixed-answer-results-v1",
+  "redaction": "Full compiler banner and host-specific paths omitted; result/source/input hashes and finite outputs retained."
+}

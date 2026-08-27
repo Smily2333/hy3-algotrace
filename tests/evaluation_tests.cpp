@@ -1,6 +1,7 @@
 #include "hy3_algotrace/evaluation.hpp"
 #include "hy3_algotrace/hy3_model_client.hpp"
 #include "interactive_v2_fixture.hpp"
+#include "../evaluation/tools/independent_oracle.hpp"
 #include <iostream>
 using namespace hy3;
 using namespace hy3::evaluation;
@@ -11,6 +12,17 @@ int main(int argc,char**argv){
  try{
  auto d=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/materials/dataset.json");
  validateDataset(d);check(d["problems"].size()==8&&d["samples"].size()==25,"material count");
+ auto expansion=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/expansion-20260828/dataset.json");
+ validateDataset(expansion);check(expansion["problems"].size()==4&&expansion["samples"].size()==12&&!expansion["frozen"].get<bool>(),"separate unfrozen expansion");
+ for(const auto& p:expansion["problems"])for(const auto& t:p["test_cases"])
+    check(std::to_string(oracle(p["id"],t["input"]))==normalizeOutput(t["expected_output"]),"expansion independent oracle");
+ auto expansionEvidence=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/expansion-20260828/answer-evidence.json");
+ json expansionRecords=json::array();for(const auto& s:expansion["samples"])expansionRecords.push_back({{"sample_id",s["id"]},{"parse_status","not_attempted"}});
+ const auto checkedExpansion=attachAnswerEvidence(expansion,expansionRecords,expansionEvidence);
+ int expansionPassed=0,expansionWrong=0;
+ for(const auto& x:checkedExpansion){expansionPassed+=x["candidate_answer_status"]=="passed";expansionWrong+=x["candidate_answer_status"]=="wrong_answer";}
+ check(expansionPassed==5&&expansionWrong==7,"expansion source/input hashes and actual answer evidence");
+ check(checkedExpansion.back()["candidate_answer_status"]=="passed"&&expansion["samples"].back()["gold"]["process_status"]=="incorrect","correct answer does not validate explicit false proof");
  InteractiveDiagnosisRequest r;
  check(parseInteractiveDiagnosisRequest(interactive_fixture::request("input"),r).ok,"minimal request");
  auto base=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-interactive-diagnosis-v2.md");

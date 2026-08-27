@@ -1,0 +1,200 @@
+{
+  "schema_version": "human-review-queue-v1",
+  "status": "not_reviewed",
+  "assigned_reviewer": "project_owner",
+  "assignment_basis": "User volunteered previously; no review of new expansion claimed",
+  "entries": [
+    {
+      "sample_id": "s026",
+      "problem_id": "p09",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s027",
+      "problem_id": "p09",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s028",
+      "problem_id": "p09",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s029",
+      "problem_id": "p10",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s030",
+      "problem_id": "p10",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s031",
+      "problem_id": "p10",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s032",
+      "problem_id": "p11",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s033",
+      "problem_id": "p11",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s034",
+      "problem_id": "p11",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s035",
+      "problem_id": "p12",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s036",
+      "problem_id": "p12",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s037",
+      "problem_id": "p12",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "statement_and_source",
+        "reference_correctness",
+        "gold_process",
+        "first_error",
+        "test_coverage"
+      ],
+      "evidence": null,
+      "disagreement": null
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schema_version": "teaching-source-registry-v1",
+  "retrieved_on": "2026-08-28",
+  "scope": "Concept references only; original project wording/constraints/code/tests. No source PDF, diagram, pseudocode or downloaded solution is redistributed.",
+  "sources": [
+    {
+      "id": "princeton_greedy_2020",
+      "title": "Greedy Algorithms I",
+      "author": "Kevin Wayne",
+      "publisher": "Princeton University course materials",
+      "url": "https://www.cs.princeton.edu/~wayne/kleinberg-tardos/pdf/04GreedyAlgorithmsI.pdf",
+      "course_index": "https://www.cs.princeton.edu/courses/archive/spring18/cos423/lectures.php",
+      "document_date": "2020-02-25",
+      "pages_1_based": {
+        "p09": [
+          17,
+          23
+        ],
+        "p10": [
+          25,
+          32
+        ],
+        "p12": [
+          38,
+          52
+        ]
+      },
+      "access_status": "PDF text inspected; relevant diagrams requested through PDF screenshot tool",
+      "rights": "Copyright notice retained in source; not assumed to be an open redistribution license",
+      "adaptations": [
+        "p09: integer half-open intervals; output count only",
+        "p10: 64-bit, all jobs mandatory, max(0,C-d)",
+        "p12: initially empty cache, count every load including first; no prefetch"
+      ],
+      "limitations": "Classical algorithms may be present in model training data. Shared interval/deadline families require grouped splitting; benchmark novelty is not claimed."
+    },
+    {
+      "id": "williams_assignment_2019",
+      "title": "CS 256 Assignment 3: Greedy Algorithms in the Wild",
+      "author": "Shikha Singh",
+      "publisher": "Williams College",
+      "url": "https://www.cs.williams.edu/~shikha/teaching/fall19/cs256/assignments/CS256_Assignment_3.pdf",
+      "document_date": "2019-10-07 (due date)",
+      "pages_1_based": [
+        1,
+        2
+      ],
+      "sections": "Problems 1–2: interval stabbing",
+      "access_status": "Relevant text inspected",
+      "rights": "No redistribution license established; only URL and short original description recorded",
+      "adaptations": [
+        "p11: closed integer intervals, duplicates and singleton intervals, count-only output"
+      ],
+      "limitations": "This is a concept reference, not official labels or official tests for the project's new statements."
+    }
+  ],
+  "not_used": [
+    {
+      "url": "https://www.ccs.neu.edu/home/hlnguyen/cs4800/spring17/hw6.pdf",
+      "reason": "PDF open failed; search snippet alone not used as verification evidence"
+    }
+  ]
+}

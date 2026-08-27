@@ -10,9 +10,10 @@
 
 M 表示 Milestone（里程碑）：**M1 做诊断应用，M2 准备评测材料，M3 验证效果，M4 整理交付**。M1 已通过双平台 CI；M2 已交付8题25候选、独立评测工具与隔离答案证据。真实实验和人工复核尚未完成。集中结果见 [阶段交付报告](docs/delivery-report.md)。
 
-**当前状态：M1完成；M2技术准备已交付，M3开发试跑后停止扩大，M4部分交付（2026-08-28）。** 三条真实开发响应均HTTP200，但严格契约通过0/3，总消耗36420 token；不是正式模型效果验收。作者已确认s001–s003的gold，余22条待审。已更正此前片段转义错误的描述（解码后8/8精确匹配）；独立[评测v2](docs/evaluation-v2.md)先离线验证，尚无新版真实调用。详见[试跑记录及更正](docs/journal/m3-development-pilot.md)。网页不执行代码，旧pilot不混入新实验；本次验证见评测v2说明，历史CI仅证明历史代码。
+**当前状态：M1完成；M2新增独立4题12候选草案，M3 v2开发验证完成但未通过正式实验门槛，M4部分交付（2026-08-28）。** v2三次调用2条parsed、1条schema_invalid，两份完整代码通过固定测试；累计v1+v2共6次、76496 token，余223504。六次开发上限已用完，不自动扩大调用。作者仅确认旧s001–s003的gold；新增12条未送模型、未人工审核。详见[最新实验报告](docs/journal/m3-development-v2.md)和[联网来源与扩充材料](evaluation/expansion-20260828/README.md)。旧三次失败、历史更正及gold不变；网页仍不执行代码。
 
 - [评测契约与运行命令](docs/evaluation-v1.md) / [8题25候选](evaluation/materials/dataset.json)
+- [独立评测v2](docs/evaluation-v2.md) / [新增4题12候选](evaluation/expansion-20260828/dataset.json) / [v2脱敏报告](evaluation/results/development-v2-report.json)
 - [真实固定答案证据（不是模型实验）](evaluation/results/fixed-answer-evidence.json)
 - [人工待审清单](evaluation/review-queue.json) / [演示脚本与Fake截图](docs/demo-m1-m4.md)
 
@@ -66,7 +67,7 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 | --- | --- | --- |
 | M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 双平台程序验收通过；未验证真实模型效果 |
 | M2 | 分层样本、独立 gold、最小答案校验与评测适配 | 材料/工具/隔离验证完成；待正式冻结与人工安排 |
-| M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | 旧开发3次均schema_invalid；正式0条；3条gold已人工确认，v2离线验证 |
+| M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | v2开发2/3契约通过；累计6次；正式0条，完整解法过程仍待人工复核 |
 | M4 | 运行说明、公开材料、分析报告与两分钟 Demo | 报告/证据/脚本已交付；真实结果和视频成片待补 |
 
 ## 7. 目录结构

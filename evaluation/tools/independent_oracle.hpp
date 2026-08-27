@@ -3,12 +3,16 @@
 #include <climits>
 #include <numeric>
 #include <functional>
+#include <algorithm>
+#include <stdexcept>
+#include <string>
+#include <vector>
 // Independent exponential oracles, only for the small fixed tests (not candidates).
 inline long long oracle(const std::string& problem,const std::string& input){
  std::istringstream in(input);int n;in>>n;if(!in||n<0||n>10)throw std::runtime_error("oracle small-case limit");
  std::vector<long long>a(n),b(n);long long B=0,F=0;
- if(problem=="p07")in>>B>>F;else if(problem=="p08")in>>B;
- for(int i=0;i<n;++i){in>>a[i];if(problem=="p03"||problem=="p06"||problem=="p07")in>>b[i];}
+ if(problem=="p07")in>>B>>F;else if(problem=="p08"||problem=="p12")in>>B;
+ for(int i=0;i<n;++i){in>>a[i];if(problem=="p03"||problem=="p06"||problem=="p07"||problem=="p09"||problem=="p10"||problem=="p11")in>>b[i];}
  if(!in)throw std::runtime_error("oracle input");
  long long best=LLONG_MAX;
  if(problem=="p01"){
@@ -42,6 +46,44 @@ inline long long oracle(const std::string& problem,const std::string& input){
  }else if(problem=="p08"){
     std::function<int(int)>f=[&](int mask){if(!mask)return 0;int i=0;while(!(mask>>i&1))++i;int rest=mask^(1<<i),ans=1+f(rest);for(int j=i+1;j<n;++j)if((rest>>j&1)&&a[i]+a[j]<=B)ans=std::min(ans,1+f(rest^(1<<j)));return ans;};
     best=f((1<<n)-1);
+ }else if(problem=="p09"){
+    // Enumerate valid room assignments, independently of the reference heap.
+    std::vector<int> room(n,-1);best=n;
+    std::function<void(int,int)> f=[&](int i,int used){
+        if(i==n){best=std::min(best,(long long)used);return;}
+        if(used>=best)return;
+        for(int color=0;color<=used;++color){bool ok=true;
+            for(int j=0;j<i;++j)if(room[j]==color&&std::max(a[i],a[j])<std::min(b[i],b[j]))ok=false;
+            if(ok){room[i]=color;f(i+1,std::max(used,color+1));}
+        }
+    };f(0,0);
+ }else if(problem=="p10"){
+    std::vector<int> p(n);std::iota(p.begin(),p.end(),0);
+    do{long long elapsed=0,cost=0;for(int i:p){elapsed+=a[i];cost=std::max(cost,elapsed-b[i]);}
+        best=std::min(best,cost);
+    }while(std::next_permutation(p.begin(),p.end()));
+ }else if(problem=="p11"){
+    // Enumerate endpoint subsets, not an earliest-finish greedy scan.
+    for(int mask=0;mask<(1<<n);++mask){bool ok=true;long long count=0;
+        for(int j=0;j<n;++j)count+=(mask>>j)&1;
+        for(int i=0;i<n;++i){bool covered=false;
+            for(int j=0;j<n;++j){
+                if((mask>>j&1)&&a[i]<=b[j]&&b[j]<=b[i])covered=true;
+            }
+            ok=ok&&covered;
+        }
+        if(ok)best=std::min(best,count);
+    }
+ }else if(problem=="p12"){
+    if(B<1)throw std::runtime_error("cache capacity");
+    std::function<long long(int,std::vector<long long>)> f=[&](int i,std::vector<long long> cache)->long long{
+        if(i==n)return 0;
+        if(std::find(cache.begin(),cache.end(),a[i])!=cache.end())return f(i+1,cache);
+        if(cache.size()<static_cast<std::size_t>(B)){cache.push_back(a[i]);return 1+f(i+1,cache);}
+        long long cost=LLONG_MAX;
+        for(std::size_t j=0;j<cache.size();++j){auto next=cache;next[j]=a[i];cost=std::min(cost,1+f(i+1,next));}
+        return cost;
+    };best=f(0,{});
  }else throw std::runtime_error("unknown oracle");
  return best;
 }
