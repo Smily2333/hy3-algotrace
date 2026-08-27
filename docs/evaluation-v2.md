@@ -47,4 +47,7 @@ RAW_FILE等是命令参数占位，不能原样执行。bundle与v1一样为 `{d
 
 离线CLI检查：导出25条v2 Prompt；用原始响应重放旧版import，三条仍schema_invalid、raw SHA全部不变；v2合成失败报告成功，混入v1记录被拒绝；错误campaign目录在构造模型客户端前被拒绝，无网络请求。原账本仍3次/36420 token。
 
-覆盖完整示例、版本隔离、缺失/错层字段路径、三态语义、CRLF/空行/重复片段、无JSON修复、finish_reason白名单和用量细分。没有编译/运行候选或示例代码，未加载真实Key。本次双平台CI另以实际run记录，不复用旧CI证明新代码。
+覆盖完整示例、版本隔离、缺失/错层字段路径、三态语义、CRLF/空行/重复片段、无JSON修复、finish_reason白名单和用量细分。没有编译/运行候选或示例代码，未加载真实Key。
+
+本次代码检查点 `c72590cacc8e7d7e6d9f50fa0f68feb1623c7fbd`，
+[CI 33091674872](https://github.com/Smily2333/hy3-algotrace/actions/runs/33091674872)：Windows/Ubuntu configure、build、全部CTest、CLI数据校验均成功。后续仅补写本段CI证据，不重复触发CI。旧冻结数据、旧Prompt、原Phase2协议指标、pilot及evaluation/materials/results均零diff；工作区未新增Python、真实raw或凭证。新版模型效果仍未验证。
