@@ -86,13 +86,15 @@ InteractiveDiagnosisRequest requestFor(const json& d,const std::string& id) {
 }
 std::string render(const InteractiveDiagnosisRequest& r,const std::string& base,const std::string& extension) {
     need(validInteractivePromptTemplate(base),"v2 template invalid");
-    need(extension.rfind("# hy3-greedy-evaluation-v1\n",0)==0,"evaluation template invalid");
     std::vector<std::uint8_t> out;std::string error;
     need(normalizeUtf8({base.begin(),base.end()},out,error),"template encoding");
     std::string text(out.begin(),out.end());
+    need(normalizeUtf8({extension.begin(),extension.end()},out,error),"extension encoding");
+    const std::string normalizedExtension(out.begin(),out.end());
+    need(normalizedExtension.rfind("# hy3-greedy-evaluation-v1\n",0)==0,"evaluation template invalid");
     const std::string marker="{{interactive_request_json}}";
     text.replace(text.find(marker),marker.size(),interactiveDiagnosisRequestJson(r).dump());
-    text += "\n"+extension;
+    text += "\n"+normalizedExtension;
     need(text.size()<=interactive_limits::rendered_prompt,"prompt too large");
     return text;
 }

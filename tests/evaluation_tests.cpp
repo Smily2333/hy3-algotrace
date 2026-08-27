@@ -13,6 +13,8 @@ int main(int argc,char**argv){
  validateDataset(d);check(d["problems"].size()==8&&d["samples"].size()==25,"material count");
  InteractiveDiagnosisRequest r;
  check(parseInteractiveDiagnosisRequest(interactive_fixture::request("input"),r).ok,"minimal request");
+ auto base=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-interactive-diagnosis-v2.md");
+ check(render(r,base,"# hy3-greedy-evaluation-v1\r\nJSON\r\n").find('\r')==std::string::npos,"CRLF extension normalized");
  json response={{"schema_version",version},{"diagnosis",interactive_fixture::diagnosis("input")},
     {"solution_code",{{"availability","provided"},{"language","cpp"},{"standard","c++17"},{"source_code",interactive_fixture::code(true)},{"unavailable_reason",nullptr}}}};
  check(parse(response.dump(),r)["parse_status"]=="parsed","complete response");
