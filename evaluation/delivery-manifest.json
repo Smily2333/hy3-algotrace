@@ -1,0 +1,46 @@
+{
+  "schema_version": "delivery-evidence-index-v1",
+  "status": "partial_delivery_not_formal_experiment",
+  "model": "hy3",
+  "model_version": null,
+  "evaluation_version": "greedy-evaluation-v1",
+  "dataset_version": "m2-draft-20260827",
+  "formal_frozen": false,
+  "code_commit": "59a7689",
+  "requests": 0,
+  "actual_tokens": 0,
+  "unknown_reserved_tokens": 0,
+  "token_limit": 300000,
+  "remaining_tokens": 300000,
+  "call_limit": 38,
+  "files": [
+    {
+      "path": "evaluation/materials/dataset.json",
+      "sha256_lf": "f7d559986f061794e7367f959c83e1bfb2e941fd84e40f024c43e34436507c1c"
+    },
+    {
+      "path": "evaluation/results/fixed-answer-evidence.json",
+      "sha256_lf": "1c0284cce91368bee8e10dae5c8ba450aa91f91d3f8cf6754eaf1565137a619c"
+    },
+    {
+      "path": "prompts/hy3-interactive-diagnosis-v2.md",
+      "sha256_lf": "a58623d7543e717f49ebf681044506736ff0e86acfea8c27b79e66dcd32d6d93"
+    },
+    {
+      "path": "prompts/hy3-greedy-evaluation-v1.md",
+      "sha256_lf": "e679574b104e192f33c125ea0b2b475075695731c2cc37b5751c41a0f2778556"
+    },
+    {
+      "path": "src/evaluation.cpp",
+      "sha256_lf": "09179c8067d632b0ec53bf2b525607f75ecab55274e847668a66affa3821853d"
+    },
+    {
+      "path": "src/evaluation_main.cpp",
+      "sha256_lf": "1cbaba9cdbad6098aca60b83f1ebbdcf480216b9fcfd2f4844d417484dc214ef"
+    },
+    {
+      "path": "evaluation/tools/fixed_answer_worker.cpp",
+      "sha256_lf": "e9e0b4a24a3720f8b066add3bc5b4fd11d100919f7ff2f66a0120bb7bd013ef7"
+    }
+  ]
+}

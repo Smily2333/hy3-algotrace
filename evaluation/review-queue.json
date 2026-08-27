@@ -1,0 +1,356 @@
+{
+  "schema_version": "human-review-queue-v1",
+  "status": "not_reviewed",
+  "entries": [
+    {
+      "sample_id": "s001",
+      "problem_id": "p01",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s002",
+      "problem_id": "p01",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s003",
+      "problem_id": "p01",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s004",
+      "problem_id": "p02",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s005",
+      "problem_id": "p02",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s006",
+      "problem_id": "p02",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s007",
+      "problem_id": "p03",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s008",
+      "problem_id": "p03",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s009",
+      "problem_id": "p03",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s010",
+      "problem_id": "p04",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s011",
+      "problem_id": "p04",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s012",
+      "problem_id": "p04",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s013",
+      "problem_id": "p05",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s014",
+      "problem_id": "p05",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s015",
+      "problem_id": "p05",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s016",
+      "problem_id": "p06",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s017",
+      "problem_id": "p06",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s018",
+      "problem_id": "p06",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s019",
+      "problem_id": "p07",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s020",
+      "problem_id": "p07",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s021",
+      "problem_id": "p07",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s022",
+      "problem_id": "p08",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s023",
+      "problem_id": "p08",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s024",
+      "problem_id": "p08",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    },
+    {
+      "sample_id": "s025",
+      "problem_id": "p01",
+      "reviewer": null,
+      "date": null,
+      "decision": "pending",
+      "review_scope": [
+        "gold_process",
+        "first_error",
+        "reference_correctness"
+      ],
+      "evidence": null,
+      "disagreement": null
+    }
+  ]
+}

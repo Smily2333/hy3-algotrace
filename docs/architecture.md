@@ -193,6 +193,15 @@ v2 不兼容旧交互请求：schema、默认 Prompt 路径、模板 ID/hash 和
 
 ## 6.5 冻结文件边界
 
+### 当前 M2 独立评测路径
+
+`hy3_evaluate` 从独立 `evaluation/materials/` allowlist 投影请求，复用网页v2诊断校验器，
+但模型响应使用 `greedy-evaluation-v1` 封装并新增完整C++17代码。网页默认仍为v2，不执行代码。
+预算账本先持久化预留再调用，未知消耗不释放；正式调用门槛和账户条件未满足时拒绝。
+答案路径为已批准材料 → Linux/WSL bubblewrap → argv编译/运行 → hash绑定证据 → 独立报告。
+参考输出另用小规模穷举/DP核对；这不是恢复通用CandidateRunner或引入其他算法诊断范围。
+当前真实模型调用0，正式冻结与人工复核待完成；详见 [evaluation-v1](evaluation-v1.md)。
+
 以下文件在 Phase 2B 中**只读不写**（实现不得修改）：`data/`（数据契约 0.3.0 逐字节不变）、`prompts/hy3-evaluator-v1.md`（冻结 Prompt 模板）、`docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`。针对这些冻结评测数据的指标/枚举/语义变更必须另行授权，不能在 C++ 中自行改变。M1 的独立交互 v2 按其自身契约扩展，不回写这些冻结文件或旧指标。
 
 ## 7. 模型适配边界（offline/manual + 可注入 adapter）

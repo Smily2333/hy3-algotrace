@@ -94,7 +94,7 @@ Hy3 静态分析
 
 **目标：** 跑通“题面 + 代码 → 结构化诊断与完整解法”的产品闭环。验收输入、输出、定位契约和程序行为，不在本阶段宣称模型准确率提高。
 
-**2026-08-27 状态：`m1_complete_local_verified_pending_model_evaluation`。** Windows/MSVC 本地 CMake 构建、全部 11 项 CTest、Fake 网页流程通过。未跑本次 Ubuntu/远端 CI；复制按钮成功提示与 JSON 内容已核对，但自动化未能核验系统剪贴板字节。详见 [M1 验收记录](journal/m1-interactive-v2.md)与[交互 v2 契约](interactive-diagnosis-demo.md)。
+**2026-08-27 状态：M1 双平台 CI 技术验收通过，模型效果待验证。** 检查点0836f0f对应CI33056104253双平台success。Windows本地CMake/CTest与Fake网页流程通过；复制按钮成功提示与JSON已核对，系统剪贴板字节仍未独立核验。详见[M1记录](journal/m1-interactive-v2.md)、[M2后续记录](journal/m2-evaluation-preparation.md)和[交付报告](delivery-report.md)。
 
 ### 4.1 必做任务
 
