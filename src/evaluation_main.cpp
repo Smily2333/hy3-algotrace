@@ -54,6 +54,20 @@ json formalDataset(const json& manifest){
     }
     validateDataset(out);return out;
 }
+json formalAnswerEvidence(const json& manifest,const json& dataset){
+    json evidence={{"schema_version","fixed-answer-results-v1"},{"dataset_sha256",hy3::sha256_hex(dataset.dump())},{"results",json::array()}};
+    std::map<std::string,json> evidenceResults;
+    for(const auto& source:manifest.at("answer_evidence_sources")){
+        const fs::path path=source.at("path").get<std::string>();if(!safeRepositoryPath(path))throw std::runtime_error("unsafe formal answer evidence path");
+        const auto part=load(path);if(hy3::sha256_hex(part.dump())!=source.at("canonical_sha256"))throw std::runtime_error("formal answer evidence hash mismatch");
+        for(const auto& r:part.at("results"))evidenceResults.emplace(r.at("id").get<std::string>(),r);
+    }
+    for(const auto& s:dataset.at("samples")){
+        const auto id=s.at("id").get<std::string>();if(!evidenceResults.count(id))throw std::runtime_error("formal answer evidence missing sample");
+        evidence["results"].push_back(evidenceResults.at(id));
+    }
+    return evidence;
+}
 void validateFormalFreeze(const json& manifest,const json& dataset,const std::string& prompt){
     validateFormalIdentity(manifest,dataset,prompt);
     const fs::path reviewPath=manifest.at("material_review_path").get<std::string>();
@@ -67,17 +81,7 @@ void validateFormalFreeze(const json& manifest,const json& dataset,const std::st
     for(const auto& e:review.at("entries"))if(e.at("decision")=="gold_confirmed")confirmed.insert(e.at("sample_id"));
     for(const auto& s:dataset.at("samples"))if(!confirmed.count(s.at("id")))
         throw std::runtime_error("formal sample lacks human gold confirmation");
-    json evidence={{"schema_version","fixed-answer-results-v1"},{"dataset_sha256",hy3::sha256_hex(dataset.dump())},{"results",json::array()}};
-    std::map<std::string,json> evidenceResults;
-    for(const auto& source:manifest.at("answer_evidence_sources")){
-        const fs::path path=source.at("path").get<std::string>();if(!safeRepositoryPath(path))throw std::runtime_error("unsafe formal answer evidence path");
-        const auto part=load(path);if(hy3::sha256_hex(part.dump())!=source.at("canonical_sha256"))throw std::runtime_error("formal answer evidence hash mismatch");
-        for(const auto& r:part.at("results"))evidenceResults.emplace(r.at("id").get<std::string>(),r);
-    }
-    for(const auto& s:dataset.at("samples")){
-        const auto id=s.at("id").get<std::string>();if(!evidenceResults.count(id))throw std::runtime_error("formal answer evidence missing sample");
-        evidence["results"].push_back(evidenceResults.at(id));
-    }
+    const auto evidence=formalAnswerEvidence(manifest,dataset);
     json pending=json::array();for(const auto& s:dataset.at("samples"))pending.push_back({{"sample_id",s.at("id")},{"parse_status","not_attempted"}});
     const auto attached=attachAnswerEvidence(dataset,pending,evidence);
     std::set<std::string> processBadAnswerPassed;
@@ -107,7 +111,9 @@ int main(int argc,char**argv){
  try{
     if(argc<3){std::cout<<"hy3_evaluate validate DATASET | export[-v2] DATASET ROOT | import[-v2] DATASET SAMPLE RAW OUT | report[-v2] DATASET RECORDS OUT [EVIDENCE] | jobs DATASET OUT\n"
         <<"Paid, authorization required: call[-v2] DATASET SAMPLE CAMPAIGN_ROOT ACCOUNT_CONFIRMATION\n"
-        <<"Formal: formal-plan FREEZE_MANIFEST CAMPAIGN_ROOT | formal-call FREEZE_MANIFEST SAMPLE CAMPAIGN_ROOT ACCOUNT_CONFIRMATION\n";return 1;}
+        <<"Formal: formal-plan FREEZE_MANIFEST CAMPAIGN_ROOT | formal-call FREEZE_MANIFEST SAMPLE CAMPAIGN_ROOT ACCOUNT_CONFIRMATION\n"
+        <<"Offline formal: formal-bundle FREEZE_MANIFEST CAMPAIGN_ROOT OUT | formal-report FREEZE_MANIFEST BUNDLE OUT [SOLUTION_EVIDENCE]\n"
+        <<"Approved execution jobs: formal-solution-jobs FREEZE_MANIFEST BUNDLE STATIC_REVIEW OUT\n";return 1;}
     std::string cmd=argv[1];
     const bool v2=cmd.size()>3&&cmd.substr(cmd.size()-3)=="-v2";
     if(v2)cmd.resize(cmd.size()-3);
@@ -135,6 +141,72 @@ int main(int argc,char**argv){
         const fs::path formalRoot=root/"formal"/manifest.at("experiment_id").get<std::string>();
         fs::create_directories(formalRoot);saveNew(formalRoot/"batch-plan.json",plan);
         std::cout<<plan.dump(2)<<"\n";return 0;
+    }
+    if(cmd=="formal-bundle"&&argc==5){
+        const auto manifest=load(argv[2]);const auto dataset=formalDataset(manifest);
+        const auto promptTemplate=readTemplate("prompts/hy3-greedy-evaluation-v2.md");validateFormalFreeze(manifest,dataset,promptTemplate);
+        const fs::path root=argv[3];if(fs::weakly_canonical(root)!=fs::canonical("build/m3-development-20260827"))
+            throw std::runtime_error("formal bundle must use original campaign root");
+        const fs::path formalRoot=root/"formal"/manifest.at("experiment_id").get<std::string>();json records=json::array();
+        for(const auto& idValue:manifest.at("sample_ids")){
+            const auto sample=idValue.get<std::string>();auto record=load(formalRoot/sample/"record.json");
+            if(record.at("sample_id")!=sample||record.at("freeze_manifest_sha256")!=hy3::sha256_hex(manifest.dump())||
+               record.at("formal_dataset_sha256")!=hy3::sha256_hex(dataset.dump())||record.at("prompt_template_sha256")!=hy3::sha256_hex(promptTemplate))
+                throw std::runtime_error("formal record identity mismatch");
+            if(record.value("parse_status","")=="parsed"){
+                const auto checked=parse(record.at("response").dump(),requestFor(dataset,sample),version2);
+                if(checked.at("parse_status")!="parsed")throw std::runtime_error("formal parsed record failed replay validation");
+            }
+            record.erase("provider_request_id");record["candidate_answer_status"]="unverified";
+            record["solution_answer_status"]="unverified";record["solution_process_status"]="unreviewed";
+            records.push_back(std::move(record));
+        }
+        saveNew(argv[4],{{"schema_version","formal-record-bundle-v1"},{"data_kind","real"},
+            {"experiment_id",manifest.at("experiment_id")},{"freeze_manifest_sha256",hy3::sha256_hex(manifest.dump())},
+            {"records",records}});return 0;
+    }
+    if(cmd=="formal-solution-jobs"&&argc==6){
+        const auto manifest=load(argv[2]);const auto dataset=formalDataset(manifest);
+        const auto promptTemplate=readTemplate("prompts/hy3-greedy-evaluation-v2.md");validateFormalFreeze(manifest,dataset,promptTemplate);
+        const auto bundle=load(argv[3]),approval=load(argv[4]);
+        if(bundle.at("schema_version")!="formal-record-bundle-v1"||bundle.at("experiment_id")!=manifest.at("experiment_id")||
+           approval.at("schema_version")!="formal-solution-static-review-v1"||approval.at("experiment_id")!=manifest.at("experiment_id")||
+           approval.at("reviewer").get<std::string>().empty()||approval.at("reviewed_at").is_null())
+            throw std::runtime_error("formal solution review identity missing");
+        std::map<std::string,json> approved;
+        for(const auto& entry:approval.at("entries"))if(entry.at("decision")=="approved_restricted_execution")
+            approved.emplace(entry.at("sample_id").get<std::string>(),entry);
+        json jobs=json::array();
+        for(const auto& record:bundle.at("records"))if(record.value("parse_status","")=="parsed"&&
+            record.at("response").at("solution_code").at("availability")=="provided"){
+            const auto sample=record.at("sample_id").get<std::string>();const auto source=record.at("response").at("solution_code").at("source_code").get<std::string>();
+            if(!approved.count(sample)||approved.at(sample).at("source_sha256")!=hy3::sha256_hex(source))
+                throw std::runtime_error("model solution lacks matching static execution approval");
+            const json* problem=nullptr;for(const auto& s:dataset.at("samples"))if(s.at("id")==sample)
+                for(const auto& p:dataset.at("problems"))if(p.at("id")==s.at("problem_id"))problem=&p;
+            if(!problem)throw std::runtime_error("formal solution problem unavailable");
+            jobs.push_back({{"id",sample+"_solution"},{"problem_id",problem->at("id")},{"source",source},{"tests",problem->at("test_cases")}});
+        }
+        saveNew(argv[5],{{"schema_version","fixed-answer-jobs-v1"},{"dataset_sha256",hy3::sha256_hex(dataset.dump())},
+            {"provenance","Planner-approved model solutions only; execution remains external and isolated"},{"jobs",jobs}});return 0;
+    }
+    if(cmd=="formal-report"&&(argc==5||argc==6)){
+        const auto manifest=load(argv[2]);const auto dataset=formalDataset(manifest);
+        const auto promptTemplate=readTemplate("prompts/hy3-greedy-evaluation-v2.md");validateFormalFreeze(manifest,dataset,promptTemplate);
+        const auto bundle=load(argv[3]);
+        if(bundle.at("schema_version")!="formal-record-bundle-v1"||bundle.at("data_kind")!="real"||
+           bundle.at("experiment_id")!=manifest.at("experiment_id")||
+           bundle.at("freeze_manifest_sha256")!=hy3::sha256_hex(manifest.dump())||
+           bundle.at("records").size()!=dataset.at("samples").size())throw std::runtime_error("formal bundle identity mismatch");
+        auto evidence=formalAnswerEvidence(manifest,dataset);
+        if(argc==6){const auto solutionEvidence=load(argv[5]);
+            if(solutionEvidence.at("dataset_sha256")!=hy3::sha256_hex(dataset.dump()))throw std::runtime_error("formal solution evidence dataset mismatch");
+            for(const auto& result:solutionEvidence.at("results"))evidence["results"].push_back(result);
+        }
+        auto records=attachAnswerEvidence(dataset,bundle.at("records"),evidence);
+        auto summary=report(dataset,records,false);summary["evaluation_version"]=version2;
+        summary["experiment_id"]=manifest.at("experiment_id");summary["freeze_manifest_sha256"]=hy3::sha256_hex(manifest.dump());
+        saveNew(argv[4],summary);return 0;
     }
     if(cmd=="formal-call"&&argc==6){
         const auto manifest=load(argv[2]);const auto dataset=formalDataset(manifest);

@@ -35,7 +35,10 @@ int main(int argc,char**argv){
  }
  auto frozenManifest=formalManifest;frozenManifest["status"]="frozen";frozenManifest["selection_frozen_before_model_output"]=true;
  frozenManifest["formal_dataset_sha256"]=sha256_hex(formal.dump());
- auto formalPrompt=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-greedy-evaluation-v2.md");
+ auto formalPromptRaw=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-greedy-evaluation-v2.md");
+ std::vector<std::uint8_t> formalPromptBytes;std::string formalPromptError;
+ check(normalizeUtf8({formalPromptRaw.begin(),formalPromptRaw.end()},formalPromptBytes,formalPromptError),"formal prompt UTF-8 normalization");
+ const std::string formalPrompt(formalPromptBytes.begin(),formalPromptBytes.end());
  validateFormalIdentity(frozenManifest,formal,formalPrompt);check(true,"formal identity and coverage gate");
  auto badFreeze=frozenManifest;badFreeze["formal_dataset_sha256"]="tampered";
  check(throws([&]{validateFormalIdentity(badFreeze,formal,formalPrompt);}),"formal data hash gate");
