@@ -1,6 +1,9 @@
 #pragma once
 #include "hy3_algotrace/interactive_diagnosis.hpp"
 #include <filesystem>
+#include <string_view>
+#include <utility>
+#include <vector>
 namespace hy3::evaluation {
 using json = nlohmann::json;
 inline constexpr const char* version = "greedy-evaluation-v1";
@@ -17,12 +20,19 @@ json report(const json& dataset, const json& records, bool synthetic);
 json attachAnswerEvidence(const json& dataset, const json& records, const json& evidence);
 std::string normalizeOutput(std::string);
 json compareOutput(const std::string& actual, const std::string& expected);
+std::uint64_t conservativeRequestUpper(std::string_view serializedPrompt,
+                                       std::uint64_t outputLimit,
+                                       std::uint64_t envelopeMargin);
+void validateFormalIdentity(const json& manifest, const json& dataset,
+                            std::string_view promptTemplate);
 // Append-only reservation/completion files; a stale lock fails closed.
 // An unanswered reservation is never automatically repeated or released.
 class Budget {
 public:
     explicit Budget(std::filesystem::path root);
     json summary() const;
+    void requireBatchCapacity(
+        const std::vector<std::pair<std::string, std::uint64_t>>& attempts) const;
     void reserve(const std::string& id, std::uint64_t upper);
     void reconcile(const std::string& id, const std::optional<ModelTokenUsage>&);
 private:

@@ -2,6 +2,8 @@
 #include "hy3_algotrace/model_runner.hpp"
 #include "hy3_algotrace/sha256.hpp"
 #include <fstream>
+#include <limits>
+#include <map>
 #include <set>
 #include <stdexcept>
 #include <algorithm>
@@ -221,6 +223,44 @@ json compareOutput(const std::string& a,const std::string& e) {
     return {{"verdict",x==y?"passed":"wrong_answer"},{"first_difference_byte",x==y?json(nullptr):json(i)},
             {"comparison","crlf_lf_optional_one_terminal_lf_v1"}};
 }
+std::uint64_t conservativeRequestUpper(std::string_view prompt,
+                                       std::uint64_t outputLimit,
+                                       std::uint64_t envelopeMargin) {
+    need(outputLimit>0&&outputLimit<=131072,"invalid output token limit");
+    need(envelopeMargin>=1024,"formal envelope margin too small");
+    const auto bytes=static_cast<std::uint64_t>(prompt.size());
+    need(bytes<=std::numeric_limits<std::uint64_t>::max()-outputLimit-envelopeMargin,
+         "formal token upper overflow");
+    return bytes+outputLimit+envelopeMargin;
+}
+void validateFormalIdentity(const json& manifest,const json& dataset,std::string_view prompt) {
+    need(manifest.at("schema_version")=="formal-freeze-manifest-v1"&&manifest.at("status")=="frozen"&&
+         manifest.at("evaluation_version")==version2&&manifest.at("model_name")=="hy3"&&
+         manifest.at("model_version").is_null()&&manifest.at("temperature")=="provider_default"&&
+         manifest.at("prompt_template_path")=="prompts/hy3-greedy-evaluation-v2.md",
+         "formal freeze identity mismatch");
+    need(manifest.at("formal_dataset_sha256")==sha256_hex(dataset.dump())&&
+         manifest.at("prompt_template_sha256")==sha256_hex(std::string(prompt)),
+         "formal frozen content hash mismatch");
+    conservativeRequestUpper("",manifest.at("output_token_limit").get<std::uint64_t>(),
+                              manifest.at("input_envelope_margin").get<std::uint64_t>());
+    std::map<std::string,std::string> difficulty;
+    for(const auto& p:dataset.at("problems")){
+        need(p.at("split")=="holdout","development problem in formal freeze");
+        difficulty[p.at("id")]=p.at("difficulty");
+    }
+    std::map<std::string,unsigned> counts;std::set<std::string> categories;bool correct=false,incorrect=false;
+    for(const auto& s:dataset.at("samples")){
+        ++counts[difficulty.at(s.at("problem_id"))];
+        correct=correct||s.at("gold").at("process_status")=="correct";
+        incorrect=incorrect||s.at("gold").at("process_status")=="incorrect";
+        if(!s.at("gold").at("primary_category").is_null())categories.insert(s.at("gold").at("primary_category"));
+    }
+    need(counts["basic"]>=3&&counts["medium"]>=3&&counts["hard"]>=3&&correct&&incorrect,
+         "formal difficulty/status coverage incomplete");
+    for(const std::string c:{"boundary_omission","wrong_greedy_choice","code_logic_error","complexity_error","invalid_greedy_proof"})
+        need(categories.count(c),"formal category coverage incomplete");
+}
 json report(const json& dataset,const json& records,bool synthetic) {
     need(records.is_array(),"records array");
     std::set<std::string> seen;
@@ -371,7 +411,25 @@ json Budget::summary() const {
         }else unknown+=upper;
     }
     return {{"limit",300000},{"call_limit",38},{"calls",calls},{"actual",spent},{"unknown_reserved",unknown},
-        {"remaining",spent+unknown<=300000?300000-spent-unknown:0},{"halt",over||spent+unknown>300000}};
+        {"remaining",spent+unknown<=300000?300000-spent-unknown:0},{"halt",over||unknown>0||spent+unknown>300000}};
+}
+void Budget::requireBatchCapacity(
+    const std::vector<std::pair<std::string,std::uint64_t>>& attempts) const {
+    const auto s=summary();
+    need(!s.at("halt").get<bool>()&&s.at("unknown_reserved").get<std::uint64_t>()==0,
+         "budget has unresolved or invalid accounting");
+    need(s.at("calls").get<std::uint64_t>()+attempts.size()<=s.at("call_limit").get<std::uint64_t>(),
+         "batch exceeds call limit");
+    std::set<std::string> ids;std::uint64_t sum=0;
+    for(const auto& [id,upper]:attempts) {
+        need(idOK(id)&&ids.insert(id).second,"unsafe or duplicate batch attempt id");
+        need(!fs::exists(root_/(id+".reserve"))&&!fs::exists(root_/(id+".done")),
+             "batch attempt already exists");
+        need(upper>0&&sum<=std::numeric_limits<std::uint64_t>::max()-upper,
+             "batch upper overflow");
+        sum+=upper;
+    }
+    need(sum<=s.at("remaining").get<std::uint64_t>(),"budget insufficient for full batch");
 }
 void Budget::reserve(const std::string& id,std::uint64_t upper) {
     need(idOK(id),"unsafe attempt id");Lock lock(root_);

@@ -12,6 +12,8 @@ M 表示 Milestone（里程碑）：**M1 做诊断应用，M2 准备评测材料
 
 **当前状态：M1完成；M2新增独立4题12候选草案，M3 v2开发验证完成但未通过正式实验门槛，M4部分交付（2026-08-28）。** v2三次调用2条parsed、1条schema_invalid，两份完整代码通过固定测试；累计v1+v2共6次、76496 token，余223504。六次开发上限已用完，不自动扩大调用。作者仅确认旧s001–s003的gold；新增12条未送模型、未人工审核。详见[最新实验报告](docs/journal/m3-development-v2.md)和[联网来源与扩充材料](evaluation/expansion-20260828/README.md)。旧三次失败、历史更正及gold不变；网页仍不执行代码。
 
+**2026-09-09 收口入口：** [任务2逐项验收表](docs/submission-acceptance.md)如实列出已验证/部分/未完成项；[9条正式集合提案](docs/reviews/formal-cohort-proposal.md)和[预算估算](evaluation/formal-20260909/budget-estimate.proposed.json)已经离线完成，但在项目作者确认gold前程序会拒绝正式调用。原[25条](docs/reviews/materials-original-25.md)与新增[12条](docs/reviews/materials-expansion-12.md)审核包可一次集中复核。
+
 - [评测契约与运行命令](docs/evaluation-v1.md) / [8题25候选](evaluation/materials/dataset.json)
 - [独立评测v2](docs/evaluation-v2.md) / [新增4题12候选](evaluation/expansion-20260828/dataset.json) / [v2脱敏报告](evaluation/results/development-v2-report.json)
 - [真实固定答案证据（不是模型实验）](evaluation/results/fixed-answer-evidence.json)

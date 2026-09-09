@@ -18,6 +18,11 @@ experiments/phase-02/runs/
 # model responses. They are private runtime artifacts, never source material.
 experiments/interactive/runs/
 
+# Local credentials. The committed example contains names only.
+.env
+.env.*
+!.env.example
+
 # Compiled object / intermediate files
 *.obj
 *.o

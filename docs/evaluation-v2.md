@@ -51,3 +51,17 @@ RAW_FILE等是命令参数占位，不能原样执行。bundle与v1一样为 `{d
 
 本次代码检查点 `c72590cacc8e7d7e6d9f50fa0f68feb1623c7fbd`，
 [CI 33091674872](https://github.com/Smily2333/hy3-algotrace/actions/runs/33091674872)：Windows/Ubuntu configure、build、全部CTest、CLI数据校验均成功。后续仅补写本段CI证据，不重复触发CI。旧冻结数据、旧Prompt、原Phase2协议指标、pilot及evaluation/materials/results均零diff；工作区未新增Python、真实raw或凭证。新版模型效果仍未验证。
+
+## 正式批次预算与冻结门禁（2026-09-09 新增）
+
+正式入口与开发入口隔离，但复用 `build/m3-development-20260827/budget` 的同一追加式账本。正式集合提案见 [`evaluation/formal-20260909`](../evaluation/formal-20260909/freeze-manifest.proposed.json)：9 条、三档难度各3条，包含 s024/s037 两条固定测试答案通过但过程错误的样本。它在项目作者确认前保持 `pending_human_review`；`formal-plan` 和 `formal-call` 都会拒绝它。
+
+逐请求上界为 `UTF-8(serialized prompt) 字节数 + max_tokens(13312) + 固定 envelope 余量(1024)`。字节数保守覆盖项目提供文本的输入 token；额外 1024 覆盖单条 user message 的 API 固定封装。TokenHub [OpenAI Chat Completions 协议](https://cloud.tencent.com/document/product/1823/135872)说明 `max_tokens` 是单次响应最大输出 token，达到时 `finish_reason=length`；`completion_tokens` 已含思维链，`total_tokens=prompt_tokens+completion_tokens`。因此 reasoning 不重复相加。若 usage 缺失、三项不满足加法、实际值超过预留、或留下未完成 reservation，账本保留未知预留并停止后续调用。
+
+冻结前的只读估算命令：
+
+```powershell
+.\build\m1\Release\hy3_evaluate.exe formal-estimate evaluation/formal-20260909/freeze-manifest.proposed.json build/m3-development-20260827
+```
+
+当前精确估算为新增 216016、历史加最坏合计 292512 token；每条明细在 [`budget-estimate.proposed.json`](../evaluation/formal-20260909/budget-estimate.proposed.json)。这不是调用授权。真人确认导入、manifest 改为 `frozen` 并重算哈希后，才运行 `formal-plan` 持久化唯一 batch plan，再逐条运行 `formal-call`。正式入口只接受 manifest 中样本；每次调用前还检查整个未完成尾批能否承载。已有 reservation/done、未知账目、hash差异、未确认gold或非holdout样本均失败关闭，无自动重试。

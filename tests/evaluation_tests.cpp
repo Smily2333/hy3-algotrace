@@ -1,8 +1,10 @@
 #include "hy3_algotrace/evaluation.hpp"
 #include "hy3_algotrace/hy3_model_client.hpp"
+#include "hy3_algotrace/sha256.hpp"
 #include "interactive_v2_fixture.hpp"
 #include "../evaluation/tools/independent_oracle.hpp"
 #include <iostream>
+#include <set>
 using namespace hy3;
 using namespace hy3::evaluation;
 int main(int argc,char**argv){
@@ -23,6 +25,22 @@ int main(int argc,char**argv){
  for(const auto& x:checkedExpansion){expansionPassed+=x["candidate_answer_status"]=="passed";expansionWrong+=x["candidate_answer_status"]=="wrong_answer";}
  check(expansionPassed==5&&expansionWrong==7,"expansion source/input hashes and actual answer evidence");
  check(checkedExpansion.back()["candidate_answer_status"]=="passed"&&expansion["samples"].back()["gold"]["process_status"]=="incorrect","correct answer does not validate explicit false proof");
+ auto formalManifest=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/formal-20260909/freeze-manifest.proposed.json");
+ auto formal=d;formal["version"]=formalManifest["dataset_version"];formal["frozen"]=true;formal["problems"]=json::array();formal["samples"]=json::array();
+ std::set<std::string> formalProblems;
+ for(const auto& id:formalManifest["sample_ids"]){
+    const json* chosen=nullptr;for(const auto* source:{&d,&expansion})for(const auto& s:(*source)["samples"])if(s["id"]==id)chosen=&s;
+    check(chosen!=nullptr,"formal proposed sample exists");if(!chosen)continue;formal["samples"].push_back(*chosen);
+    for(const auto* source:{&d,&expansion})for(const auto& p:(*source)["problems"])if(p["id"]==chosen->at("problem_id")&&formalProblems.insert(p["id"]).second)formal["problems"].push_back(p);
+ }
+ auto frozenManifest=formalManifest;frozenManifest["status"]="frozen";frozenManifest["selection_frozen_before_model_output"]=true;
+ frozenManifest["formal_dataset_sha256"]=sha256_hex(formal.dump());
+ auto formalPrompt=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-greedy-evaluation-v2.md");
+ validateFormalIdentity(frozenManifest,formal,formalPrompt);check(true,"formal identity and coverage gate");
+ auto badFreeze=frozenManifest;badFreeze["formal_dataset_sha256"]="tampered";
+ check(throws([&]{validateFormalIdentity(badFreeze,formal,formalPrompt);}),"formal data hash gate");
+ badFreeze=frozenManifest;badFreeze["status"]="pending_human_review";
+ check(throws([&]{validateFormalIdentity(badFreeze,formal,formalPrompt);}),"unfrozen formal cohort rejected");
  InteractiveDiagnosisRequest r;
  check(parseInteractiveDiagnosisRequest(interactive_fixture::request("input"),r).ok,"minimal request");
  auto base=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-interactive-diagnosis-v2.md");
@@ -81,6 +99,8 @@ int main(int argc,char**argv){
  check(compareOutput("2 \n","2\n")["verdict"]=="wrong_answer","no whitespace repair");
  check(compareOutput("2\n\n","2\n")["first_difference_byte"]==1,"extra newline");
  interactive_fixture::OwnedRoot root;
+ check(conservativeRequestUpper("abc",13312,1024)==14339,"formal bound uses bytes, cap, and margin");
+ check(throws([&]{conservativeRequestUpper("x",1,1023);}),"formal bound requires fixed envelope margin");
  Budget b(root.path/"budget");b.reserve("one",210000);
  check(throws([&]{b.reserve("one",1);}),"duplicate no resend");
  check(throws([&]{b.reserve("two",100000);}),"unknown reserves full upper");
@@ -88,11 +108,18 @@ int main(int argc,char**argv){
  b.reconcile("one",usage);check(b.summary()["actual"]==300,"usage reconcile");
  check(throws([&]{b.reconcile("one",usage);}),"double reconcile");
  b.reserve("two",200000);b.reconcile("two",std::nullopt);
- Budget recovered(root.path/"budget");check(recovered.summary()["unknown_reserved"]==200000,"unknown survives recovery");
+ Budget recovered(root.path/"budget");check(recovered.summary()["unknown_reserved"]==200000&&recovered.summary()["halt"]==true,"unknown survives recovery and halts");
  check(throws([&]{recovered.reserve("three",100000);}),"remaining protected");
  check(throws([&]{b.reserve("../bad",1);}),"safe id");
- Budget count(root.path/"count");for(int i=0;i<38;++i)count.reserve("r"+std::to_string(i),1);
+ Budget count(root.path/"count");ModelTokenUsage unitUsage;unitUsage.prompt_tokens=1;unitUsage.completion_tokens=0;unitUsage.total_tokens=1;
+ for(int i=0;i<38;++i){const auto id="r"+std::to_string(i);count.reserve(id,1);count.reconcile(id,unitUsage);}
  check(throws([&]{count.reserve("extra",1);}),"38 call cap");
+ Budget batch(root.path/"batch");
+ batch.requireBatchCapacity({{"formal-a",100000},{"formal-b",200000}});
+ check(throws([&]{batch.requireBatchCapacity({{"formal-a",100000},{"formal-b",200001}});}),"whole formal batch must fit");
+ check(throws([&]{batch.requireBatchCapacity({{"formal-a",1},{"formal-a",1}});}),"formal batch ids unique");
+ batch.reserve("formal-a",100000);
+ check(throws([&]{batch.requireBatchCapacity({{"formal-b",1}});}),"interrupted formal request blocks continuation");
  Budget over(root.path/"over");over.reserve("r",100);over.reconcile("r",usage);
  check(over.summary()["halt"]==true,"underestimated bound halts");
  Budget partial(root.path/"partial");partial.reserve("r",100);ModelTokenUsage inconsistent;inconsistent.total_tokens=500000;
