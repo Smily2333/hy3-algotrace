@@ -10,9 +10,9 @@
 
 M 表示 Milestone（里程碑）：**M1 做诊断应用，M2 准备评测材料，M3 验证效果，M4 整理交付**。M1 已通过双平台 CI；M2 已交付8题25候选、独立评测工具与隔离答案证据。真实实验和人工复核尚未完成。集中结果见 [阶段交付报告](docs/delivery-report.md)。
 
-**当前状态：M1完成；M2新增独立4题12候选草案，M3 v2开发验证完成但未通过正式实验门槛，M4部分交付（2026-08-28）。** v2三次调用2条parsed、1条schema_invalid，两份完整代码通过固定测试；累计v1+v2共6次、76496 token，余223504。六次开发上限已用完，不自动扩大调用。作者仅确认旧s001–s003的gold；新增12条未送模型、未人工审核。详见[最新实验报告](docs/journal/m3-development-v2.md)和[联网来源与扩充材料](evaluation/expansion-20260828/README.md)。旧三次失败、历史更正及gold不变；网页仍不执行代码。
+**当前状态：M1完成；M2的12题37候选已由 Smily2333 于2026-09-09全部确认，M3正式9条已在模型输出前冻结，M4部分交付。** v2开发调用2条parsed、1条schema_invalid；累计v1+v2共6次、76496 token，余223504。六次开发上限已用完，正式批次固定为9条且不事后换样本。详见[最新实验报告](docs/journal/m3-development-v2.md)、[材料审核记录](evaluation/reviews/)和[正式冻结清单](evaluation/formal-20260909/freeze-manifest.json)。旧失败、历史更正及gold不变；网页仍不执行代码。
 
-**2026-09-09 收口入口：** [任务2逐项验收表](docs/submission-acceptance.md)如实列出已验证/部分/未完成项；[9条正式集合提案](docs/reviews/formal-cohort-proposal.md)和[预算估算](evaluation/formal-20260909/budget-estimate.proposed.json)已经离线完成，但在项目作者确认gold前程序会拒绝正式调用。原[25条](docs/reviews/materials-original-25.md)与新增[12条](docs/reviews/materials-expansion-12.md)审核包可一次集中复核。
+**2026-09-09 收口入口：** [任务2逐项验收表](docs/submission-acceptance.md)如实列出已验证/部分/未完成项；原[25条](docs/reviews/materials-original-25.md)与新增[12条](docs/reviews/materials-expansion-12.md)已全部人工确认。[正式冻结清单](evaluation/formal-20260909/freeze-manifest.json)固定9条分母、模型与预算，不允许按输出换样本。
 
 - [评测契约与运行命令](docs/evaluation-v1.md) / [8题25候选](evaluation/materials/dataset.json)
 - [独立评测v2](docs/evaluation-v2.md) / [新增4题12候选](evaluation/expansion-20260828/dataset.json) / [v2脱敏报告](evaluation/results/development-v2-report.json)
@@ -55,7 +55,7 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 
 - 本批（Phase 1A）试验题面**直接来自 Codeforces 官方页面**（160A / 545D / 1398B 三个官方题目页），仅做中文摘要与官方链接引用，不整段复制完整题面。
 - CodeContests Verified 属于历史候选来源规划，本轮未下载或采用。
-- M2 实际为 **8 道原创表述贪心题、25 条受控候选**，开发7条/保留18条，gold由智能体编写待人工复核；10条通过指定测试，15条输出不符，不等于模型准确率。
+- M2 合计 **12 道原创表述贪心题、37 条受控候选**；Smily2333 已于2026-09-09逐条确认gold。固定测试结果与模型准确率是不同证据。
 - 按题目划分开发集和保留测试集，预先确定标准答案、自动校验、过程标签与首次错误位置。
 - 旧约 12 题 / 72 样本规划已归档，不再作为本版前置条件；样本量不是任务书的硬性门槛。
 - 样本构造：允许基于公开题面由人工编写推理轨迹，但须记录来源、构造方式与标注信息，不得把人工改写伪装成官方内容。
@@ -68,7 +68,7 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 | 阶段 | 内容 | 当前状态 |
 | --- | --- | --- |
 | M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 双平台程序验收通过；未验证真实模型效果 |
-| M2 | 分层样本、独立 gold、最小答案校验与评测适配 | 材料/工具/隔离验证完成；待正式冻结与人工安排 |
+| M2 | 分层样本、独立 gold、最小答案校验与评测适配 | 材料/工具/隔离验证及37条人工确认完成；正式9条已冻结 |
 | M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | v2开发2/3契约通过；累计6次；正式0条，完整解法过程仍待人工复核 |
 | M4 | 运行说明、公开材料、分析报告与两分钟 Demo | 报告/证据/脚本已交付；真实结果和视频成片待补 |
 

@@ -1,0 +1,23 @@
+{
+  "schema_version": "human-gold-review-v1",
+  "dataset_version": "expansion-draft-20260828",
+  "reviewer": "Smily2333",
+  "reviewed_at": "2026-09-09",
+  "status": "complete",
+  "review_basis": "The project author reviewed and confirmed every item-specific statement, source note, code line, gold label, independent basis and fixed-test result in docs/reviews/materials-expansion-12.md.",
+  "gold_changed": false,
+  "entries": [
+    {"sample_id":"s026","decision":"gold_confirmed","process_status":"correct","primary_category":null,"first_error":null},
+    {"sample_id":"s027","decision":"gold_confirmed","process_status":"incorrect","primary_category":"boundary_omission","first_error":{"start_line":11,"end_line":11}},
+    {"sample_id":"s028","decision":"gold_confirmed","process_status":"incorrect","primary_category":"code_logic_error","first_error":{"start_line":14,"end_line":14}},
+    {"sample_id":"s029","decision":"gold_confirmed","process_status":"correct","primary_category":null,"first_error":null},
+    {"sample_id":"s030","decision":"gold_confirmed","process_status":"incorrect","primary_category":"wrong_greedy_choice","first_error":{"start_line":8,"end_line":8}},
+    {"sample_id":"s031","decision":"gold_confirmed","process_status":"incorrect","primary_category":"code_logic_error","first_error":{"start_line":11,"end_line":11}},
+    {"sample_id":"s032","decision":"gold_confirmed","process_status":"correct","primary_category":null,"first_error":null},
+    {"sample_id":"s033","decision":"gold_confirmed","process_status":"incorrect","primary_category":"boundary_omission","first_error":{"start_line":10,"end_line":10}},
+    {"sample_id":"s034","decision":"gold_confirmed","process_status":"incorrect","primary_category":"wrong_greedy_choice","first_error":{"start_line":12,"end_line":12}},
+    {"sample_id":"s035","decision":"gold_confirmed","process_status":"correct","primary_category":null,"first_error":null},
+    {"sample_id":"s036","decision":"gold_confirmed","process_status":"incorrect","primary_category":"wrong_greedy_choice","first_error":{"start_line":12,"end_line":12}},
+    {"sample_id":"s037","decision":"gold_confirmed","process_status":"incorrect","primary_category":"invalid_greedy_proof","first_error":{"kind":"reasoning_text","code_range":null}}
+  ]
+}

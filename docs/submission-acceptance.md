@@ -12,7 +12,7 @@
 | 6 | 分层题集、来源、标准答案及自动校验 | 部分完成 | [25 条材料](../evaluation/materials/dataset.json)、[12 条扩充](../evaluation/expansion-20260828/dataset.json)、[答案证据](../evaluation/results/fixed-answer-evidence.json)；真人材料复核待完成。 |
 | 7 | 过程正确性、首次错误定位和分类 | 部分完成 | [评测 v2](evaluation-v2.md) 与两份[审核包](reviews/materials-original-25.md)；正式结果未生成。 |
 | 8 | 答案正确但过程不成立样本 | 部分完成 | s024/s025/s037 有固定测试通过证据和独立反驳；待作者确认，其中 s024/s037 拟入正式集。 |
-| 9 | 正式实验完整结果 | 未完成 | [冻结提案](../evaluation/formal-20260909/freeze-manifest.proposed.json) 尚待真人确认，正式调用 0。 |
+| 9 | 正式实验完整结果 | 进行中 | Smily2333 已于2026-09-09确认37条材料；[最终冻结清单](../evaluation/formal-20260909/freeze-manifest.json)已固定9条分母且正式调用在冻结时为0。 |
 | 10 | 最终答案准确率、过程正确率、错误分布 | 未完成 | 仅有[开发结果](../evaluation/results/development-v2-summary.json)，不得代替正式指标。 |
 | 11 | 难度分层结果与能力边界 | 未完成 | 材料具备三档；正式结果和人工分析尚无。 |
 | 12 | 定位准确率、误报率及人工抽检 | 未完成 | s001–s003 有有限人工记录；正式结果复核尚无。 |

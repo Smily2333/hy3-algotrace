@@ -1,20 +1,20 @@
 {
   "schema_version": "human-gold-review-v1",
   "experiment_id": "formal-hy3-greedy-v2-20260909",
-  "reviewer": null,
-  "reviewed_at": null,
-  "status": "pending_human_review",
+  "reviewer": "Smily2333",
+  "reviewed_at": "2026-09-09",
+  "status": "complete",
   "review_basis": "docs/reviews/formal-cohort-proposal.md and the two complete material review packages",
   "gold_changed": false,
   "entries": [
-    {"sample_id": "s004", "decision": "pending", "proposed_process_status": "correct", "proposed_primary_category": null, "proposed_first_error": null, "reviewer_basis": null},
-    {"sample_id": "s005", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "wrong_greedy_choice", "proposed_first_error": {"start_line": 8, "end_line": 8}, "reviewer_basis": null},
-    {"sample_id": "s006", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "problem_misunderstanding", "proposed_first_error": {"start_line": 9, "end_line": 9}, "reviewer_basis": null},
-    {"sample_id": "s010", "decision": "pending", "proposed_process_status": "correct", "proposed_primary_category": null, "proposed_first_error": null, "reviewer_basis": null},
-    {"sample_id": "s011", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "wrong_greedy_choice", "proposed_first_error": {"start_line": 7, "end_line": 7}, "reviewer_basis": null},
-    {"sample_id": "s012", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "code_logic_error", "proposed_first_error": {"start_line": 8, "end_line": 8}, "reviewer_basis": null},
-    {"sample_id": "s023", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "boundary_omission", "proposed_first_error": {"start_line": 9, "end_line": 9}, "reviewer_basis": null},
-    {"sample_id": "s024", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "complexity_error", "proposed_first_error": {"start_line": 8, "end_line": 8}, "reviewer_basis": null},
-    {"sample_id": "s037", "decision": "pending", "proposed_process_status": "incorrect", "proposed_primary_category": "invalid_greedy_proof", "proposed_first_error": {"kind": "reasoning_text", "code_range": null}, "reviewer_basis": null}
+    {"sample_id": "s004", "decision": "gold_confirmed", "process_status": "correct", "primary_category": null, "first_error": null, "reviewer_basis": "Confirmed the item-specific proof/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s005", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "wrong_greedy_choice", "first_error": {"start_line": 8, "end_line": 8}, "reviewer_basis": "Confirmed the item-specific counterexample/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s006", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "problem_misunderstanding", "first_error": {"start_line": 9, "end_line": 9}, "reviewer_basis": "Confirmed the item-specific objective/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s010", "decision": "gold_confirmed", "process_status": "correct", "primary_category": null, "first_error": null, "reviewer_basis": "Confirmed the item-specific proof/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s011", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "wrong_greedy_choice", "first_error": {"start_line": 7, "end_line": 7}, "reviewer_basis": "Confirmed the item-specific counterexample/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s012", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "code_logic_error", "first_error": {"start_line": 8, "end_line": 8}, "reviewer_basis": "Confirmed the item-specific accumulation/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s023", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "boundary_omission", "first_error": {"start_line": 9, "end_line": 9}, "reviewer_basis": "Confirmed the item-specific equality-boundary/test basis in docs/reviews/materials-original-25.md."},
+    {"sample_id": "s024", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "complexity_error", "first_error": {"start_line": 8, "end_line": 8}, "reviewer_basis": "Confirmed that O(n^2) violates n<=100000 despite 3/3 fixed tests passing."},
+    {"sample_id": "s037", "decision": "gold_confirmed", "process_status": "incorrect", "primary_category": "invalid_greedy_proof", "first_error": {"kind": "reasoning_text", "code_range": null}, "reviewer_basis": "Confirmed the independent counterexample to the claim that every eviction order is optimal; code passes 4/4 fixed tests."}
   ]
 }
