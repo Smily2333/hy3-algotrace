@@ -4,7 +4,7 @@
 
 | # | 任务要求 | 状态 | 当前证据 / 缺口 |
 | --- | --- | --- | --- |
-| 1 | 公开开源仓库 | 部分完成 | 仓库地址已登记在 [README](../README.md)，但公开默认 `main` 尚未更新至成果分支。 |
+| 1 | 公开开源仓库 | 已验证 | 成果已通过 [PR #1](https://github.com/Smily2333/hy3-algotrace/pull/1) 合并至公开仓库默认 `main`。 |
 | 2 | 个人/活动作品声明 | 已验证 | [README 项目性质声明](../README.md#当前执行入口与-827-方案)。 |
 | 3 | 项目介绍、目标用户和真实问题 | 已验证 | [README 项目目标](../README.md#1-项目目标)、[交付报告](delivery-report.md)。 |
 | 4 | 运行方式、环境要求和无密钥配置样例 | 已验证 | [README](../README.md) 构建/启动/离线重放说明及 [`.env.example`](../.env.example)。 |
@@ -18,4 +18,4 @@
 | 12 | 定位准确率、误报率及人工抽检 | 已验证 | [人工结果审核](../evaluation/reviews/formal-result-review-20260909.json)及正式指标。 |
 | 13 | 典型案例分析 | 已验证 | [s005/s010与结构失败分析](delivery-report.md#7-典型案例与失败模式)。 |
 | 14 | 两分钟以内视频或 GIF | 已验证 | [94秒真实结果回放GIF](assets/hy3-algotrace-real-replay.gif)及[复现记录](demo-m1-m4.md)。 |
-| 15 | 密钥、隐私、许可、链接和复现检查 | 部分完成 | MIT [LICENSE](../LICENSE)、[NOTICE](../NOTICE.md)及本地扫描已具备；最终双平台CI、main及匿名链接检查待完成。 |
+| 15 | 密钥、隐私、许可、链接和复现检查 | 已验证 | MIT [LICENSE](../LICENSE)、[NOTICE](../NOTICE.md)、敏感信息与链接检查均完成；最终 [`main` CI](https://github.com/Smily2333/hy3-algotrace/actions/runs/34839459235) 的 Windows/Ubuntu 全部通过。 |
