@@ -139,4 +139,4 @@ build/Release/hy3_evaluate.exe formal-report `
 - 94秒真实结果回放：[GIF](assets/hy3-algotrace-real-replay.gif)
 - 逐项验收：[submission acceptance](submission-acceptance.md)
 
-最终双平台CI与默认分支发布信息将在准备发布的准确提交通过后写入 `SUBMISSION.md`，不借用历史CI冒充最终验证。
+发布候选 `620af9be3457df51990d0877546b72a17aca3ab1` 已通过 PR #1 合并为 `fd6fd7fe68580227b0f554dd7d0269808db8d856`；对应最终 [main CI](https://github.com/Smily2333/hy3-algotrace/actions/runs/34839459235) 的 Windows/Ubuntu 均通过。发布索引见 `SUBMISSION.md`。

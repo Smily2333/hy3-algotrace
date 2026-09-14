@@ -1,6 +1,9 @@
 {
   "schema_version": "delivery-evidence-index-v2",
-  "status": "release_candidate_pending_final_ci",
+  "status": "released_main_ci_verified",
+  "release_candidate_commit": "620af9be3457df51990d0877546b72a17aca3ab1",
+  "main_merge_commit": "fd6fd7fe68580227b0f554dd7d0269808db8d856",
+  "main_ci_url": "https://github.com/Smily2333/hy3-algotrace/actions/runs/34839459235",
   "model": "hy3",
   "model_version": null,
   "evaluation_version": "greedy-evaluation-v2",

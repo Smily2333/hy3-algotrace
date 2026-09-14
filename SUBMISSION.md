@@ -30,7 +30,10 @@ build/Release/hy3_algotrace_demo.exe --host 127.0.0.1 --port 8080
 
 ## 发布验证
 
-准备发布的实现提交与对应CI将在最终双平台验证后记录于此；默认分支当前状态以 GitHub `main` 为准。
+- 发布候选提交：`620af9be3457df51990d0877546b72a17aca3ab1`
+- 合并提交：`fd6fd7fe68580227b0f554dd7d0269808db8d856`
+- PR：[Smily2333/hy3-algotrace#1](https://github.com/Smily2333/hy3-algotrace/pull/1)
+- 最终 `main` CI：[Windows / Ubuntu 全部通过](https://github.com/Smily2333/hy3-algotrace/actions/runs/34839459235)
 
 ## 已知限制
 
