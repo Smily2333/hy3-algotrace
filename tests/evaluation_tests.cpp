@@ -137,6 +137,26 @@ int main(int argc,char**argv){
      {"solution_answer_status","passed"},{"solution_process_status","unreviewed"}};
  auto matched=report(small,json::array({goodRecord}),true);
  check(matched["first_error_localization"]["numerator"]==1,"line/category matches independent gold");
+ json humanReview={{"schema_version","formal-result-human-review-v1"},{"status","complete"},{"reviewer","Smily2333"},
+    {"reviewed_at","2026-09-09"},{"entries",json::array({{{"sample_id","s002"},{"diagnosis_decision","confirmed"},
+    {"localization_decision","confirmed"},{"counterexample_decision","confirmed"},{"solution_process_decision","confirmed"}}})}};
+ auto humanAttached=attachHumanResultReview(small,json::array({goodRecord}),humanReview);
+ check(humanAttached[0]["solution_process_status"]=="correct"&&humanAttached[0]["human_result_review"]["reviewer"]=="Smily2333",
+       "human result review integrated");
+ auto correctSmall=d;correctSmall["samples"]=json::array({d["samples"][0]});
+ auto correctRecord=goodRecord;correctRecord["sample_id"]="s001";correctRecord["response"]["diagnosis"]=interactive_fixture::diagnosis("input","correct");
+ auto correctReview=humanReview;correctReview["entries"][0]["sample_id"]="s001";correctReview["entries"][0]["localization_decision"]="not_applicable";
+ correctReview["entries"][0]["counterexample_decision"]="not_applicable";
+ auto reviewedCorrect=attachHumanResultReview(correctSmall,json::array({correctRecord}),correctReview);
+ check(report(correctSmall,reviewedCorrect,true)["human_review_queue"][0]["decision"]=="confirmed","review queue reflects completed human decision");
+ auto solutionRecord=goodRecord;solutionRecord["response"]["solution_code"]["source_code"]=small["samples"][0]["code"];
+ auto solutionBaseEvidence=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/results/fixed-answer-evidence.json");
+ auto solutionEvidence=solutionBaseEvidence;solutionEvidence["dataset_sha256"]=sha256_hex(small.dump());solutionEvidence["results"]=json::array();
+ for(auto result:solutionBaseEvidence["results"])if(result["id"]=="s002"){result["id"]="s002_solution";solutionEvidence["results"].push_back(result);}
+ auto solutionAttached=attachAnswerEvidence(small,json::array({solutionRecord}),solutionEvidence);
+ check(solutionAttached[0]["solution_answer_status"]=="wrong_answer","model solution evidence integrated");
+ auto incompleteReview=humanReview;incompleteReview["status"]="pending_human_review";
+ check(throws([&]{attachHumanResultReview(small,json::array({goodRecord}),incompleteReview);}),"incomplete human review rejected");
  goodRecord["response"]["diagnosis"]["first_error"]["step_id"]=nullptr;
  check(report(small,json::array({goodRecord}),true)["first_error_localization"]["numerator"]==0,"no location no hit");
  check(throws([&]{attachAnswerEvidence(d,json::array(),{{"schema_version","fixed-answer-results-v1"},{"dataset_sha256","wrong"}});}),"mismatched evidence rejected");

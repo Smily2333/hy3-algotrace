@@ -37,9 +37,11 @@ async function checkHealth() {
     const response = await fetch("/api/health", {cache:"no-store"});
     const health = await response.json();
     const mock = health.model_mode === "mock_fixture";
+    const replay = health.model_mode === "recorded_replay";
     $("mockNotice").hidden = !mock;
-    $("healthStatus").className = "health " + (health.ok && (mock || health.tokenhub_status === "configured") ? "ok" : "error");
-    $("healthStatus").lastChild.textContent = mock ? "Mock / Fake · 零模型调用" :
+    $("replayNotice").hidden = !replay;
+    $("healthStatus").className = "health " + (health.ok && (mock || replay || health.tokenhub_status === "configured") ? "ok" : "error");
+    $("healthStatus").lastChild.textContent = replay ? "真实结果回放 · 零新增调用" : mock ? "Mock / Fake · 零模型调用" :
       (!health.ok ? "模板不可用" : health.tokenhub_status === "configured" ? "TokenHub 已配置" : "TokenHub 未配置");
   } catch (_) {
     $("healthStatus").className = "health error";

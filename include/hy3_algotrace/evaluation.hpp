@@ -18,6 +18,7 @@ std::string renderV2(const InteractiveDiagnosisRequest&, const std::string& stan
 json parse(const std::string& raw, const InteractiveDiagnosisRequest&, const std::string& expectedVersion = version);
 json report(const json& dataset, const json& records, bool synthetic);
 json attachAnswerEvidence(const json& dataset, const json& records, const json& evidence);
+json attachHumanResultReview(const json& dataset, const json& records, const json& review);
 std::string normalizeOutput(std::string);
 json compareOutput(const std::string& actual, const std::string& expected);
 std::uint64_t conservativeRequestUpper(std::string_view serializedPrompt,

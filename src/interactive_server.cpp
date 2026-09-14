@@ -101,11 +101,11 @@ void setStatic(httplib::Response& response, const std::string& body,
 
 InteractiveHttpApplication::InteractiveHttpApplication(
     IModelClient& client, std::string promptTemplateText,
-    std::string artifactsRoot, bool tokenHubConfigured, bool mockMode)
+    std::string artifactsRoot, bool tokenHubConfigured, bool mockMode, bool replayMode)
     : client_(client),
       prompt_template_text_(std::move(promptTemplateText)),
       artifacts_root_(std::move(artifactsRoot)),
-      token_hub_configured_(tokenHubConfigured), mock_mode_(mockMode) {}
+      token_hub_configured_(tokenHubConfigured), mock_mode_(mockMode), replay_mode_(replayMode) {}
 
 InteractiveHttpReply InteractiveHttpApplication::health() const {
     std::vector<std::uint8_t> input(prompt_template_text_.begin(),
@@ -118,8 +118,8 @@ InteractiveHttpReply InteractiveHttpApplication::health() const {
     const json document{
         {"ok", templateValid},
         {"service", "hy3-algotrace-interactive-demo"},
-        {"model_name", mock_mode_ ? "fake-model" : "hy3"},
-        {"model_mode", mock_mode_ ? "mock_fixture" : "hy3"},
+        {"model_name", replay_mode_ ? "hy3-recorded" : mock_mode_ ? "fake-model" : "hy3"},
+        {"model_mode", replay_mode_ ? "recorded_replay" : mock_mode_ ? "mock_fixture" : "hy3"},
         {"algorithm_scope", "greedy"},
         {"tokenhub_status", token_hub_configured_ ? "configured" : "not_configured"},
         {"request_schema_version", kInteractiveRequestVersion},

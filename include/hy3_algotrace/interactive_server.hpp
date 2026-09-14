@@ -33,7 +33,8 @@ public:
                                std::string promptTemplateText,
                                std::string artifactsRoot,
                                bool tokenHubConfigured,
-                               bool mockMode = false);
+                               bool mockMode = false,
+                               bool replayMode = false);
 
     InteractiveHttpReply health() const;
     InteractiveHttpReply diagnose(const std::string& contentType,
@@ -45,6 +46,7 @@ private:
     std::string artifacts_root_;
     bool token_hub_configured_ = false;
     bool mock_mode_ = false; // Test harness only; production never enables it.
+    bool replay_mode_ = false; // Saved, contract-valid Hy3 response; no network call.
     std::atomic_flag call_active_ = ATOMIC_FLAG_INIT;
 };
 

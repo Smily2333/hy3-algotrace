@@ -1,0 +1,21 @@
+{
+  "schema_version": "formal-solution-static-review-v1",
+  "experiment_id": "formal-hy3-greedy-v2-20260909",
+  "reviewer": "Codex Planner",
+  "reviewed_at": "2026-09-09",
+  "scope": "Static safety approval only for execution in the existing no-network bubblewrap fixture runner; this is not a correctness judgment or human process review.",
+  "entries": [
+    {
+      "sample_id": "s005",
+      "source_sha256": "cad2109f2694121cf6dcfeee87a84a647a98c1e9d03736d12ebc9a8a87a95e52",
+      "decision": "approved_restricted_execution",
+      "basis": "C++17 source uses only standard algorithm, iostream and vector operations over stdin/stdout; no file, network, process, dynamic loading or environment access was found."
+    },
+    {
+      "sample_id": "s010",
+      "source_sha256": "dbc551ee5e0d25928cfe2be791782b9e23e4e8535d964d87421c31ff049f7c8c",
+      "decision": "approved_restricted_execution",
+      "basis": "C++17 source uses only standard priority-queue and stdin/stdout operations; no file, network, process, dynamic loading or environment access was found."
+    }
+  ]
+}

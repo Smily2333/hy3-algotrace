@@ -1,0 +1,789 @@
+{
+  "answer_verification_coverage": {
+    "denominator": 9,
+    "numerator": 2,
+    "value": 0.2222222222222222
+  },
+  "data_kind": "real",
+  "diagnosis_agreement": {
+    "denominator": 9,
+    "numerator": 2,
+    "value": 0.2222222222222222
+  },
+  "evaluation_version": "greedy-evaluation-v2",
+  "experiment_id": "formal-hy3-greedy-v2-20260909",
+  "experiment_started": true,
+  "failures": 7,
+  "first_error_localization": {
+    "denominator": 5,
+    "numerator": 1,
+    "value": 0.2
+  },
+  "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+  "human_result_review": {
+    "contract_valid_outputs": 2,
+    "reviewed_at": "2026-09-09",
+    "reviewed_contract_valid_outputs": 2,
+    "reviewer": "Smily2333"
+  },
+  "human_review_queue": [
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s004"
+    },
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s006"
+    },
+    {
+      "date": "2026-09-09",
+      "decision": "confirmed",
+      "evidence": "evaluation/reviews/formal-result-review-20260909.json",
+      "priority": "stratified_review",
+      "reviewer": "Smily2333",
+      "sample_id": "s010"
+    },
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s011"
+    },
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s012"
+    },
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s023"
+    },
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s024"
+    },
+    {
+      "date": null,
+      "decision": "not_reviewable_contract_failure",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s037"
+    }
+  ],
+  "included": 9,
+  "limitations": [
+    "Finite tests are not proof; unreviewed labels are agent-authored.",
+    "Location match is category plus tight code range, not proof of explanation correctness.",
+    "Unverified outputs never count as verified correct; failures remain in denominators."
+  ],
+  "missing_solution": 7,
+  "predicted_categories": {
+    "none": 1,
+    "wrong_greedy_choice": 1
+  },
+  "process_correct_false_positive_rate": {
+    "denominator": 2,
+    "numerator": 0,
+    "value": 0.0
+  },
+  "process_review_coverage": {
+    "denominator": 9,
+    "numerator": 2,
+    "value": 0.2222222222222222
+  },
+  "records_received": 9,
+  "rows": [
+    {
+      "agreement": false,
+      "candidate_answer_status": "passed",
+      "difficulty": "basic",
+      "gold_category": "none",
+      "location_eligible": false,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s004",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    },
+    {
+      "agreement": true,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "basic",
+      "gold_category": "wrong_greedy_choice",
+      "location_eligible": true,
+      "location_hit": true,
+      "predicted_status": "incorrect",
+      "sample_id": "s005",
+      "solution_answer_status": "passed",
+      "solution_process_status": "correct",
+      "split": "holdout"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "basic",
+      "gold_category": "problem_misunderstanding",
+      "location_eligible": true,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s006",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    },
+    {
+      "agreement": true,
+      "candidate_answer_status": "passed",
+      "difficulty": "medium",
+      "gold_category": "none",
+      "location_eligible": false,
+      "location_hit": false,
+      "predicted_status": "correct",
+      "sample_id": "s010",
+      "solution_answer_status": "passed",
+      "solution_process_status": "correct",
+      "split": "holdout"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "medium",
+      "gold_category": "wrong_greedy_choice",
+      "location_eligible": true,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s011",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "medium",
+      "gold_category": "code_logic_error",
+      "location_eligible": true,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s012",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "hard",
+      "gold_category": "boundary_omission",
+      "location_eligible": true,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s023",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "passed",
+      "difficulty": "hard",
+      "gold_category": "complexity_error",
+      "location_eligible": false,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s024",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "passed",
+      "difficulty": "hard",
+      "gold_category": "invalid_greedy_proof",
+      "location_eligible": false,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s037",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "holdout"
+    }
+  ],
+  "schema_version": "greedy-report-v1",
+  "solution_answer_accuracy": {
+    "denominator": 9,
+    "numerator": 2,
+    "value": 0.2222222222222222
+  },
+  "solution_process_accuracy": {
+    "denominator": 9,
+    "numerator": 2,
+    "value": 0.2222222222222222
+  },
+  "strata": {
+    "basic": {
+      "agreement": 1,
+      "answer_passed": 1,
+      "answer_verification_coverage": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "answer_verified": 1,
+      "diagnosis_agreement": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "failed": 2,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "location_eligible": 2,
+      "location_hit": 1,
+      "n": 3,
+      "process_correct": 1,
+      "process_correct_false_positive_rate": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_passed": 1,
+      "process_review_coverage": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "process_reviewed": 1,
+      "solution_answer_accuracy": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "solution_process_accuracy": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "undetermined": 0
+    },
+    "boundary_omission": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "location_eligible": 1,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "undetermined": 0
+    },
+    "code_logic_error": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "location_eligible": 1,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "undetermined": 0
+    },
+    "complexity_error": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "location_eligible": 0,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "undetermined": 0
+    },
+    "hard": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "failed": 3,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "location_eligible": 1,
+      "location_hit": 0,
+      "n": 3,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "solution_process_accuracy": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "undetermined": 0
+    },
+    "holdout": {
+      "agreement": 2,
+      "answer_passed": 2,
+      "answer_verification_coverage": {
+        "denominator": 9,
+        "numerator": 2,
+        "value": 0.2222222222222222
+      },
+      "answer_verified": 2,
+      "diagnosis_agreement": {
+        "denominator": 9,
+        "numerator": 2,
+        "value": 0.2222222222222222
+      },
+      "failed": 7,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 5,
+        "numerator": 1,
+        "value": 0.2
+      },
+      "location_eligible": 5,
+      "location_hit": 1,
+      "n": 9,
+      "process_correct": 2,
+      "process_correct_false_positive_rate": {
+        "denominator": 2,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_passed": 2,
+      "process_review_coverage": {
+        "denominator": 9,
+        "numerator": 2,
+        "value": 0.2222222222222222
+      },
+      "process_reviewed": 2,
+      "solution_answer_accuracy": {
+        "denominator": 9,
+        "numerator": 2,
+        "value": 0.2222222222222222
+      },
+      "solution_process_accuracy": {
+        "denominator": 9,
+        "numerator": 2,
+        "value": 0.2222222222222222
+      },
+      "undetermined": 0
+    },
+    "invalid_greedy_proof": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "location_eligible": 0,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "undetermined": 0
+    },
+    "medium": {
+      "agreement": 1,
+      "answer_passed": 1,
+      "answer_verification_coverage": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "answer_verified": 1,
+      "diagnosis_agreement": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "failed": 2,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 2,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "location_eligible": 2,
+      "location_hit": 0,
+      "n": 3,
+      "process_correct": 1,
+      "process_correct_false_positive_rate": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_passed": 1,
+      "process_review_coverage": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "process_reviewed": 1,
+      "solution_answer_accuracy": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "solution_process_accuracy": {
+        "denominator": 3,
+        "numerator": 1,
+        "value": 0.3333333333333333
+      },
+      "undetermined": 0
+    },
+    "none": {
+      "agreement": 1,
+      "answer_passed": 1,
+      "answer_verification_coverage": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "answer_verified": 1,
+      "diagnosis_agreement": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "location_eligible": 0,
+      "location_hit": 0,
+      "n": 2,
+      "process_correct": 2,
+      "process_correct_false_positive_rate": {
+        "denominator": 2,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_passed": 1,
+      "process_review_coverage": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "process_reviewed": 1,
+      "solution_answer_accuracy": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "solution_process_accuracy": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "undetermined": 0
+    },
+    "problem_misunderstanding": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "location_eligible": 1,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0.0
+      },
+      "undetermined": 0
+    },
+    "wrong_greedy_choice": {
+      "agreement": 1,
+      "answer_passed": 1,
+      "answer_verification_coverage": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "answer_verified": 1,
+      "diagnosis_agreement": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "location_eligible": 2,
+      "location_hit": 1,
+      "n": 2,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 1,
+      "process_review_coverage": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "process_reviewed": 1,
+      "solution_answer_accuracy": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "solution_process_accuracy": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "undetermined": 0
+    }
+  },
+  "undetermined": 0
+}

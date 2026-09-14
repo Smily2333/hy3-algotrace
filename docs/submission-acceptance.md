@@ -7,15 +7,15 @@
 | 1 | 公开开源仓库 | 部分完成 | 仓库地址已登记在 [README](../README.md)，但公开默认 `main` 尚未更新至成果分支。 |
 | 2 | 个人/活动作品声明 | 已验证 | [README 项目性质声明](../README.md#当前执行入口与-827-方案)。 |
 | 3 | 项目介绍、目标用户和真实问题 | 已验证 | [README 项目目标](../README.md#1-项目目标)、[交付报告](delivery-report.md)。 |
-| 4 | 运行方式、环境要求和无密钥配置样例 | 部分完成 | [README](../README.md) 有构建/启动说明；`.env.example` 尚未提交并验证。 |
-| 5 | 可运行 Hy3 应用及完整解答过程 | 部分完成 | M1 双平台程序证据见 [M1 记录](journal/m1-interactive-v2.md)；真实回放与最终默认分支待完成。 |
-| 6 | 分层题集、来源、标准答案及自动校验 | 部分完成 | [25 条材料](../evaluation/materials/dataset.json)、[12 条扩充](../evaluation/expansion-20260828/dataset.json)、[答案证据](../evaluation/results/fixed-answer-evidence.json)；真人材料复核待完成。 |
-| 7 | 过程正确性、首次错误定位和分类 | 部分完成 | [评测 v2](evaluation-v2.md) 与两份[审核包](reviews/materials-original-25.md)；正式结果未生成。 |
-| 8 | 答案正确但过程不成立样本 | 部分完成 | s024/s025/s037 有固定测试通过证据和独立反驳；待作者确认，其中 s024/s037 拟入正式集。 |
-| 9 | 正式实验完整结果 | 进行中 | Smily2333 已于2026-09-09确认37条材料；[最终冻结清单](../evaluation/formal-20260909/freeze-manifest.json)已固定9条分母且正式调用在冻结时为0。 |
-| 10 | 最终答案准确率、过程正确率、错误分布 | 未完成 | 仅有[开发结果](../evaluation/results/development-v2-summary.json)，不得代替正式指标。 |
-| 11 | 难度分层结果与能力边界 | 未完成 | 材料具备三档；正式结果和人工分析尚无。 |
-| 12 | 定位准确率、误报率及人工抽检 | 未完成 | s001–s003 有有限人工记录；正式结果复核尚无。 |
-| 13 | 典型案例分析 | 部分完成 | [开发报告](journal/m3-development-v2.md) 有案例；正式成功/失败案例待补。 |
-| 14 | 两分钟以内视频或 GIF | 未完成 | 只有 [Demo 脚本/Fake 素材说明](demo-m1-m4.md)，无成片。 |
-| 15 | 密钥、隐私、许可、链接和复现检查 | 部分完成 | 历史 secret 扫描和 `.gitignore` 已有；顶层 LICENSE、最终链接/干净复现/匿名访问待完成。 |
+| 4 | 运行方式、环境要求和无密钥配置样例 | 已验证 | [README](../README.md) 构建/启动/离线重放说明及 [`.env.example`](../.env.example)。 |
+| 5 | 可运行 Hy3 应用及完整解答过程 | 已验证 | [M1记录](journal/m1-interactive-v2.md)、[真实结果回放](demo-m1-m4.md)和正式s005/s010完整解法。 |
+| 6 | 分层题集、来源、标准答案及自动校验 | 已验证 | [25条材料](../evaluation/materials/dataset.json)、[12条扩充](../evaluation/expansion-20260828/dataset.json)、答案证据及37/37[真人审核](../evaluation/reviews/)。 |
+| 7 | 过程正确性、首次错误定位和分类 | 已验证 | [评测v2](evaluation-v2.md)、[正式报告](delivery-report.md)与逐样本结果。 |
+| 8 | 答案正确但过程不成立样本 | 已验证 | s024/s025/s037 固定测试与独立反驳均经作者确认；s024/s037预冻结进入正式集。 |
+| 9 | 正式实验完整结果 | 已验证 | [固定9条冻结](../evaluation/formal-20260909/freeze-manifest.json)、[脱敏记录](../evaluation/results/formal-20260909-records.json)，失败未剔除。 |
+| 10 | 最终答案准确率、过程正确率、错误分布 | 已验证 | [机器报告](../evaluation/results/formal-20260909-report.json)与[分析](delivery-report.md#5-正式指标)。 |
+| 11 | 难度分层结果与能力边界 | 已验证 | [正式报告难度表及边界](delivery-report.md#难度分层)。 |
+| 12 | 定位准确率、误报率及人工抽检 | 已验证 | [人工结果审核](../evaluation/reviews/formal-result-review-20260909.json)及正式指标。 |
+| 13 | 典型案例分析 | 已验证 | [s005/s010与结构失败分析](delivery-report.md#7-典型案例与失败模式)。 |
+| 14 | 两分钟以内视频或 GIF | 已验证 | [94秒真实结果回放GIF](assets/hy3-algotrace-real-replay.gif)及[复现记录](demo-m1-m4.md)。 |
+| 15 | 密钥、隐私、许可、链接和复现检查 | 部分完成 | MIT [LICENSE](../LICENSE)、[NOTICE](../NOTICE.md)及本地扫描已具备；最终双平台CI、main及匿名链接检查待完成。 |

@@ -112,7 +112,7 @@ int main(int argc,char**argv){
     if(argc<3){std::cout<<"hy3_evaluate validate DATASET | export[-v2] DATASET ROOT | import[-v2] DATASET SAMPLE RAW OUT | report[-v2] DATASET RECORDS OUT [EVIDENCE] | jobs DATASET OUT\n"
         <<"Paid, authorization required: call[-v2] DATASET SAMPLE CAMPAIGN_ROOT ACCOUNT_CONFIRMATION\n"
         <<"Formal: formal-plan FREEZE_MANIFEST CAMPAIGN_ROOT | formal-call FREEZE_MANIFEST SAMPLE CAMPAIGN_ROOT ACCOUNT_CONFIRMATION\n"
-        <<"Offline formal: formal-bundle FREEZE_MANIFEST CAMPAIGN_ROOT OUT | formal-report FREEZE_MANIFEST BUNDLE OUT [SOLUTION_EVIDENCE]\n"
+        <<"Offline formal: formal-bundle FREEZE_MANIFEST CAMPAIGN_ROOT OUT | formal-report FREEZE_MANIFEST BUNDLE OUT [SOLUTION_EVIDENCE [HUMAN_REVIEW]]\n"
         <<"Approved execution jobs: formal-solution-jobs FREEZE_MANIFEST BUNDLE STATIC_REVIEW OUT\n";return 1;}
     std::string cmd=argv[1];
     const bool v2=cmd.size()>3&&cmd.substr(cmd.size()-3)=="-v2";
@@ -190,7 +190,7 @@ int main(int argc,char**argv){
         saveNew(argv[5],{{"schema_version","fixed-answer-jobs-v1"},{"dataset_sha256",hy3::sha256_hex(dataset.dump())},
             {"provenance","Planner-approved model solutions only; execution remains external and isolated"},{"jobs",jobs}});return 0;
     }
-    if(cmd=="formal-report"&&(argc==5||argc==6)){
+    if(cmd=="formal-report"&&(argc==5||argc==6||argc==7)){
         const auto manifest=load(argv[2]);const auto dataset=formalDataset(manifest);
         const auto promptTemplate=readTemplate("prompts/hy3-greedy-evaluation-v2.md");validateFormalFreeze(manifest,dataset,promptTemplate);
         const auto bundle=load(argv[3]);
@@ -199,13 +199,21 @@ int main(int argc,char**argv){
            bundle.at("freeze_manifest_sha256")!=hy3::sha256_hex(manifest.dump())||
            bundle.at("records").size()!=dataset.at("samples").size())throw std::runtime_error("formal bundle identity mismatch");
         auto evidence=formalAnswerEvidence(manifest,dataset);
-        if(argc==6){const auto solutionEvidence=load(argv[5]);
+        if(argc>=6){const auto solutionEvidence=load(argv[5]);
             if(solutionEvidence.at("dataset_sha256")!=hy3::sha256_hex(dataset.dump()))throw std::runtime_error("formal solution evidence dataset mismatch");
             for(const auto& result:solutionEvidence.at("results"))evidence["results"].push_back(result);
         }
         auto records=attachAnswerEvidence(dataset,bundle.at("records"),evidence);
+        json humanReview=nullptr;
+        if(argc==7){humanReview=load(argv[6]);
+            if(humanReview.at("experiment_id")!=manifest.at("experiment_id"))throw std::runtime_error("human result review experiment mismatch");
+            records=attachHumanResultReview(dataset,records,humanReview);
+        }
         auto summary=report(dataset,records,false);summary["evaluation_version"]=version2;
         summary["experiment_id"]=manifest.at("experiment_id");summary["freeze_manifest_sha256"]=hy3::sha256_hex(manifest.dump());
+        if(!humanReview.is_null())summary["human_result_review"]={{"reviewer",humanReview.at("reviewer")},
+            {"reviewed_at",humanReview.at("reviewed_at")},{"reviewed_contract_valid_outputs",humanReview.at("entries").size()},
+            {"contract_valid_outputs",std::count_if(records.begin(),records.end(),[](const auto& r){return r.contains("human_result_review");})}};
         saveNew(argv[4],summary);return 0;
     }
     if(cmd=="formal-call"&&argc==6){

@@ -2,22 +2,24 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-## 当前执行入口与 8/27 方案
+## 最终成果
 
-- **接手开发先读：[M1–M4 执行路线图](docs/roadmap.md)。** 包含完整背景、现状、每阶段任务、验收和停止条件，不依赖其他聊天记录。
-- **提交材料：[项目方案](docs/project-proposal-2026-08-27.md)。** 包含设计思路、目标架构、重点技术、预期效果与建议排期。
-- **历史追溯：[旧 Phase 路线图](docs/roadmap-legacy-phase.md)。** 仅保留历史，不再作为下一步任务入口。
+- **[94秒真实 Hy3 结果回放](docs/assets/hy3-algotrace-real-replay.gif)**
+- **[最终实验与交付报告](docs/delivery-report.md)**
+- **[正式9条脱敏结果](evaluation/results/formal-20260909-records.json)** / **[机器可读指标](evaluation/results/formal-20260909-report.json)**
+- **[任务2逐项验收](docs/submission-acceptance.md)** / **[提交入口](SUBMISSION.md)**
+- 开发依据：[M1–M4 路线图](docs/roadmap.md)；历史 Phase 记录只作追溯。
 
-M 表示 Milestone（里程碑）：**M1 做诊断应用，M2 准备评测材料，M3 验证效果，M4 整理交付**。M1 已通过双平台 CI；M2 已交付8题25候选、独立评测工具与隔离答案证据。真实实验和人工复核尚未完成。集中结果见 [阶段交付报告](docs/delivery-report.md)。
+M1–M4 已形成可运行应用、12题37候选材料、一次冻结正式实验、人工审核、隔离答案证据、最终报告与实际GIF。项目只支持贪心题；结果不外推为 Hy3 总体能力。
 
-**当前状态：M1完成；M2的12题37候选已由 Smily2333 于2026-09-09全部确认，M3正式9条已在模型输出前冻结，M4部分交付。** v2开发调用2条parsed、1条schema_invalid；累计v1+v2共6次、76496 token，余223504。六次开发上限已用完，正式批次固定为9条且不事后换样本。详见[最新实验报告](docs/journal/m3-development-v2.md)、[材料审核记录](evaluation/reviews/)和[正式冻结清单](evaluation/formal-20260909/freeze-manifest.json)。旧失败、历史更正及gold不变；网页仍不执行代码。
+**正式结果：** 9条固定分母、每条一次、无重试；契约通过2/9，诊断一致2/9，首次错误定位1/5，正确过程误报0/2。两份合法完整解法均通过3个固定测试并由 Smily2333 确认过程成立。7条契约失败仍计入分母。全项目15次调用共204,186 token，未知0，剩余95,814。
 
-**2026-09-09 收口入口：** [任务2逐项验收表](docs/submission-acceptance.md)如实列出已验证/部分/未完成项；原[25条](docs/reviews/materials-original-25.md)与新增[12条](docs/reviews/materials-expansion-12.md)已全部人工确认。[正式冻结清单](evaluation/formal-20260909/freeze-manifest.json)固定9条分母、模型与预算，不允许按输出换样本。
+正式集合在调用前由[冻结清单](evaluation/formal-20260909/freeze-manifest.json)固定，不允许按输出换样本。原[25条](docs/reviews/materials-original-25.md)与新增[12条](docs/reviews/materials-expansion-12.md)均已人工确认；正式结果复核见[审核记录](evaluation/reviews/formal-result-review-20260909.json)。
 
 - [评测契约与运行命令](docs/evaluation-v1.md) / [8题25候选](evaluation/materials/dataset.json)
 - [独立评测v2](docs/evaluation-v2.md) / [新增4题12候选](evaluation/expansion-20260828/dataset.json) / [v2脱敏报告](evaluation/results/development-v2-report.json)
 - [真实固定答案证据（不是模型实验）](evaluation/results/fixed-answer-evidence.json)
-- [人工待审清单](evaluation/review-queue.json) / [演示脚本与Fake截图](docs/demo-m1-m4.md)
+- [正式解法隔离执行证据](evaluation/results/formal-20260909-solution-evidence.json) / [真实结果演示说明](docs/demo-m1-m4.md)
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
@@ -67,10 +69,10 @@ hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代
 
 | 阶段 | 内容 | 当前状态 |
 | --- | --- | --- |
-| M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 双平台程序验收通过；未验证真实模型效果 |
+| M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 完成；程序与真实结果回放已验证 |
 | M2 | 分层样本、独立 gold、最小答案校验与评测适配 | 材料/工具/隔离验证及37条人工确认完成；正式9条已冻结 |
-| M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | v2开发2/3契约通过；累计6次；正式0条，完整解法过程仍待人工复核 |
-| M4 | 运行说明、公开材料、分析报告与两分钟 Demo | 报告/证据/脚本已交付；真实结果和视频成片待补 |
+| M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | 完成；正式9条及真人结果审核已记录 |
+| M4 | 运行说明、公开材料、分析报告与两分钟 Demo | 交付内容完成；最终main与CI状态见SUBMISSION |
 
 ## 7. 目录结构
 

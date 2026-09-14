@@ -54,7 +54,7 @@ RAW_FILE等是命令参数占位，不能原样执行。bundle与v1一样为 `{d
 
 ## 正式批次预算与冻结门禁（2026-09-09 新增）
 
-正式入口与开发入口隔离，但复用 `build/m3-development-20260827/budget` 的同一追加式账本。正式集合提案见 [`evaluation/formal-20260909`](../evaluation/formal-20260909/freeze-manifest.proposed.json)：9 条、三档难度各3条，包含 s024/s037 两条固定测试答案通过但过程错误的样本。它在项目作者确认前保持 `pending_human_review`；`formal-plan` 和 `formal-call` 都会拒绝它。
+正式入口与开发入口隔离，但复用 `build/m3-development-20260827/budget` 的同一追加式账本。最终[冻结清单](../evaluation/formal-20260909/freeze-manifest.json)为9条、三档难度各3条，包含 s024/s037 两条固定测试答案通过但过程错误的样本。材料确认前的提案仍保留作审计；正式入口只接受已确认的最终清单。
 
 逐请求上界为 `UTF-8(serialized prompt) 字节数 + max_tokens(13312) + 固定 envelope 余量(1024)`。字节数保守覆盖项目提供文本的输入 token；额外 1024 覆盖单条 user message 的 API 固定封装。TokenHub [OpenAI Chat Completions 协议](https://cloud.tencent.com/document/product/1823/135872)说明 `max_tokens` 是单次响应最大输出 token，达到时 `finish_reason=length`；`completion_tokens` 已含思维链，`total_tokens=prompt_tokens+completion_tokens`。因此 reasoning 不重复相加。若 usage 缺失、三项不满足加法、实际值超过预留、或留下未完成 reservation，账本保留未知预留并停止后续调用。
 
@@ -64,4 +64,12 @@ RAW_FILE等是命令参数占位，不能原样执行。bundle与v1一样为 `{d
 .\build\m1\Release\hy3_evaluate.exe formal-estimate evaluation/formal-20260909/freeze-manifest.proposed.json build/m3-development-20260827
 ```
 
-当前精确估算为新增 216016、历史加最坏合计 292512 token；每条明细在 [`budget-estimate.proposed.json`](../evaluation/formal-20260909/budget-estimate.proposed.json)。这不是调用授权。真人确认导入、manifest 改为 `frozen` 并重算哈希后，才运行 `formal-plan` 持久化唯一 batch plan，再逐条运行 `formal-call`。正式入口只接受 manifest 中样本；每次调用前还检查整个未完成尾批能否承载。已有 reservation/done、未知账目、hash差异、未确认gold或非holdout样本均失败关闭，无自动重试。
+调用前精确估算为新增216016、历史加最坏292512 token。实际正式9条均一次完成，新增127690；全项目账本204186 token、15次、未知0。正式入口只接受manifest中样本；已有reservation/done、未知账目、hash差异、未确认gold或非holdout样本均失败关闭，无自动重试。
+
+公开记录可纯离线重放，不会调用模型：
+
+```powershell
+build/Release/hy3_evaluate.exe formal-report evaluation/formal-20260909/freeze-manifest.json evaluation/results/formal-20260909-records.json report.json evaluation/results/formal-20260909-solution-evidence.json evaluation/reviews/formal-result-review-20260909.json
+```
+
+最后两个证据文件分别接入已批准隔离运行的完整解答测试，以及真实审核者的过程判断；hash、样本身份、重复条目和未完成审核均失败关闭。

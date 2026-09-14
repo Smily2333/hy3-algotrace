@@ -29,9 +29,35 @@ public:
         }
     }
 };
+class RecordedReplay final : public IModelClient {
+    json diagnosis_;
+public:
+    explicit RecordedReplay(json diagnosis):diagnosis_(std::move(diagnosis)) {}
+    ModelCallResult invoke(const ModelRequest& request) noexcept override {
+        auto diagnosis=diagnosis_;diagnosis["request_id"]=request.trace_id;
+        const auto raw=diagnosis.dump();ModelCallResult result;
+        result.raw_response.assign(raw.begin(),raw.end());result.status=ModelCallStatus::Succeeded;result.http_status=200;
+        return result;
+    }
+};
 }
 int main(int argc,char** argv) {
     try {
+        if(argc==6 && std::string(argv[1])=="--serve-replay") {
+            const fs::path repo=argv[2];const auto port=std::stoul(argv[4]);
+            if(port==0 || port>65535) return 2;
+            const auto bundle=json::parse(readText(argv[5]));const json* selected=nullptr;
+            for(const auto& record:bundle.at("records"))if(record.at("sample_id")=="s005"&&record.at("parse_status")=="parsed")selected=&record;
+            if(!selected)throw std::runtime_error("s005 replay record unavailable");
+            RecordedReplay replay(selected->at("response").at("diagnosis"));
+            InteractiveServerConfig config;config.port=static_cast<std::uint16_t>(port);
+            config.web_root=repo/"web";config.artifacts_root=argv[3];
+            InteractiveHttpApplication app(replay,readText(repo/"prompts/hy3-interactive-diagnosis-v2.md"),
+                                           config.artifacts_root.string(),false,false,true);
+            std::cout<<"RECORDED HY3 RESULT REPLAY - no network or code execution\n"
+                     <<"URL: http://127.0.0.1:"<<port<<"/\n"<<std::flush;
+            std::string error;if(!serveInteractiveDemo(config,app,error)){std::cerr<<error<<'\n';return 1;}return 0;
+        }
         if(argc==5 && std::string(argv[1])=="--serve-fake") {
             const fs::path repo=argv[2];
             const auto port=std::stoul(argv[4]);
@@ -56,6 +82,10 @@ int main(int argc,char** argv) {
         CHECK(health["ok"]==true && health["model_mode"]=="mock_fixture" && fake.callCount()==0,"health honest/no call");
         CHECK(health["prompt_template_id"]==kInteractiveTemplateId &&
               health["request_schema_version"]==kInteractiveRequestVersion,"health v2 identity");
+        OwnedRoot replayRoot;RecordedReplay replay(diagnosis("replay"));
+        InteractiveHttpApplication replayApp(replay,prompt,replayRoot.path.string(),false,false,true);
+        const auto replayHealth=json::parse(replayApp.health().body);
+        CHECK(replayHealth["model_mode"]=="recorded_replay"&&replayHealth["model_name"]=="hy3-recorded","replay mode honest");
         CHECK(app.diagnose("text/plain","{}").status==415 && fake.callCount()==0,"content type");
         CHECK(app.diagnose("application/json","{").status==400 && fake.callCount()==0,"invalid JSON before call");
         CHECK(app.diagnose("application/json",std::string(256*1024+1,'x')).status==413 &&

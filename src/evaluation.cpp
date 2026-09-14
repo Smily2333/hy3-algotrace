@@ -335,9 +335,16 @@ json report(const json& dataset,const json& records,bool synthetic) {
             std::string key=c.is_null()?"none":c.get<std::string>();
             categories[key]=categories.value(key,0)+1;
         }
-        if((candidateAnswer=="passed"&&pred=="incorrect")||!matched||difficulty=="hard"||g.at("process_status")=="correct")
-            reviews.push_back({{"sample_id",s.at("id")},{"priority",candidateAnswer=="passed"&&pred=="incorrect"?"answer_correct_alert":"stratified_review"},
-                {"reviewer",nullptr},{"date",nullptr},{"decision","pending"},{"evidence",nullptr}});
+        if((candidateAnswer=="passed"&&pred=="incorrect")||!matched||difficulty=="hard"||g.at("process_status")=="correct") {
+            json review={{"sample_id",s.at("id")},{"priority",candidateAnswer=="passed"&&pred=="incorrect"?"answer_correct_alert":"stratified_review"},
+                {"reviewer",nullptr},{"date",nullptr},{"decision",valid?"pending":"not_reviewable_contract_failure"},{"evidence",nullptr}};
+            if(valid&&rec->contains("human_result_review")) {
+                const auto& human=rec->at("human_result_review");review["reviewer"]=human.at("reviewer");
+                review["date"]=human.at("reviewed_at");review["decision"]=human.at("diagnosis_decision");
+                review["evidence"]="evaluation/reviews/formal-result-review-20260909.json";
+            }
+            reviews.push_back(std::move(review));
+        }
     }
     const auto n=dataset.at("samples").size();
     for(auto& x:slices) {
@@ -394,6 +401,37 @@ json attachAnswerEvidence(const json& dataset,const json& records,const json& ev
                 record[key]=verdict;
             }
         }
+    }
+    return out;
+}
+json attachHumanResultReview(const json& dataset,const json& records,const json& review) {
+    need(review.at("schema_version")=="formal-result-human-review-v1"&&review.at("status")=="complete",
+         "human result review incomplete");
+    need(review.at("reviewer").is_string()&&!review.at("reviewer").get<std::string>().empty()&&
+         review.at("reviewed_at").is_string()&&!review.at("reviewed_at").get<std::string>().empty(),
+         "human result review identity missing");
+    std::map<std::string,json> entries;
+    for(const auto& entry:review.at("entries")) {
+        const auto id=entry.at("sample_id").get<std::string>();
+        bool known=false;for(const auto& sample:dataset.at("samples"))known=known||sample.at("id")==id;
+        need(known&&entries.emplace(id,entry).second,"unknown or duplicate human review sample");
+    }
+    json out=records;
+    for(auto& record:out) {
+        const auto id=record.at("sample_id").get<std::string>();
+        const bool hasSolution=record.value("parse_status","")=="parsed"&&record.contains("response")&&
+            !record.at("response").is_null()&&record.at("response").at("solution_code").at("availability")=="provided";
+        if(!hasSolution)continue;
+        need(entries.count(id),"contract-valid solution lacks human review");
+        const auto& entry=entries.at(id);
+        need(entry.at("diagnosis_decision")=="confirmed"||entry.at("diagnosis_decision")=="rejected",
+             "diagnosis human review decision missing");
+        const auto process=entry.at("solution_process_decision").get<std::string>();
+        need(process=="confirmed"||process=="rejected","solution human review decision missing");
+        record["solution_process_status"]=process=="confirmed"?"correct":"incorrect";
+        record["human_result_review"]={{"reviewer",review.at("reviewer")},{"reviewed_at",review.at("reviewed_at")},
+            {"diagnosis_decision",entry.at("diagnosis_decision")},{"localization_decision",entry.at("localization_decision")},
+            {"counterexample_decision",entry.at("counterexample_decision")},{"solution_process_decision",entry.at("solution_process_decision")}};
     }
     return out;
 }
