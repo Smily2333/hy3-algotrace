@@ -188,6 +188,8 @@ experiments/phase-02/runs/<run_id>/
 │   └── <trace_id>.txt
 ├── raw-responses/
 │   └── <trace_id>.txt
+├── model-calls/
+│   └── <trace_id>.json
 ├── predictions/
 │   └── <trace_id>.json
 ├── report.json
@@ -235,6 +237,61 @@ experiments/phase-02/runs/<run_id>/
 - `prompt_template_id = "hy3-evaluator-v1"`
 - `input_mode = "reference_assisted"`
 - `model_version`：若模型版本不可得则为 `null`（见 `docs/journal/phase-02a.md` 未决问题）。
+
+### 6.2 模型调用侧车（model-calls/\<trace_id\>.json）
+
+Phase 2C 的每次真实模型调用必须有一个独立审计侧车。它不替代
+`raw-responses/` 或 `predictions/`，也不得复制 Prompt、原始响应或任何认证
+信息。发送前先以 `outcome = "attempting"` 原子创建；调用或导入结束后原子
+替换为最终状态。任何已存在的同名侧车（包括中断后残留的 `attempting`）都
+视为已经尝试过，必须在网络请求前拒绝再次调用。
+
+```json
+{
+  "schema_version": "0.1.0",
+  "run_id": "string",
+  "trace_id": "string",
+  "provider": "tencent-hunyuan",
+  "service": "tokenhub",
+  "model_name": "hy3",
+  "model_version": null,
+  "endpoint_origin": "https://tokenhub.tencentmaas.com",
+  "attempted_at": "ISO-8601",
+  "completed_at": "ISO-8601 或 null",
+  "outcome": "attempting|success|timeout|authentication_error|rate_limited|transport_error|http_error|provider_error|configuration_error|postprocess_error|empty_response|cancelled",
+  "error_category": "string 或 null",
+  "timeout_seconds": 120,
+  "http_status": 200,
+  "request_id": "string 或 null",
+  "latency_ms": 1234,
+  "token_usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 50,
+    "total_tokens": 150
+  },
+  "prompt_sha256": "string",
+  "raw_response_sha256": "string 或 null",
+  "response_saved": true,
+  "prediction_imported": true,
+  "parse_status": "parsed 或其他协议 parse_status，或 null"
+}
+```
+
+约束：
+
+- `model_version`、`completed_at`、`error_category`、`http_status`、
+  `request_id`、`latency_ms`、`token_usage`、`raw_response_sha256` 和
+  `parse_status` 在服务端或当前阶段不可得时必须为 `null`，不得猜测。
+- `token_usage` 非空时各计数字段仍可独立为 `null`。
+- `endpoint_origin` 只记录 `scheme://host[:port]`，不得包含路径、查询参数。
+- 不得记录 API Key、Authorization、完整请求 headers、完整 Prompt、完整 raw
+  response 或未经约束的 transport/provider 错误文本。
+- `response_saved` 仅表示逐字节响应已进入 `raw-responses/`；
+  `prediction_imported` 仅表示 Importer 已生成 wrapper。解析失败仍可为 `true`，
+  具体状态由 `parse_status` 表达。
+- `model-calls.schema_version = "0.1.0"` 是侧车自身版本。本次扩展不改变既有
+  `evaluation_schema_version = "0.1.0"`：没有 `model-calls/` 的旧离线 run 仍
+  可按原协议读取；只有真实调用入口强制要求侧车。
 
 ---
 
@@ -290,7 +347,7 @@ experiments/phase-02/runs/<run_id>/
 - `prediction` 是 Hy3 输出解析后的结构；其形状与 `prompts/hy3-evaluator-v1.md` 输出契约一致。
 - **gold diagnosis 绝不能写进 prediction 文件。**
 - comparison 只在 Reporter 阶段内存读取 gold，或进入 `report.json` / `report.md`。
-- raw response 必须独立保存于 `raw-responses/<trace_id>.txt`，并用 `raw_response_sha256` 关联。
+- raw response 必须独立保存于 `raw-responses/<trace_id>.txt`，并用 `raw_response_sha256` 关联。对 OpenAI-compatible Chat Completions transport，这里的 raw response 明确定义为服务端 `choices[0].message.content` 解码所得的模型内容字节，保持其内容逐字节不修复；HTTP JSON envelope 只在内存中用于提取内容和安全元数据，不进入 sidecar。
 - `parse_status != parsed` 时 `prediction` 必须为 `null`（Phase 2A 尚未创建 run，故无任何 wrapper 文件）。
 - `__parse_failed__` 等内部 sentinel 只用于指标计算（见 `docs/phase-02-metrics.md` 第 3 节），**绝不写回** prediction JSON。
 

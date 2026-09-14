@@ -1,0 +1,121 @@
+{
+  "schema_version": "development-validation-summary-v2",
+  "kind": "development_real_not_formal",
+  "recorded_on": "2026-08-28",
+  "code_commit": "e3cd81e56241261c59d8f6f98a6b86fac2c61f13",
+  "model": "hy3",
+  "model_version": null,
+  "evaluation_version": "greedy-evaluation-v2",
+  "dataset_version": "m2-draft-20260827",
+  "original_dataset_sha256": "f9fa185011a0a903ccae8348b80215b901531b242ebf90e862c3b59165ce9dc6",
+  "analysis_scope": "The three IDs were selected before calls. Reporter uses an explicit three-sample projection, retaining s003 failure; not the full 25-sample cohort.",
+  "analysis_dataset_sha256": "b2cd080d3d3c1018dff63aa7096b28fd132c3d78bf7cb2f55bc66803d0111e7e",
+  "prompt_template_id": "hy3-greedy-evaluation-v2",
+  "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+  "started_at": "2026-08-27T16:13:16Z",
+  "finished_at": "2026-08-27T16:19:25Z",
+  "usage": {
+    "prompt_tokens": 6910,
+    "completion_tokens": 33166,
+    "total_tokens": 40076,
+    "reasoning_tokens": 30134,
+    "cached_tokens": 0
+  },
+  "campaign_budget": {
+    "calls": 6,
+    "actual_tokens": 76496,
+    "unknown_reserved": 0,
+    "remaining_tokens": 223504,
+    "remaining_call_upper_bound": 32,
+    "token_limit": 300000,
+    "call_limit": 38,
+    "development_cap_reached": true
+  },
+  "samples": [
+    {
+      "sample_id": "s001",
+      "attempt_id": "v2-s001",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "parse_status": "parsed",
+      "finish_reason": "stop",
+      "duration_ms": 109988,
+      "token_usage": {
+        "completion_tokens": 11853,
+        "prompt_tokens": 2304,
+        "total_tokens": 14157
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 10894
+      },
+      "raw_sha256": "5c0e0b9d0891b700611a3c408aec6540fc158d5a021a469e67cbf5883c3e59de",
+      "prompt_sha256": "ec6c3fa9844cd61447cc762330702d366f401ec4f0550083640ae6866df6b8ab",
+      "predicted_status": "correct",
+      "predicted_primary_category": null,
+      "validation_errors": [],
+      "solution_verdict": "passed"
+    },
+    {
+      "sample_id": "s002",
+      "attempt_id": "v2-s002",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "parse_status": "parsed",
+      "finish_reason": "stop",
+      "duration_ms": 92430,
+      "token_usage": {
+        "completion_tokens": 12484,
+        "prompt_tokens": 2304,
+        "total_tokens": 14788
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 11338
+      },
+      "raw_sha256": "8a4431bc71ab4631de5b6193798566b3b0530f4a1e929a7bebe5bee0138fbc54",
+      "prompt_sha256": "44a94cf619d424dc5808c68891557cd0613a86f36762d750d49392b851ede4f9",
+      "predicted_status": "incorrect",
+      "predicted_primary_category": "boundary_omission",
+      "validation_errors": [],
+      "solution_verdict": "passed"
+    },
+    {
+      "sample_id": "s003",
+      "attempt_id": "v2-s003",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "parse_status": "schema_invalid",
+      "finish_reason": "stop",
+      "duration_ms": 63987,
+      "token_usage": {
+        "completion_tokens": 8829,
+        "prompt_tokens": 2302,
+        "total_tokens": 11131
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 7902
+      },
+      "raw_sha256": "1939727bf7dd60bdf7facada5448060b20825bd4b3d3491d74c9b7a7b0cbe8d4",
+      "prompt_sha256": "1089113b8ac0b7a70b35a78b19a73a44354c98a46877fffedcb6a54484e84272",
+      "predicted_status": null,
+      "predicted_primary_category": null,
+      "validation_errors": [
+        {
+          "message": "required field missing",
+          "path": "/solution_code"
+        }
+      ],
+      "solution_verdict": "unverified"
+    }
+  ],
+  "limitations": [
+    "Three development samples of a single problem; cannot infer general model capability or causal improvement from v1 to v2.",
+    "Two code outputs passed three fixed tests each; not a proof of full correctness.",
+    "Model-produced explanation/proof has not been human reviewed.",
+    "s003 is legal JSON but schema_invalid. Do not salvage, relabel as success, or retry.",
+    "Original three v1 failures and 36420 token consumption are retained separately."
+  ],
+  "next_gate": "No further development calls under the six-call cap; formal holdout remains blocked pending review and an explicit experiment decision."
+}

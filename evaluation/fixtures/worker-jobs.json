@@ -1,0 +1,72 @@
+{
+  "schema_version": "fixed-answer-jobs-v1",
+  "dataset_sha256": "SYNTHETIC_WORKER_TEST",
+  "jobs": [
+    {
+      "id": "passed",
+      "source": "#include <iostream>\nint main(){std::cout<<2;}",
+      "tests": [
+        {
+          "id": "t1",
+          "input": "",
+          "expected_output": "2\n"
+        }
+      ]
+    },
+    {
+      "id": "wrong",
+      "source": "#include <iostream>\nint main(){std::cout<<1;}",
+      "tests": [
+        {
+          "id": "t1",
+          "input": "",
+          "expected_output": "2\n"
+        }
+      ]
+    },
+    {
+      "id": "compile",
+      "source": "int main( {",
+      "tests": [
+        {
+          "id": "t1",
+          "input": "",
+          "expected_output": ""
+        }
+      ]
+    },
+    {
+      "id": "runtime",
+      "source": "int main(){return 3;}",
+      "tests": [
+        {
+          "id": "t1",
+          "input": "",
+          "expected_output": ""
+        }
+      ]
+    },
+    {
+      "id": "timeout",
+      "source": "int main(){for(;;){}}",
+      "tests": [
+        {
+          "id": "t1",
+          "input": "",
+          "expected_output": ""
+        }
+      ]
+    },
+    {
+      "id": "output",
+      "source": "#include <iostream>\nint main(){for(;;)std::cout<<\"abcdefghijklmnop\";}",
+      "tests": [
+        {
+          "id": "t1",
+          "input": "",
+          "expected_output": ""
+        }
+      ]
+    }
+  ]
+}

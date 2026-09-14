@@ -1,0 +1,361 @@
+{
+  "answer_verification_coverage": {
+    "denominator": 3,
+    "numerator": 2,
+    "value": 0.6666666666666666
+  },
+  "data_kind": "real",
+  "diagnosis_agreement": {
+    "denominator": 3,
+    "numerator": 2,
+    "value": 0.6666666666666666
+  },
+  "evaluation_version": "greedy-evaluation-v2",
+  "experiment_started": true,
+  "failures": 1,
+  "first_error_localization": {
+    "denominator": 2,
+    "numerator": 1,
+    "value": 0.5
+  },
+  "human_review_queue": [
+    {
+      "date": null,
+      "decision": "pending",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s001"
+    },
+    {
+      "date": null,
+      "decision": "pending",
+      "evidence": null,
+      "priority": "stratified_review",
+      "reviewer": null,
+      "sample_id": "s003"
+    }
+  ],
+  "included": 3,
+  "limitations": [
+    "Finite tests are not proof; unreviewed labels are agent-authored.",
+    "Location match is category plus tight code range, not proof of explanation correctness.",
+    "Unverified outputs never count as verified correct; failures remain in denominators."
+  ],
+  "missing_solution": 1,
+  "predicted_categories": {
+    "boundary_omission": 1,
+    "none": 1
+  },
+  "process_correct_false_positive_rate": {
+    "denominator": 1,
+    "numerator": 0,
+    "value": 0
+  },
+  "process_review_coverage": {
+    "denominator": 3,
+    "numerator": 0,
+    "value": 0
+  },
+  "records_received": 3,
+  "rows": [
+    {
+      "agreement": true,
+      "candidate_answer_status": "passed",
+      "difficulty": "basic",
+      "gold_category": "none",
+      "location_eligible": false,
+      "location_hit": false,
+      "predicted_status": "correct",
+      "sample_id": "s001",
+      "solution_answer_status": "passed",
+      "solution_process_status": "unreviewed",
+      "split": "development"
+    },
+    {
+      "agreement": true,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "basic",
+      "gold_category": "boundary_omission",
+      "location_eligible": true,
+      "location_hit": true,
+      "predicted_status": "incorrect",
+      "sample_id": "s002",
+      "solution_answer_status": "passed",
+      "solution_process_status": "unreviewed",
+      "split": "development"
+    },
+    {
+      "agreement": false,
+      "candidate_answer_status": "wrong_answer",
+      "difficulty": "basic",
+      "gold_category": "wrong_greedy_choice",
+      "location_eligible": true,
+      "location_hit": false,
+      "predicted_status": "failed",
+      "sample_id": "s003",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "split": "development"
+    }
+  ],
+  "schema_version": "greedy-report-v1",
+  "solution_answer_accuracy": {
+    "denominator": 3,
+    "numerator": 2,
+    "value": 0.6666666666666666
+  },
+  "solution_process_accuracy": {
+    "denominator": 3,
+    "numerator": 0,
+    "value": 0
+  },
+  "strata": {
+    "basic": {
+      "agreement": 2,
+      "answer_passed": 2,
+      "answer_verification_coverage": {
+        "denominator": 3,
+        "numerator": 2,
+        "value": 0.6666666666666666
+      },
+      "answer_verified": 2,
+      "diagnosis_agreement": {
+        "denominator": 3,
+        "numerator": 2,
+        "value": 0.6666666666666666
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "location_eligible": 2,
+      "location_hit": 1,
+      "n": 3,
+      "process_correct": 1,
+      "process_correct_false_positive_rate": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 3,
+        "numerator": 2,
+        "value": 0.6666666666666666
+      },
+      "solution_process_accuracy": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0
+      },
+      "undetermined": 0
+    },
+    "boundary_omission": {
+      "agreement": 1,
+      "answer_passed": 1,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "answer_verified": 1,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "failed": 0,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "location_eligible": 1,
+      "location_hit": 1,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "undetermined": 0
+    },
+    "development": {
+      "agreement": 2,
+      "answer_passed": 2,
+      "answer_verification_coverage": {
+        "denominator": 3,
+        "numerator": 2,
+        "value": 0.6666666666666666
+      },
+      "answer_verified": 2,
+      "diagnosis_agreement": {
+        "denominator": 3,
+        "numerator": 2,
+        "value": 0.6666666666666666
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 2,
+        "numerator": 1,
+        "value": 0.5
+      },
+      "location_eligible": 2,
+      "location_hit": 1,
+      "n": 3,
+      "process_correct": 1,
+      "process_correct_false_positive_rate": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 3,
+        "numerator": 2,
+        "value": 0.6666666666666666
+      },
+      "solution_process_accuracy": {
+        "denominator": 3,
+        "numerator": 0,
+        "value": 0
+      },
+      "undetermined": 0
+    },
+    "none": {
+      "agreement": 1,
+      "answer_passed": 1,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "answer_verified": 1,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "failed": 0,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "location_eligible": 0,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 1,
+      "process_correct_false_positive_rate": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 1,
+        "value": 1
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "undetermined": 0
+    },
+    "wrong_greedy_choice": {
+      "agreement": 0,
+      "answer_passed": 0,
+      "answer_verification_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "answer_verified": 0,
+      "diagnosis_agreement": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "failed": 1,
+      "false_positive": 0,
+      "first_error_localization": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "location_eligible": 1,
+      "location_hit": 0,
+      "n": 1,
+      "process_correct": 0,
+      "process_correct_false_positive_rate": {
+        "denominator": 0,
+        "numerator": 0,
+        "value": null
+      },
+      "process_passed": 0,
+      "process_review_coverage": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "process_reviewed": 0,
+      "solution_answer_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "solution_process_accuracy": {
+        "denominator": 1,
+        "numerator": 0,
+        "value": 0
+      },
+      "undetermined": 0
+    }
+  },
+  "undetermined": 0
+}

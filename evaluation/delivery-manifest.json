@@ -1,0 +1,28 @@
+{
+  "schema_version": "delivery-evidence-index-v2",
+  "status": "release_candidate_pending_final_ci",
+  "model": "hy3",
+  "model_version": null,
+  "evaluation_version": "greedy-evaluation-v2",
+  "formal_experiment_id": "formal-hy3-greedy-v2-20260909",
+  "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+  "formal_sample_count": 9,
+  "formal_requests": 9,
+  "formal_tokens": 127690,
+  "campaign_requests": 15,
+  "campaign_tokens": 204186,
+  "unknown_reserved_tokens": 0,
+  "token_limit": 300000,
+  "remaining_tokens": 95814,
+  "human_material_review": "37/37 by Smily2333 on 2026-09-09",
+  "human_result_review": "2/2 contract-valid outputs by Smily2333 on 2026-09-09",
+  "files": [
+    "evaluation/formal-20260909/freeze-manifest.json",
+    "evaluation/results/formal-20260909-records.json",
+    "evaluation/results/formal-20260909-solution-evidence.json",
+    "evaluation/results/formal-20260909-report.json",
+    "evaluation/reviews/formal-result-review-20260909.json",
+    "docs/delivery-report.md",
+    "docs/assets/hy3-algotrace-real-replay.gif"
+  ]
+}

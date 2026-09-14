@@ -1,0 +1,518 @@
+{
+  "data_kind": "real",
+  "experiment_id": "formal-hy3-greedy-v2-20260909",
+  "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+  "records": [
+    {
+      "attempt_id": "f20260909-s004",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 100178,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "stop",
+      "finished_at": "2026-09-09T05:04:28Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "schema_invalid",
+      "prompt_sha256": "24dad192ad5d17a8a1c200d205590b4b2c0a3269a15dcbadbedf7abe384fc1c7",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "ef4a7f46bf62bfdf8b599c2bb56fc61d14f8ebbb19101869024bd60b63105569",
+      "response": null,
+      "sample_id": "s004",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:02:48Z",
+      "token_usage": {
+        "completion_tokens": 8910,
+        "prompt_tokens": 2286,
+        "total_tokens": 11196
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 8902
+      },
+      "validation_errors": [
+        {
+          "message": "required field missing",
+          "path": "/schema_version"
+        }
+      ]
+    },
+    {
+      "attempt_id": "f20260909-s005",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 108700,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "stop",
+      "finished_at": "2026-09-09T05:06:17Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "parsed",
+      "prompt_sha256": "a7a584997cac7485f92118a2b941ceaad57388df516d57b683ccae6c0597a8a2",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "a5d3088c30223d948499dc8ddb768dd05d97d19bc737c232eb722a4fea5ec8b5",
+      "response": {
+        "diagnosis": {
+          "algorithm_overview": {
+            "origin": "model_code_interpretation",
+            "summary": "代码读取n和任务时长数组，使用sort降序排列，然后遍历数组，用t累加已遍历任务的时长，将t累加入ans得到总等待时间，最后输出ans。"
+          },
+          "counterexample": {
+            "availability": "provided",
+            "candidate_output_basis": "static_inference",
+            "expected_output": "1\n",
+            "explanation": "代码按降序执行（10后1），任务1开始前等待10，总等待输出10；而最小等待和应为升序执行（1后10）时的1。代码未给出最小值。",
+            "input": "2\n1 10\n",
+            "predicted_candidate_output": "10\n",
+            "provenance": "model_proposed_not_executed"
+          },
+          "findings": [
+            {
+              "category": "wrong_greedy_choice",
+              "code_location": {
+                "end_line": 8,
+                "snippet": "sort(a.rbegin(),a.rend());",
+                "start_line": 8
+              },
+              "id": "f1",
+              "input_evidence": {
+                "excerpt": "求所有任务开始前等待时长之和的最小值",
+                "source": "problem_statement"
+              },
+              "location_reason": null,
+              "reason": "总等待时间等于各任务前序任务时长之和，等价于权重随执行位置递减的加权和。将最长任务放在最前（权重最大）会最大化总和，而非最小化。正确贪心是按任务时长升序排列（短任务优先），使小数值乘以大权重。",
+              "step_id": "s2",
+              "suggestion": "将排序改为升序：sort(a.begin(), a.end());"
+            }
+          ],
+          "first_error": {
+            "explanation": "降序排序使最长任务最先执行，后续所有任务均需等待该长任务，导致总等待时间最大；为求最小等待和应改为升序排序。",
+            "step_id": "s2"
+          },
+          "limitations": [
+            "仅静态分析代码与题面，未编译或执行程序。",
+            "反例与参考解法均由模型提出，未经OJ验证。"
+          ],
+          "primary_category": "wrong_greedy_choice",
+          "reference_solution": {
+            "availability": "provided",
+            "boundaries": "n=1时总等待为0；任务时长均为正且上界1e6、n上界1e5，使用long long可避免溢出（最大约5e15）。",
+            "complexity": "时间复杂度主要为排序的O(n log n)，遍历累加为O(n)；空间复杂度O(n)用于存储任务时长。",
+            "correctness": "总等待时间可写为sum_{k=1}^{n-1}(n-k)*p_k（p_k为第k个执行的任务时长），权重随k增大而严格递减。由排序不等式，将最小的时长放在最前（最大权重）可最小化和，故升序排列为最优调度；任意相邻逆序交换都会增加总和，因此升序即全局最优。",
+            "provenance": "model_generated_unverified",
+            "strategy": "将所有任务时长按升序排序，依次执行；遍历时用累加器t记录已执行任务的总时长，在每个任务开始前将t加入答案ans，再将当前任务时长加入t。",
+            "unavailable_reason": null
+          },
+          "request_id": "input",
+          "schema_version": "interactive-diagnosis-v2",
+          "status": "incorrect",
+          "steps": [
+            {
+              "code_location": {
+                "end_line": 7,
+                "snippet": "int main(){int n;cin>>n;vector<long long>a(n);for(auto&x:a)cin>>x;",
+                "start_line": 7
+              },
+              "id": "s1",
+              "summary": "读取任务数量n和各个任务时长"
+            },
+            {
+              "code_location": {
+                "end_line": 8,
+                "snippet": "sort(a.rbegin(),a.rend());",
+                "start_line": 8
+              },
+              "id": "s2",
+              "summary": "对任务时长按降序排序"
+            },
+            {
+              "code_location": {
+                "end_line": 9,
+                "snippet": "long long t=0,ans=0;for(auto x:a){ans+=t;t+=x;}cout<<ans<<\"\\n\";}",
+                "start_line": 9
+              },
+              "id": "s3",
+              "summary": "按排序后顺序累加每个任务开始前的等待时长并输出"
+            }
+          ],
+          "summary": "程序将任务按时长降序排序后计算等待时间之和，这会得到最大可能的等待和，而题面要求最小值；正确的贪心策略是按升序排序（短任务优先）。"
+        },
+        "schema_version": "greedy-evaluation-v2",
+        "solution_code": {
+          "availability": "provided",
+          "language": "cpp",
+          "source_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\n    int n;\n    cin >> n;\n    vector<long long> a(n);\n    for (auto& x : a) cin >> x;\n    sort(a.begin(), a.end());\n    long long t = 0, ans = 0;\n    for (auto x : a) {\n        ans += t;\n        t += x;\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}\n",
+          "standard": "c++17",
+          "unavailable_reason": null
+        }
+      },
+      "sample_id": "s005",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:04:28Z",
+      "token_usage": {
+        "completion_tokens": 12452,
+        "prompt_tokens": 2288,
+        "total_tokens": 14740
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 11290
+      },
+      "validation_errors": []
+    },
+    {
+      "attempt_id": "f20260909-s006",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 127701,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "length",
+      "finished_at": "2026-09-09T05:08:24Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "empty_response",
+      "prompt_sha256": "a1dc46498e5f1e55f308a63a045b59c665b33f99c849e2b0611a99e72012c42d",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "response": null,
+      "sample_id": "s006",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:06:17Z",
+      "token_usage": {
+        "completion_tokens": 13312,
+        "prompt_tokens": 2287,
+        "total_tokens": 15599
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 13312
+      },
+      "validation_errors": []
+    },
+    {
+      "attempt_id": "f20260909-s010",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 96979,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "stop",
+      "finished_at": "2026-09-09T05:10:02Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "parsed",
+      "prompt_sha256": "3d9701c0569a3384d3e0ca31bf2670fb18955cc4ef5f23ff15fa3f9ffc62c737",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "b6fd82ab387c02e59f6d96fa30d04ba66c99d74b32450f01a38d7f7b8317b28c",
+      "response": {
+        "diagnosis": {
+          "algorithm_overview": {
+            "origin": "model_code_interpretation",
+            "summary": "代码使用小顶优先队列（最小堆）实现哈夫曼贪心合并：读入所有重量后，反复取出最小的两堆合并，将合并费用加入总和，并将新堆放回队列，直到只剩一堆，输出总费用。"
+          },
+          "counterexample": {
+            "availability": "unavailable",
+            "candidate_output_basis": null,
+            "expected_output": null,
+            "explanation": "静态分析未发现错误，因此未构造反例。",
+            "input": null,
+            "predicted_candidate_output": null,
+            "provenance": "model_proposed_not_executed"
+          },
+          "findings": [],
+          "first_error": {
+            "explanation": "静态分析未发现在提供的代码中存在与题面不符或逻辑错误之处。",
+            "step_id": null
+          },
+          "limitations": [
+            "仅静态审查代码逻辑，未编译或执行。",
+            "不验证实际运行效率和平台相关行为。"
+          ],
+          "primary_category": null,
+          "reference_solution": {
+            "availability": "provided",
+            "boundaries": "支持 n=1 到 100000，重量为正且不超过 1000000，使用 long long 避免费用溢出。",
+            "complexity": "时间复杂度 O(n log n)，每个元素入队和出队各约 O(log n)；空间复杂度 O(n) 存储优先队列。",
+            "correctness": "该策略等价于哈夫曼编码的贪心构造，每次合并最小两堆可保证总合并费用最小；当n=1时循环不执行，输出0也符合题意。",
+            "provenance": "model_generated_unverified",
+            "strategy": "使用小顶优先队列（最小堆）维护所有堆的重量，每次提取最小的两个重量进行合并，将合并后的重量重新放入队列，并累加合并费用，直到只剩一个堆。",
+            "unavailable_reason": null
+          },
+          "request_id": "input",
+          "schema_version": "interactive-diagnosis-v2",
+          "status": "correct",
+          "steps": [
+            {
+              "code_location": {
+                "end_line": 6,
+                "snippet": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;",
+                "start_line": 1
+              },
+              "id": "s1",
+              "summary": "包含所需头文件并使用标准命名空间。"
+            },
+            {
+              "code_location": {
+                "end_line": 7,
+                "snippet": "int main(){int n;cin>>n;priority_queue<long long,vector<long long>,greater<long long>>q;while(n--){long long x;cin>>x;q.push(x);}",
+                "start_line": 7
+              },
+              "id": "s2",
+              "summary": "主函数读取堆数n，将所有重量推入小顶优先队列。"
+            },
+            {
+              "code_location": {
+                "end_line": 8,
+                "snippet": "long long ans=0;while(q.size()>1){auto a=q.top();q.pop();auto b=q.top();q.pop();ans+=a+b;q.push(a+b);}cout<<ans<<\"\\n\";}",
+                "start_line": 8
+              },
+              "id": "s3",
+              "summary": "初始化总费用，当堆中多于1堆时循环取出最小两堆合并，累加费用并将新堆推回，最后输出总费用。"
+            }
+          ],
+          "summary": "静态分析未发现明确错误；该实现使用最小堆每次合并最轻的两堆，符合哈夫曼合并贪心策略，能够正确计算最小总费用。"
+        },
+        "schema_version": "greedy-evaluation-v2",
+        "solution_code": {
+          "availability": "provided",
+          "language": "cpp",
+          "source_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){int n;cin>>n;priority_queue<long long,vector<long long>,greater<long long>>q;while(n--){long long x;cin>>x;q.push(x);}\nlong long ans=0;while(q.size()>1){auto a=q.top();q.pop();auto b=q.top();q.pop();ans+=a+b;q.push(a+b);}cout<<ans<<\"\\n\";}\n",
+          "standard": "c++17",
+          "unavailable_reason": null
+        }
+      },
+      "sample_id": "s010",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:08:25Z",
+      "token_usage": {
+        "completion_tokens": 9857,
+        "prompt_tokens": 2316,
+        "total_tokens": 12173
+      },
+      "usage_details": {
+        "cached_tokens": 2048,
+        "reasoning_tokens": 8916
+      },
+      "validation_errors": []
+    },
+    {
+      "attempt_id": "f20260909-s011",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 173565,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "stop",
+      "finished_at": "2026-09-09T05:12:55Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "schema_invalid",
+      "prompt_sha256": "f487579566804c87edaf887d5bfdf761dca16e014315c5dbbb284a9111a7dcd4",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "053bd8cd6d823956528a2efbc413dcc7781901f21a46f10210532cd9d9b748b4",
+      "response": null,
+      "sample_id": "s011",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:10:02Z",
+      "token_usage": {
+        "completion_tokens": 12854,
+        "prompt_tokens": 2316,
+        "total_tokens": 15170
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 11934
+      },
+      "validation_errors": [
+        {
+          "message": "required field missing",
+          "path": "/solution_code"
+        }
+      ]
+    },
+    {
+      "attempt_id": "f20260909-s012",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 86235,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "stop",
+      "finished_at": "2026-09-09T05:14:21Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "schema_invalid",
+      "prompt_sha256": "268c41410e1b1b6c46c6e094709ebdcc1d9e932653b39cdf5b1b916397ce9552",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "7a4c46bc124018dc4aa9f825e8e2a5eaa49ce3729ff84af34493c70736efe6bf",
+      "response": null,
+      "sample_id": "s012",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:12:55Z",
+      "token_usage": {
+        "completion_tokens": 10353,
+        "prompt_tokens": 2315,
+        "total_tokens": 12668
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 9450
+      },
+      "validation_errors": [
+        {
+          "message": "required field missing",
+          "path": "/solution_code"
+        }
+      ]
+    },
+    {
+      "attempt_id": "f20260909-s023",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 122331,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "stop",
+      "finished_at": "2026-09-09T05:16:24Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "schema_invalid",
+      "prompt_sha256": "4ffe791100a1666c2d26dc4528e9afe9da13ed07b1f3707807a647bf5189aef3",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "6584c04ba8ea909851edeb6b76fde737d97336cab89a923abd17ea9457cad38f",
+      "response": null,
+      "sample_id": "s023",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:14:22Z",
+      "token_usage": {
+        "completion_tokens": 12400,
+        "prompt_tokens": 2322,
+        "total_tokens": 14722
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 11232
+      },
+      "validation_errors": [
+        {
+          "message": "required field missing",
+          "path": "/solution_code"
+        }
+      ]
+    },
+    {
+      "attempt_id": "f20260909-s024",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 151084,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "length",
+      "finished_at": "2026-09-09T05:18:55Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "invalid_json",
+      "prompt_sha256": "0d8442bb0128d84858fc7ce3f358d4cfd168581776d08e3b0d0c15498a32f372",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "c860264d5c9e30c85f108c09cc8441188c5695ed150b0439f421e14ce7a01417",
+      "response": null,
+      "sample_id": "s024",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:16:24Z",
+      "token_usage": {
+        "completion_tokens": 13311,
+        "prompt_tokens": 2359,
+        "total_tokens": 15670
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 12379
+      },
+      "validation_errors": [
+        {
+          "message": "invalid JSON syntax; not repaired",
+          "path": ""
+        }
+      ]
+    },
+    {
+      "attempt_id": "f20260909-s037",
+      "candidate_answer_status": "unverified",
+      "data_kind": "formal_real",
+      "duration_ms": 141546,
+      "expected_schema_version": "greedy-evaluation-v2",
+      "finish_reason": "length",
+      "finished_at": "2026-09-09T05:21:17Z",
+      "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+      "freeze_manifest_sha256": "7b3d7a65ea791c7fdbb8b8326d52ade8c1111a123e27ab085618504152b5fafe",
+      "http_status": 200,
+      "model": "hy3",
+      "model_version": null,
+      "outcome": "succeeded",
+      "parse_status": "empty_response",
+      "prompt_sha256": "cbdfe9e3c9a19db19728a5f45ebac690643c079a0bd01a189c359c2f46599059",
+      "prompt_template_id": "hy3-greedy-evaluation-v2",
+      "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "response": null,
+      "sample_id": "s037",
+      "solution_answer_status": "unverified",
+      "solution_process_status": "unreviewed",
+      "started_at": "2026-09-09T05:18:55Z",
+      "token_usage": {
+        "completion_tokens": 13312,
+        "prompt_tokens": 2440,
+        "total_tokens": 15752
+      },
+      "usage_details": {
+        "cached_tokens": 0,
+        "reasoning_tokens": 13312
+      },
+      "validation_errors": []
+    }
+  ],
+  "schema_version": "formal-record-bundle-v1"
+}

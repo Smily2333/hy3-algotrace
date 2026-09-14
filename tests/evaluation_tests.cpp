@@ -1,0 +1,192 @@
+#include "hy3_algotrace/evaluation.hpp"
+#include "hy3_algotrace/hy3_model_client.hpp"
+#include "hy3_algotrace/sha256.hpp"
+#include "interactive_v2_fixture.hpp"
+#include "../evaluation/tools/independent_oracle.hpp"
+#include <iostream>
+#include <set>
+using namespace hy3;
+using namespace hy3::evaluation;
+int main(int argc,char**argv){
+ int passed=0,failed=0;
+ auto check=[&](bool ok,const char* msg){if(ok)++passed;else{++failed;std::cerr<<msg<<"\n";}};
+ auto throws=[&](auto f){try{f();return false;}catch(...){return true;}};
+ try{
+ auto d=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/materials/dataset.json");
+ validateDataset(d);check(d["problems"].size()==8&&d["samples"].size()==25,"material count");
+ auto expansion=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/expansion-20260828/dataset.json");
+ validateDataset(expansion);check(expansion["problems"].size()==4&&expansion["samples"].size()==12&&!expansion["frozen"].get<bool>(),"separate unfrozen expansion");
+ for(const auto& p:expansion["problems"])for(const auto& t:p["test_cases"])
+    check(std::to_string(oracle(p["id"],t["input"]))==normalizeOutput(t["expected_output"]),"expansion independent oracle");
+ auto expansionEvidence=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/expansion-20260828/answer-evidence.json");
+ json expansionRecords=json::array();for(const auto& s:expansion["samples"])expansionRecords.push_back({{"sample_id",s["id"]},{"parse_status","not_attempted"}});
+ const auto checkedExpansion=attachAnswerEvidence(expansion,expansionRecords,expansionEvidence);
+ int expansionPassed=0,expansionWrong=0;
+ for(const auto& x:checkedExpansion){expansionPassed+=x["candidate_answer_status"]=="passed";expansionWrong+=x["candidate_answer_status"]=="wrong_answer";}
+ check(expansionPassed==5&&expansionWrong==7,"expansion source/input hashes and actual answer evidence");
+ check(checkedExpansion.back()["candidate_answer_status"]=="passed"&&expansion["samples"].back()["gold"]["process_status"]=="incorrect","correct answer does not validate explicit false proof");
+ auto formalManifest=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/formal-20260909/freeze-manifest.proposed.json");
+ auto formal=d;formal["version"]=formalManifest["dataset_version"];formal["frozen"]=true;formal["problems"]=json::array();formal["samples"]=json::array();
+ std::set<std::string> formalProblems;
+ for(const auto& id:formalManifest["sample_ids"]){
+    const json* chosen=nullptr;for(const auto* source:{&d,&expansion})for(const auto& s:(*source)["samples"])if(s["id"]==id)chosen=&s;
+    check(chosen!=nullptr,"formal proposed sample exists");if(!chosen)continue;formal["samples"].push_back(*chosen);
+    for(const auto* source:{&d,&expansion})for(const auto& p:(*source)["problems"])if(p["id"]==chosen->at("problem_id")&&formalProblems.insert(p["id"]).second)formal["problems"].push_back(p);
+ }
+ auto frozenManifest=formalManifest;frozenManifest["status"]="frozen";frozenManifest["selection_frozen_before_model_output"]=true;
+ frozenManifest["formal_dataset_sha256"]=sha256_hex(formal.dump());
+ auto formalPromptRaw=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-greedy-evaluation-v2.md");
+ std::vector<std::uint8_t> formalPromptBytes;std::string formalPromptError;
+ check(normalizeUtf8({formalPromptRaw.begin(),formalPromptRaw.end()},formalPromptBytes,formalPromptError),"formal prompt UTF-8 normalization");
+ const std::string formalPrompt(formalPromptBytes.begin(),formalPromptBytes.end());
+ validateFormalIdentity(frozenManifest,formal,formalPrompt);check(true,"formal identity and coverage gate");
+ auto badFreeze=frozenManifest;badFreeze["formal_dataset_sha256"]="tampered";
+ check(throws([&]{validateFormalIdentity(badFreeze,formal,formalPrompt);}),"formal data hash gate");
+ badFreeze=frozenManifest;badFreeze["status"]="pending_human_review";
+ check(throws([&]{validateFormalIdentity(badFreeze,formal,formalPrompt);}),"unfrozen formal cohort rejected");
+ InteractiveDiagnosisRequest r;
+ check(parseInteractiveDiagnosisRequest(interactive_fixture::request("input"),r).ok,"minimal request");
+ auto base=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-interactive-diagnosis-v2.md");
+ check(render(r,base,"# hy3-greedy-evaluation-v1\r\nJSON\r\n").find('\r')==std::string::npos,"CRLF extension normalized");
+ json response={{"schema_version",version},{"diagnosis",interactive_fixture::diagnosis("input")},
+    {"solution_code",{{"availability","provided"},{"language","cpp"},{"standard","c++17"},{"source_code",interactive_fixture::code(true)},{"unavailable_reason",nullptr}}}};
+ check(parse(response.dump(),r)["parse_status"]=="parsed","complete response");
+ auto ex=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/fixtures/evaluation-v2-example.json");
+ InteractiveDiagnosisRequest example;
+ check(parseInteractiveDiagnosisRequest(ex["request"],example).ok,"v2 example request");
+ check(parse(ex["response"].dump(),example,version2)["parse_status"]=="parsed","full v2 example same validator");
+ check(parse(ex["response"].dump(),example)["parse_status"]=="schema_invalid","v2 cannot masquerade as v1");
+ auto standalone=interactive_fixture::readText(std::filesystem::path(argc>1?argv[1]:".")/"prompts/hy3-greedy-evaluation-v2.md");
+ check(renderV2(example,standalone).find("{{evaluation_request_json}}")==std::string::npos,"standalone render");
+ check(throws([&]{renderV2(example,standalone+"{{evaluation_request_json}}");}),"duplicate marker rejected");
+ check(throws([&]{renderV2(example,base);}),"interactive template cannot replace standalone v2");
+ check(parse("{}",example,version2)["expected_schema_version"]==version2,"invalid response retains campaign version");
+ for(const std::string state:{"correct","undetermined"}) {
+    InteractiveDiagnosisRequest input;
+    parseInteractiveDiagnosisRequest(interactive_fixture::request("input",state=="correct"),input);
+    auto value=response;value["schema_version"]=version2;value["diagnosis"]=interactive_fixture::diagnosis("input",state);
+    if(state=="undetermined")value["solution_code"]={{"availability","unavailable"},{"language","cpp"},{"standard","c++17"},{"source_code",nullptr},{"unavailable_reason","insufficient information"}};
+    check(parse(value.dump(),input,version2)["parse_status"]=="parsed","v2 non-error states retain semantics");
+ }
+ auto crlf=example;crlf.cpp_solution.clear();for(char c:example.cpp_solution){if(c=='\n')crlf.cpp_solution+='\r';crlf.cpp_solution+=c;}
+ check(parse(ex["response"].dump(),crlf,version2)["parse_status"]=="parsed","CRLF exact decoded snippet");
+ auto duplicateSource=example;auto located=ex["response"];
+ const auto snippet=located["diagnosis"]["steps"][0]["code_location"]["snippet"].get<std::string>();
+ duplicateSource.cpp_solution="#include <iostream>\n\n"+snippet+"\n\n"+snippet+"\n";
+ for(const char* group:{"steps","findings"})for(const char* key:{"start_line","end_line"})located["diagnosis"][group][0]["code_location"][key]=3;
+ check(parse(located.dump(),duplicateSource,version2)["parse_status"]=="parsed","blank lines preserve numbering");
+ for(const char* key:{"start_line","end_line"})located["diagnosis"]["steps"][0]["code_location"][key]=4;
+ check(parse(located.dump(),duplicateSource,version2)["parse_status"]=="schema_invalid","repeated snippet elsewhere does not validate declared blank line");
+ // Both embedded JSON blocks must be real JSON and match the tested fixture.
+ auto fence=std::string(3,char(96));auto at=standalone.find(fence+"json\n");
+ if(at==std::string::npos){auto cr=standalone;standalone.clear();for(char c:cr)if(c!='\r')standalone+=c;at=standalone.find(fence+"json\n");}
+ auto end=standalone.find(fence,at+8);auto embedded=json::parse(standalone.substr(at+8,end-at-8));
+ check(embedded==ex["request"],"prompt example request exact");
+ at=standalone.find(fence+"json\n",end+3);end=standalone.find(fence,at+8);
+ check(json::parse(standalone.substr(at+8,end-at-8))==ex["response"],"prompt example response exact");
+ auto malformed=ex["response"];malformed["diagnosis"]["steps"].push_back({{"first_error",malformed["diagnosis"]["first_error"]}});
+ check(parse(malformed.dump(),example,version2)["validation_errors"][0]["path"]=="/diagnosis/steps/1/id","specific nested field path");
+ malformed=ex["response"];malformed["diagnosis"]["steps"][0]["code_location"]["snippet"]="wrong";
+ check(parse(malformed.dump(),example,version2)["validation_errors"][0]["path"]=="/diagnosis/steps/0/code_location/snippet","specific decoded snippet path");
+ check(parse(std::string(3,char(96))+"json\n"+response.dump(),r)["parse_status"]=="invalid_json","no fence repair");
+ check(parse("",r)["parse_status"]=="empty_response","empty");
+ auto bad=response;bad["solution_code"]["source_code"]=" \n";
+ check(parse(bad.dump(),r)["parse_status"]=="schema_invalid","blank code");
+ bad=response;bad["diagnosis"]["first_error"]["step_id"]="absent";
+ check(parse(bad.dump(),r)["parse_status"]=="schema_invalid","bad reference");
+ bad=response;bad.erase("solution_code");
+ check(parse(bad.dump(),r)["parse_status"]=="schema_invalid","missing code object");
+ bad=response;bad["solution_code"]={{"availability","unavailable"},{"language","cpp"},{"standard","c++17"},{"source_code",nullptr},{"unavailable_reason","insufficient"}};
+ check(parse(bad.dump(),r)["parse_status"]=="parsed","unavailable explicit");
+ check(compareOutput("2\r\n","2\n")["verdict"]=="passed","CRLF");
+ check(compareOutput("2 \n","2\n")["verdict"]=="wrong_answer","no whitespace repair");
+ check(compareOutput("2\n\n","2\n")["first_difference_byte"]==1,"extra newline");
+ interactive_fixture::OwnedRoot root;
+ check(conservativeRequestUpper("abc",13312,1024)==14339,"formal bound uses bytes, cap, and margin");
+ check(throws([&]{conservativeRequestUpper("x",1,1023);}),"formal bound requires fixed envelope margin");
+ Budget b(root.path/"budget");b.reserve("one",210000);
+ check(throws([&]{b.reserve("one",1);}),"duplicate no resend");
+ check(throws([&]{b.reserve("two",100000);}),"unknown reserves full upper");
+ ModelTokenUsage usage;usage.prompt_tokens=100;usage.completion_tokens=200;usage.total_tokens=300;
+ b.reconcile("one",usage);check(b.summary()["actual"]==300,"usage reconcile");
+ check(throws([&]{b.reconcile("one",usage);}),"double reconcile");
+ b.reserve("two",200000);b.reconcile("two",std::nullopt);
+ Budget recovered(root.path/"budget");check(recovered.summary()["unknown_reserved"]==200000&&recovered.summary()["halt"]==true,"unknown survives recovery and halts");
+ check(throws([&]{recovered.reserve("three",100000);}),"remaining protected");
+ check(throws([&]{b.reserve("../bad",1);}),"safe id");
+ Budget count(root.path/"count");ModelTokenUsage unitUsage;unitUsage.prompt_tokens=1;unitUsage.completion_tokens=0;unitUsage.total_tokens=1;
+ for(int i=0;i<38;++i){const auto id="r"+std::to_string(i);count.reserve(id,1);count.reconcile(id,unitUsage);}
+ check(throws([&]{count.reserve("extra",1);}),"38 call cap");
+ Budget batch(root.path/"batch");
+ batch.requireBatchCapacity({{"formal-a",100000},{"formal-b",200000}});
+ check(throws([&]{batch.requireBatchCapacity({{"formal-a",100000},{"formal-b",200001}});}),"whole formal batch must fit");
+ check(throws([&]{batch.requireBatchCapacity({{"formal-a",1},{"formal-a",1}});}),"formal batch ids unique");
+ batch.reserve("formal-a",100000);
+ check(throws([&]{batch.requireBatchCapacity({{"formal-b",1}});}),"interrupted formal request blocks continuation");
+ Budget over(root.path/"over");over.reserve("r",100);over.reconcile("r",usage);
+ check(over.summary()["halt"]==true,"underestimated bound halts");
+ Budget partial(root.path/"partial");partial.reserve("r",100);ModelTokenUsage inconsistent;inconsistent.total_tokens=500000;
+ partial.reconcile("r",inconsistent);check(partial.summary()["halt"]==true,"inconsistent overage stops calls");
+ auto rep=report(d,json::array(),true);
+ check(rep["failures"]==25&&rep["solution_answer_accuracy"]["numerator"]==0,"missing retained");
+ check(rep["first_error_localization"]["value"].is_null(),"zero denominator");
+ check(rep["data_kind"]=="SYNTHETIC_NOT_MODEL_EVIDENCE","synthetic labeled");
+ auto small=d;small["samples"]=json::array({d["samples"][1]});
+ small["samples"][0]["gold"]["first_error"]={{"start_line",16},{"end_line",16},{"logical_error","comparison"}};
+ json goodRecord={{"sample_id","s002"},{"parse_status","parsed"},{"response",response},{"candidate_answer_status","wrong_answer"},
+     {"solution_answer_status","passed"},{"solution_process_status","unreviewed"}};
+ auto matched=report(small,json::array({goodRecord}),true);
+ check(matched["first_error_localization"]["numerator"]==1,"line/category matches independent gold");
+ json humanReview={{"schema_version","formal-result-human-review-v1"},{"status","complete"},{"reviewer","Smily2333"},
+    {"reviewed_at","2026-09-09"},{"entries",json::array({{{"sample_id","s002"},{"diagnosis_decision","confirmed"},
+    {"localization_decision","confirmed"},{"counterexample_decision","confirmed"},{"solution_process_decision","confirmed"}}})}};
+ auto humanAttached=attachHumanResultReview(small,json::array({goodRecord}),humanReview);
+ check(humanAttached[0]["solution_process_status"]=="correct"&&humanAttached[0]["human_result_review"]["reviewer"]=="Smily2333",
+       "human result review integrated");
+ auto correctSmall=d;correctSmall["samples"]=json::array({d["samples"][0]});
+ auto correctRecord=goodRecord;correctRecord["sample_id"]="s001";correctRecord["response"]["diagnosis"]=interactive_fixture::diagnosis("input","correct");
+ auto correctReview=humanReview;correctReview["entries"][0]["sample_id"]="s001";correctReview["entries"][0]["localization_decision"]="not_applicable";
+ correctReview["entries"][0]["counterexample_decision"]="not_applicable";
+ auto reviewedCorrect=attachHumanResultReview(correctSmall,json::array({correctRecord}),correctReview);
+ check(report(correctSmall,reviewedCorrect,true)["human_review_queue"][0]["decision"]=="confirmed","review queue reflects completed human decision");
+ auto solutionRecord=goodRecord;solutionRecord["response"]["solution_code"]["source_code"]=small["samples"][0]["code"];
+ auto solutionBaseEvidence=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/results/fixed-answer-evidence.json");
+ auto solutionEvidence=solutionBaseEvidence;solutionEvidence["dataset_sha256"]=sha256_hex(small.dump());solutionEvidence["results"]=json::array();
+ for(auto result:solutionBaseEvidence["results"])if(result["id"]=="s002"){result["id"]="s002_solution";solutionEvidence["results"].push_back(result);}
+ auto solutionAttached=attachAnswerEvidence(small,json::array({solutionRecord}),solutionEvidence);
+ check(solutionAttached[0]["solution_answer_status"]=="wrong_answer","model solution evidence integrated");
+ auto incompleteReview=humanReview;incompleteReview["status"]="pending_human_review";
+ check(throws([&]{attachHumanResultReview(small,json::array({goodRecord}),incompleteReview);}),"incomplete human review rejected");
+ goodRecord["response"]["diagnosis"]["first_error"]["step_id"]=nullptr;
+ check(report(small,json::array({goodRecord}),true)["first_error_localization"]["numerator"]==0,"no location no hit");
+ check(throws([&]{attachAnswerEvidence(d,json::array(),{{"schema_version","fixed-answer-results-v1"},{"dataset_sha256","wrong"}});}),"mismatched evidence rejected");
+ auto evidence=load(std::filesystem::path(argc>1?argv[1]:".")/"evaluation/results/fixed-answer-evidence.json");
+ json pending=json::array();for(const auto&s:d["samples"])pending.push_back({{"sample_id",s["id"]},{"parse_status","not_attempted"}});
+ auto attached=attachAnswerEvidence(d,pending,evidence);int answerPass=0,answerWrong=0;
+ for(const auto&x:attached){answerPass+=x["candidate_answer_status"]=="passed";answerWrong+=x["candidate_answer_status"]=="wrong_answer";}
+ check(answerPass==10&&answerWrong==15,"actual isolated evidence integration");
+ auto synthetic=report(d,attached,true);check(synthetic["first_error_localization"]["denominator"]==15,"location denominator from actual wrong answers");
+ auto changed=evidence;changed["results"][8]["source_sha256"]="tampered";
+ check(throws([&]{attachAnswerEvidence(d,pending,changed);}),"tampered source hash rejected");
+ auto dup=json::array({{{"sample_id","s001"}},{{"sample_id","s001"}}});
+ check(throws([&]{report(d,dup,true);}),"duplicate records");
+ auto empty=d;empty["samples"]=json::array();auto zero=report(empty,json::array(),true);
+ check(zero["diagnosis_agreement"]["value"].is_null(),"empty denominator");
+ auto req=requestFor(d,"s001");auto j=interactiveDiagnosisRequestJson(req);
+ check(!j.contains("gold")&&!j.contains("difficulty")&&req.request_id=="input"&&req.test_cases.empty(),"projection");
+ struct Transport:IHttpTransport{HttpRequest last;int calls=0;HttpResponse perform(const HttpRequest&r)override{last=r;++calls;return {};}} t;
+ Hy3ModelClientConfig cfg;cfg.api_key="synthetic";cfg.max_tokens=4096;
+ Hy3ModelClient client(t,cfg);client.invoke({"x","test","hash"});
+ auto body=json::parse(t.last.body);check(body["max_tokens"]==4096,"output cap transmitted");
+ cfg.max_tokens=0;Hy3ModelClient invalid(t,cfg);invalid.invoke({"x","test","hash"});check(t.calls==1,"invalid cap pre-call");
+ struct MetadataTransport:IHttpTransport {json envelope;HttpResponse perform(const HttpRequest&)override{HttpResponse h;h.transport_status=HttpTransportStatus::Completed;h.status_code=200;auto body=envelope.dump();h.body.assign(body.begin(),body.end());return h;}} mt;
+ mt.envelope={{"choices",json::array({{{"finish_reason","length"},{"message",{{"content","{}"}}}}})},
+  {"usage",{{"prompt_tokens",10},{"completion_tokens",20},{"total_tokens",30},{"prompt_tokens_details",{{"cached_tokens",3}}},{"completion_tokens_details",{{"reasoning_tokens",15}}}}}};
+ cfg.max_tokens=4096;Hy3ModelClient metadata(mt,cfg);auto meta=metadata.invoke({"x","test","hash"});
+ check(meta.finish_reason=="length"&&meta.token_usage->reasoning_tokens==15&&meta.token_usage->cached_tokens==3,"safe finish and usage detail");
+ check(meta.token_usage->total_tokens==30,"usage subsets not double counted");
+ mt.envelope["choices"][0]["finish_reason"]="Bearer synthetic-secret";
+ check(!metadata.invoke({"x","test","hash"}).finish_reason,"unsafe finish reason omitted");
+ }catch(const std::exception&e){std::cerr<<e.what()<<"\n";++failed;}
+ std::cout<<passed<<" passed, "<<failed<<" failed\n";return failed?1:0;
+}

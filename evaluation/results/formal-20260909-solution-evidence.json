@@ -1,0 +1,141 @@
+{
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "compiler_path": "/usr/bin/g++",
+  "dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+  "environment": "cleared",
+  "flags": [
+    "-std=c++17",
+    "-O2",
+    "-pipe"
+  ],
+  "network": "unshared",
+  "results": [
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 549,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s005_solution",
+      "independent_oracle_checked": true,
+      "source_sha256": "cad2109f2694121cf6dcfeee87a84a647a98c1e9d03736d12ebc9a8a87a95e52",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "4\n",
+          "first_difference_byte": null,
+          "input_sha256": "a9c146863ba10c942378978dbe0b90f1b8ccc5c286df3970d824c3eb853cfe96",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "4\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "0\n",
+          "first_difference_byte": null,
+          "input_sha256": "d87d55a5561481b9cbca35f97b722714cc841525078d633ce54dd09818f8cbf7",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "0\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "12\n",
+          "first_difference_byte": null,
+          "input_sha256": "a843c6f643ca1655e0e3e3e2a5dc2386e5cbb4d24c6f043ce4509a6932ea8419",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "12\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "passed"
+    },
+    {
+      "compile": {
+        "exit_code": 0,
+        "outcome": "success",
+        "runtime_ms": 327,
+        "signal": null,
+        "stderr": "",
+        "stderr_truncated": false,
+        "stdout": "",
+        "stdout_truncated": false
+      },
+      "id": "s010_solution",
+      "independent_oracle_checked": true,
+      "source_sha256": "dbc551ee5e0d25928cfe2be791782b9e23e4e8535d964d87421c31ff049f7c8c",
+      "tests": [
+        {
+          "exit_code": 0,
+          "expected_output": "14\n",
+          "first_difference_byte": null,
+          "input_sha256": "3aacd2ad4fb790864b06e726f84e5a1fe64e6ef25d85ce6ee39a671659246952",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "14\n",
+          "stdout_truncated": false,
+          "test_id": "t1",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "0\n",
+          "first_difference_byte": null,
+          "input_sha256": "d87d55a5561481b9cbca35f97b722714cc841525078d633ce54dd09818f8cbf7",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "0\n",
+          "stdout_truncated": false,
+          "test_id": "t2",
+          "verdict": "passed"
+        },
+        {
+          "exit_code": 0,
+          "expected_output": "8\n",
+          "first_difference_byte": null,
+          "input_sha256": "499dda568319ac2d211c97bb557bd0ec7e64391ceff0e3de82061e867f7b4dbf",
+          "outcome": "success",
+          "runtime_ms": 2,
+          "signal": null,
+          "stderr": "",
+          "stderr_truncated": false,
+          "stdout": "8\n",
+          "stdout_truncated": false,
+          "test_id": "t3",
+          "verdict": "passed"
+        }
+      ],
+      "verdict": "passed"
+    }
+  ],
+  "schema_version": "fixed-answer-results-v1"
+}

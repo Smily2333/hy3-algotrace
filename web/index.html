@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><title>Hy3 贪心代码诊断 · M1</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark" aria-hidden="true">H3</div><div><strong>Hy3 贪心代码诊断</strong><span>题意 × 代码 · interactive v2</span></div></div>
+    <div class="topbar-meta"><span class="tag">仅贪心 · C++17</span><span id="healthStatus" class="health pending"><i></i><span>连接本地服务…</span></span></div>
+  </header>
+  <div class="call-notice"><strong>静态分析，不执行代码。</strong> 每次提交至多一次模型调用，无自动重试。未发现错误不等于已证明正确。</div>
+  <div id="mockNotice" class="mock-notice" role="status" hidden>Mock / Fake 演示：所有结果均为预设测试数据，不是 Hy3 的真实分析。请仅使用示例进行页面验收。</div>
+  <div id="replayNotice" class="mock-notice" role="status" hidden>真实 Hy3 结果回放：展示已保存并脱敏的正式响应，不会进行新的模型调用，也不会执行页面中的代码。</div>
+  <main class="workspace">
+    <section class="panel input-panel" aria-labelledby="inputTitle">
+      <div class="panel-heading"><div><span class="eyebrow">01 · INPUT</span><h1 id="inputTitle">粘贴题面与代码</h1></div><span class="required-note">只需两项</span></div>
+      <form id="diagnosisForm" novalidate>
+        <label class="field"><span>完整题面 <b>*</b></span><textarea id="statement" rows="8" required placeholder="直接粘贴完整题面，包含目标、约束和输入输出说明，无需分栏。"></textarea><small>最多 60,000 UTF-8 字节</small></label>
+        <label class="field code-field"><span>C++ 代码 <b>*</b></span><textarea id="cppSolution" rows="15" required spellcheck="false" placeholder="#include &lt;iostream&gt;&#10;..."></textarea><small>最多 120,000 UTF-8 字节 · 保留缩进与空行，LF 行号从 1 开始</small></label>
+        <details id="advancedOptions" class="optional-block"><summary><span>高级选项</span><small>思路、测试、补充说明 · 均可不填</small></summary>
+          <label class="field"><span>用户思路（可选）</span><textarea id="reasoning" rows="4" placeholder="已有思路或证明可在此补充；不填写不会因此被判错。"></textarea></label>
+          <div class="field-grid"><label class="field"><span>测试输入（可选）</span><textarea id="testInput" rows="4" spellcheck="false"></textarea></label><label class="field"><span>期望输出（可选）</span><textarea id="expectedOutput" rows="4" spellcheck="false"></textarea></label></div>
+          <label class="field"><span>补充说明（可选）</span><textarea id="userNotes" rows="3"></textarea></label>
+          <p class="hint">测试仅作为静态上下文，不会运行。思路最多 30,000 字节；测试各 20,000；补充说明 10,000。</p>
+        </details>
+        <div id="formError" class="inline-error" role="alert" hidden></div>
+        <div class="form-actions"><button id="clearButton" type="button" class="button secondary">清空</button><button id="exampleButton" type="button" class="button secondary">填入示例</button><button id="submitButton" type="submit" class="button primary"><span class="button-label">分析代码</span><span class="spinner" aria-hidden="true"></span></button></div>
+      </form>
+    </section>
+    <section class="panel result-panel" aria-labelledby="resultTitle" aria-live="polite">
+      <div class="panel-heading"><div><span class="eyebrow">02 · STATIC REVIEW</span><h2 id="resultTitle">诊断与修正建议</h2></div><button id="copyButton" type="button" class="copy-button" hidden>复制 JSON</button></div>
+      <div id="emptyState" class="empty-state"><div class="radar" aria-hidden="true"><span></span></div><h3>从两段输入开始</h3><p>查看模型对代码的解释、首次可定位错误、证据与完整修正策略。你不需要先写一份证明。</p></div>
+      <div id="loadingState" class="loading-state" hidden><div class="scan" aria-hidden="true"></div><h3>正在静态审查代码</h3><p>仅提交一次；失败也不会自动重试。</p></div>
+      <div id="errorState" class="error-state" hidden><span class="error-icon" aria-hidden="true">!</span><div><h3 id="errorTitle">未得到诊断</h3><p id="errorMessage"></p><small id="errorCode"></small></div></div>
+      <div id="resultContent" hidden>
+        <article id="statusCard" class="status-card"><div><span class="result-label">总体判断（非执行结论）</span><strong id="statusText"></strong><small id="statusCode"></small></div><div class="primary-category"><span class="result-label">主要类别</span><strong id="primaryCategory"></strong></div></article>
+        <p id="diagnosisSummary" class="prose"></p><ul id="limitations" class="limitations"></ul>
+        <p id="sourceChangedNote" class="inline-error" hidden>输入已更改。以下结果及行号对应上一次提交，请查看“本次提交的代码”。</p>
+        <section class="result-section"><div class="section-title"><h3>算法概述</h3></div><p class="hint">模型对代码的解释，不是用户思路，也不是独立正确性证据。</p><p id="algorithmOverview" class="prose"></p></section>
+        <section class="suggestion-section"><span class="eyebrow">FIRST ERROR · 逻辑顺序</span><strong id="firstErrorStep"></strong><p id="firstErrorExplanation"></p></section>
+        <details class="result-section" id="stepsDetails" open><summary>算法步骤与代码位置</summary><ol id="algorithmSteps" class="steps"></ol></details>
+        <section class="result-section"><div class="section-title"><h3>错误原因与证据</h3><span id="findingCount"></span></div><div id="findingsGroups" class="findings-groups"></div></section>
+        <details class="result-section" id="counterexampleDetails"><summary>反例候选 · 模型提出、未执行验证</summary><div id="counterexampleContent" class="detail-content"></div></details>
+        <details class="result-section" id="solutionDetails"><summary>完整参考 / 修正解法 · 模型生成、未执行验证</summary><div id="solutionContent" class="detail-content"></div></details>
+        <details class="result-section"><summary>本次提交的代码 · LF 行号</summary><pre id="sourceSnapshot" class="code-snippet"></pre></details>
+        <details class="result-section metadata-section"><summary>版本与审计信息</summary><dl id="metadata"></dl></details>
+        <details class="result-section" id="jsonDetails"><summary>结构化 JSON</summary><textarea id="jsonText" rows="12" readonly aria-label="结构化 JSON"></textarea></details>
+      </div>
+      <div class="disclaimers"><p><b>模型静态诊断，非形式化证明。</b> 位置检查只证明片段对应输入，不证明诊断正确。解法和反例均需另行验证。</p><p>不执行用户代码、不连接 OJ。交互 v2 不进入旧 Phase 2 实验指标。</p></div>
+    </section>
+  </main>
+  <footer>hy3-algotrace · M1 · 本地贪心代码诊断</footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "trace_id": "cf_160A_t1",
+  "status": "incorrect",
+  "primary_category": "boundary_omission",
+  "findings": [
+    {
+      "stage": "boundary",
+      "category": "boundary_omission",
+      "locating": "step 3: loop upper bound excludes n-1",
+      "evidence": "input n=1 reaches no iterations; reference verdict expects boundary handling",
+      "suggestion": "change loop condition to i <= n or handle n=1 explicitly"
+    }
+  ],
+  "confidence": null,
+  "confidence_method": null,
+  "calibration_version": null
+}

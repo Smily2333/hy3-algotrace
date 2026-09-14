@@ -1,0 +1,26 @@
+{
+  "schema_version": "formal-result-human-review-v1",
+  "experiment_id": "formal-hy3-greedy-v2-20260909",
+  "reviewer": "Smily2333",
+  "reviewed_at": "2026-09-09",
+  "status": "complete",
+  "scope": "All contract-valid formal diagnoses and model solutions; contract failures remain failures and are not repaired by review.",
+  "entries": [
+    {
+      "sample_id": "s005",
+      "diagnosis_decision": "confirmed",
+      "localization_decision": "confirmed",
+      "counterexample_decision": "confirmed",
+      "solution_process_decision": "confirmed",
+      "reviewer_basis": "Project author confirmed that the diagnosis, first-error location, counterexample and complete reference solution all hold."
+    },
+    {
+      "sample_id": "s010",
+      "diagnosis_decision": "confirmed",
+      "localization_decision": "not_applicable",
+      "counterexample_decision": "not_applicable",
+      "solution_process_decision": "confirmed",
+      "reviewer_basis": "Project author confirmed that no alert is appropriate and that the complete reference solution holds."
+    }
+  ]
+}

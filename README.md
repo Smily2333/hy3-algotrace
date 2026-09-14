@@ -2,43 +2,49 @@
 
 > 个人开源实践 / 参赛实验：基于混元（Hy3）的算法竞赛解法推理过程评估研究
 
-**当前状态：`phase2a_complete_planner_reviewed` — Phase 2A 离线评估协议与 Prompt 模板已通过 codex_planner 技术验收并冻结（2026-08-24）。Phase 1B 已完成且 tag `v0.3.0-phase1b` 已发布（C++17 数据契约校验器 `hy3_algotrace validate` 通过本地功能验证 MSVC 56/56，GitHub CI Windows/Linux 双平台 canonical CMake/CTest 全过）。Phase 2A 只设计离线评估协议与 Prompt 模板（见 `docs/phase-02-protocol.md`、`docs/phase-02-metrics.md`、`prompts/hy3-evaluator-v1.md`、`docs/journal/phase-02a.md`），**尚未实现 `ProcessEvaluator` / `Reporter`，尚未运行 9 条轨迹的 Hy3 实验，尚未创建任何实验 run，所有 Phase 2A 指标仍为 N/A / not_computed**，未进入 Phase 2B。**Phase 2A-R1/R1.1/R1.2 已落实规划方协议审查修订并通过最终验收（排除 `test_cases.notes` 防语义泄漏、leakage audit 改为 structural/semantic 分层、解析失败指标处理、指标一律 N/A、wrapper/run-manifest nullability、Prompt BEGIN/END 标记与哈希、收紧 `undetermined`、Phase 2C 离线不默认调 API、Phase 2D 本地不连 OJ）。** 该验收**不等同于**人工（human_reviewed）或专家（expert-reviewed）审查背书。数据集（数据契约 0.3.0，3 题 × 3 轨迹 = 9 条模型生成样本）校验器**仅做数据结构与契约一致性校验**（schema / manifest / 外键 / 诊断规则 / 计数重算），**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码。构建方面：本地机器未安装 CMake，故本地未运行 canonical CMake；但 GitHub CI 已在 Windows/Linux 实际运行成功（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`，详见 `docs/journal/phase-01b.md` 与 [CI run 32656643095](https://github.com/Smily2333/hy3-algotrace/actions/runs/32656643095)）。本地功能验证使用现有 MSVC `cl.exe`。
+## 最终成果
+
+- **[94秒真实 Hy3 结果回放](docs/assets/hy3-algotrace-real-replay.gif)**
+- **[最终实验与交付报告](docs/delivery-report.md)**
+- **[正式9条脱敏结果](evaluation/results/formal-20260909-records.json)** / **[机器可读指标](evaluation/results/formal-20260909-report.json)**
+- **[任务2逐项验收](docs/submission-acceptance.md)** / **[提交入口](SUBMISSION.md)**
+- 开发依据：[M1–M4 路线图](docs/roadmap.md)；历史 Phase 记录只作追溯。
+
+M1–M4 已形成可运行应用、12题37候选材料、一次冻结正式实验、人工审核、隔离答案证据、最终报告与实际GIF。项目只支持贪心题；结果不外推为 Hy3 总体能力。
+
+**正式结果：** 9条固定分母、每条一次、无重试；契约通过2/9，诊断一致2/9，首次错误定位1/5，正确过程误报0/2。两份合法完整解法均通过3个固定测试并由 Smily2333 确认过程成立。7条契约失败仍计入分母。全项目15次调用共204,186 token，未知0，剩余95,814。
+
+正式集合在调用前由[冻结清单](evaluation/formal-20260909/freeze-manifest.json)固定，不允许按输出换样本。原[25条](docs/reviews/materials-original-25.md)与新增[12条](docs/reviews/materials-expansion-12.md)均已人工确认；正式结果复核见[审核记录](evaluation/reviews/formal-result-review-20260909.json)。
+
+- [评测契约与运行命令](docs/evaluation-v1.md) / [8题25候选](evaluation/materials/dataset.json)
+- [独立评测v2](docs/evaluation-v2.md) / [新增4题12候选](evaluation/expansion-20260828/dataset.json) / [v2脱敏报告](evaluation/results/development-v2-report.json)
+- [真实固定答案证据（不是模型实验）](evaluation/results/fixed-answer-evidence.json)
+- [正式解法隔离执行证据](evaluation/results/formal-20260909-solution-evidence.json) / [真实结果演示说明](docs/demo-m1-m4.md)
 
 > ⚠️ **项目性质声明**：本仓库是**个人开源实践 / 参赛项目**，**不是**腾讯、腾讯混元（Hunyuan）或 Codeforces 的官方仓库，也**不代表**任何官方立场或背书。其中由 Hy3（混元）模型生成的部分推理样本，由本仓库维护者自行产出并标注 `model_generated`，不代表腾讯或混元的官方意见。计划公开仓库地址：<https://github.com/Smily2333/hy3-algotrace>。
 
 ## 1. 项目目标
 
-hy3-algotrace 是一个个人开源实验（参赛项目方向）：给定一道**算法竞赛题**、相关**测试信息**，以及由模型（Hy3）生成的 C++17 **解法思路**，系统评估其：
+hy3-algotrace 面向算法学习者，目标是：**输入完整题面 + C++ 代码，获得 Hy3 的错误诊断、代码定位、反例候选和完整参考 / 修正解法**。思路和测试数据可选，不要求用户先编写证明。
 
-- 算法选择是否合适；
-- 正确性论证（尤其是贪心题的贪心性质 / 交换论证）是否成立；
-- 复杂度分析是否正确；
-- 边界条件是否考虑周全；
-- 实现与思路是否一致；
+本项目同时建设小规模评测材料，独立检查答案正确性、过程是否成立和诊断是否可靠。模型静态判断不等于正确性证明，测试通过也不等于算法对所有输入正确。具体执行范围与验收见 [当前路线图](docs/roadmap.md)。
 
-并**定位推理过程中的错误所在环节**，而非仅判定最终代码 AC/WA。
-
-## 2. 初始版本范围（Phase 0 冻结）
+## 2. 本版交付范围
 
 - 技术方向：**C++17**，不使用 Python。
 - 仅研究**贪心算法题（greedy）**。
 - 暂不实现：搜索、动态规划、图论等其它算法类型（仅作为未来扩展记录）。
-- 本阶段**只**建立可执行的项目基础与文档约定，**不实现完整评测算法**。
+- 复用已有后端、网页和评测管线，不为新目标重写基础设施。
+- 网页只做静态诊断；固定题集的受控离线答案校验在 M2 完成，通用 CandidateRunner、沙箱平台和 OJ 接入暂缓。
 
-## 3. 概念输入与输出形式
+## 3. M1 输入与输出（交互 v2 已实现）
 
-输入（概念形式，文档约定，本阶段不读取 / 不解析）：
+- **必填输入：** 完整题面（包含约束、输入输出说明）和 C++ 代码。
+- **可选输入：** 用户思路、测试数据、补充说明；标题和 I/O 不必拆开填写。
+- **默认输出：** 算法概述、未发现明确错误 / 发现错误 / 无法确定、首次错误步骤、代码位置、原因与修改建议。
+- **展开输出：** 反例候选、完整参考 / 修正解法（策略、正确性理由、复杂度、边界）；未经执行时明确标为未验证。
 
-- **题目记录**：题面、约束、来源、参考标签、算法类型。
-- **候选推理轨迹**：参赛者对本题的解题推理，按六环节分段（题意理解 → 贪心策略选择 → 贪心性质 / 交换论证 → 复杂度分析 → 边界条件 → 实现与思路一致性），并标注来源（人工编写 / 模型生成 / 改写）。
-- **候选 C++17 解法**：参赛者给出的参考实现（可选，用于后续一致性验证）。
-- **测试信息（test_case）**：可选测试用例（输入 / 期望输出 / 来源 / 用途），用于后续验证。
-
-输出（概念形式）：
-
-- **诊断报告**：针对每条推理轨迹，给出诊断状态（`correct` / `incorrect` / `undetermined`）、主要错误类别（`primary_category`）以及多条具体发现（`findings`，含出错环节定位、依据与改进建议）。错误类别见 `docs/error-taxonomy.md`。
-
-> 本阶段仅定义以上形式，不实现解析器或评测器。数据字段详见 `docs/data-contract.md`（含 test_case、verification_result 与可复现元数据）。
+当前默认使用 `hy3-interactive-diagnosis-v2`，v1/未版本化请求明确拒绝。最小请求、完整响应示例与位置校验规则见 [交互契约](docs/interactive-diagnosis-demo.md)。旧数据契约、taxonomy 与实验保持冻结；v2 的 `code_logic_error` 只用于交互，不映射成旧指标。
 
 ## 4. 为什么先测试贪心题
 
@@ -47,52 +53,53 @@ hy3-algotrace 是一个个人开源实验（参赛项目方向）：给定一道
 3. **低风险起步**：不涉及复杂状态转移，便于先把「过程评估」方法论跑通，再扩展到 DP / 搜索 / 图论。
 4. **数据可得**：Codeforces 等平台有稳定且丰富的经典贪心题。
 
-## 5. 数据来源与预计规模
+## 5. 数据来源与评测规模
 
 - 本批（Phase 1A）试验题面**直接来自 Codeforces 官方页面**（160A / 545D / 1398B 三个官方题目页），仅做中文摘要与官方链接引用，不整段复制完整题面。
-- 后续扩充候选来源：以 **CodeContests Verified**（含 Codeforces 来源）等数据集为主（尚未下载，仅规划）。注意：该数据集是**后续阶段**的候选来源，不能混为本批（Phase 1A）实际来源。
-- 初始选题：约 **12 道** 贪心题。
-- 每题构造：约 **6 条** 显式解题推理轨迹（含正确与典型错误样本）。
-- 预计规模：约 **72 条** 实验样本（试验基线，非硬性上限）。
+- CodeContests Verified 属于历史候选来源规划，本轮未下载或采用。
+- M2 合计 **12 道原创表述贪心题、37 条受控候选**；Smily2333 已于2026-09-09逐条确认gold。固定测试结果与模型准确率是不同证据。
+- 按题目划分开发集和保留测试集，预先确定标准答案、自动校验、过程标签与首次错误位置。
+- 旧约 12 题 / 72 样本规划已归档，不再作为本版前置条件；样本量不是任务书的硬性门槛。
 - 样本构造：允许基于公开题面由人工编写推理轨迹，但须记录来源、构造方式与标注信息，不得把人工改写伪装成官方内容。
-- 标注方式：初版由人工标注算法类型为 `greedy`，后续阶段（Phase 6）再增加自动路由。
+- 本版固定支持 `greedy`，自动路由暂缓。旧 pilot 保留其来源及审查状态，不能冒充新模式正式评测或真实人工抽检。
 
-## 6. 后续阶段概览
+## 6. 当前里程碑
 
-宏观路线详见 `docs/roadmap.md`：
+任务、验收、停止条件和接手指令统一见 [docs/roadmap.md](docs/roadmap.md)。
 
-| 阶段 | 主题 |
-| --- | --- |
-| Phase 0 | 范围与骨架（本阶段） |
-| Phase 1 | 数据契约及少量人工样本 |
-| Phase 2 | C++17 基础评测管线 |
-| Phase 3 | 贪心题小规模实验 |
-| Phase 4 | 错误定位与评分校准 |
-| Phase 5 | 扩大数据规模 |
-| Phase 6 | 自动算法类型路由 |
-| Phase 7 | 扩展到搜索、动态规划等类型 |
-| Phase 8 | 总结、复现实验与最终交付 |
+| 阶段 | 内容 | 当前状态 |
+| --- | --- | --- |
+| M1 | 两框输入、交互 v2、步骤/代码定位、完整解法 | 完成；程序与真实结果回放已验证 |
+| M2 | 分层样本、独立 gold、最小答案校验与评测适配 | 材料/工具/隔离验证及37条人工确认完成；正式9条已冻结 |
+| M3 | 真实 Hy3 实验、指标、人工抽检和失败分析 | 完成；正式9条及真人结果审核已记录 |
+| M4 | 运行说明、公开材料、分析报告与两分钟 Demo | 交付内容完成；最终main与CI状态见SUBMISSION |
 
 ## 7. 目录结构
 
 ```
 hy3-algotrace/
 ├── README.md               本文件（项目说明 + 当前阶段状态）
-├── CMakeLists.txt          C++17 校验器 + 测试（canonical 构建；本机未用 CMake 验证）
+├── CMakeLists.txt          C++17 校验器 + 测试（canonical；M1 本地 Windows 已验证）
 ├── build-msvc/             本地 MSVC 编译产物（git 忽略，非 CMake 产出）
 ├── docs/
 │   ├── architecture.md     系统架构与处理流程（含 Phase 1B 落地模块）
 │   ├── data-contract.md    数据契约（语言无关，schema 0.3.0；附录 A 为错误码映射）
 │   ├── error-taxonomy.md   错误分类体系 v1（taxonomy 1.0.0）
-│   ├── roadmap.md          阶段路线图
+│   ├── roadmap.md          当前 M1–M4 执行路线图
+│   ├── roadmap-legacy-phase.md  已归档的旧 Phase 规划
+│   ├── project-proposal-2026-08-27.md  8/27 方案文档
 │   └── journal/
 │       ├── phase-00.md     Phase 0 设计与探索记录
 │       ├── phase-01a.md    Phase 1A 数据冻结与首批样本记录
-│       └── phase-01b.md    Phase 1B C++17 校验器实现与本地验证记录
-├── include/hy3_algotrace/  C++17 头文件（diagnostic / json_loader / validator）
-├── src/                    C++17 源文件（main / json_loader / validator）
-├── tests/                  validator_tests.cpp（56 项正/负向测试，依赖自由）
+│       ├── phase-01b.md    Phase 1B C++17 校验器实现与本地验证记录
+│       ├── phase-02a.md    Phase 2A 离线评估协议与 Prompt 模板冻结记录
+│       └── phase-02b.md    Phase 2B-1 PromptExporter 实现与验证记录
+├── include/hy3_algotrace/  C++17 头文件（校验、离线管线、ModelClient/Runner、Hy3 adapter）
+├── src/                    对应 C++17 实现与 CLI
+├── tests/                  依赖自由单元测试与 synthetic 端到端 smoke
+├── web/                    本地交互诊断页面（原生 HTML/CSS/JS）
 ├── third_party/nlohmann/   供应商锁定 nlohmann/json v3.12.0 单头文件（MIT）
+├── third_party/cpp-httplib/ 固定 cpp-httplib v0.51.0 单头文件（MIT）
 ├── data/
 │   ├── manifest.json       数据集汇总（版本/计数/审查状态）
 │   └── problems/
@@ -111,18 +118,18 @@ hy3-algotrace/
 计数等。它**不**调用模型 API、**不**连接外部 OJ、**不**执行任何候选代码，也**不**实现
 `ProcessEvaluator` / `CandidateRunner`（这些属于 Phase 2+）。
 
-### 8.2 CMake（canonical，跨平台，GitHub CI 已实际验证）
+### 8.2 CMake（canonical；本轮 Windows 本地已验证）
 
 ```bash
 cmake -S . -B build
-cmake --build build
-ctest --test-dir build        # 运行 validator_tests（56 项）
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
 ./build/hy3_algotrace validate data
 ```
 
-> 本地机器未安装 CMake，故本机未运行上述 canonical 流程；但 GitHub CI 已在 `windows-latest` 与 `ubuntu-latest` 实际运行成功（`cmake_ctest_status = verified_github_ci`，`cross_platform_status = verified_windows_linux`）。完整 CI 结果见 [run 32656643095](https://github.com/Smily2333/hy3-algotrace/actions/runs/32656643095)：两个平台的 Configure / Build / CTest / Run CLI 均 success。macOS 尚未验证。
+> 本轮已使用官方便携 CMake 4.3.4 与 MSVC 完成 Windows 本地完整构建及 11/11 CTest，实际命令见 M1 记录。Ubuntu 与远端 CI 未为本轮重跑；历史 CI 不替代当前验证。Windows 多配置生成器的 CLI 路径为 `build/Release/hy3_algotrace.exe`。
 
-### 8.3 本地 MSVC 直接编译（已验证，无 CMake）
+### 8.3 历史 MSVC 直接编译记录（当前请使用 8.2 CMake）
 
 本机已用现有 MSVC `cl.exe`（经 `vcvars64.bat` 初始化）完成功能验证：
 
@@ -130,20 +137,76 @@ ctest --test-dir build        # 运行 validator_tests（56 项）
 call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
 cl /std:c++17 /EHsc /utf-8 /W4 /external:I third_party /external:W0 ^
    /I include /I third_party /Febuild-msvc\hy3_algotrace.exe ^
-   src\main.cpp src\json_loader.cpp src\validator.cpp
+   src\main.cpp src\json_loader.cpp src\validator.cpp src\sha256.cpp src\prompt_exporter.cpp
 cl /std:c++17 /EHsc /utf-8 /W4 /external:I third_party /external:W0 ^
    /I include /I third_party /Febuild-msvc\validator_tests.exe ^
    tests\validator_tests.cpp src\json_loader.cpp src\validator.cpp
-build-msvc\validator_tests.exe data     # 56 passed, 0 failed
-build-msvc\hy3_algotrace.exe validate data   # result: PASS (exit 0)
+cl /std:c++17 /EHsc /utf-8 /W4 /external:I third_party /external:W0 ^
+   /I include /I third_party /Febuild-msvc\prompt_exporter_tests.exe ^
+   tests\prompt_exporter_tests.cpp src\json_loader.cpp src\validator.cpp src\sha256.cpp src\prompt_exporter.cpp
+build-msvc\validator_tests.exe data              # 56 passed, 0 failed
+build-msvc\prompt_exporter_tests.exe data        # 22 passed, 0 failed
+build-msvc\hy3_algotrace.exe validate data        # result: PASS (exit 0)
+build-msvc\hy3_algotrace.exe export-prompts data prompts\hy3-evaluator-v1.md build-msvc\run_smoke ^
+   --run-id smoke-001 --pipeline-commit local-msvc --started-at 2026-08-24T00:00:00Z
 ```
 
 > `build-msvc/` 由 `build-msvc/build.bat` 生成，已加入 `.gitignore`，不纳入版本管理。
+> 这些是历史构建方式，不包含当前全部模块。M1 的本机工具链已实际验证；未修改旧实验或重跑付费调用。
 
 ### 8.4 CLI 用法与退出码
 
 ```text
-hy3_algotrace validate <data_dir>   校验数据集，打印确定性汇总与诊断；0=PASS，1=FAIL
+hy3_algotrace validate <data_dir>
+        校验数据集，打印确定性汇总与诊断；0=PASS，1=FAIL
+hy3_algotrace export-prompts <data_dir> <template_file> <run_dir>
+        --run-id <id> --pipeline-commit <commit> --started-at <ISO-8601>
+        导出每条推理轨迹的评测 Prompt（PromptExporter）；0=成功，1=失败，2=用法错误
+hy3_algotrace import-response <run_dir> <trace_id> <raw_file>
+        --run-id <id> --generated-at <ISO-8601>
+        导入某条轨迹的模型原始响应（逐字节保存），生成 prediction wrapper
+        （PredictionImporter）；0=成功，1=业务失败，2=用法错误
+hy3_algotrace mark-not-attempted <run_dir> <trace_id>
+        --run-id <id> --generated-at <ISO-8601>
+        显式将该轨迹标记为 model_call_not_attempted（绝不推断缺文件）；
+        0=成功，1=业务失败，2=用法错误
+hy3_algotrace report <run_dir> <data_dir>
+        --completed-at <ISO-8601|null> --generated-at <ISO-8601>
+        生成 report.json + report.md（Reporter，指标严格按 docs/phase-02-metrics.md）；
+        0=成功，1=业务失败，2=用法错误
 hy3_algotrace --help | help          打印用法；退出 0
 （其它参数）                         打印 E_USAGE 与用法；退出 2
 ```
+
+> 所有命令**不调用模型 API、不连接 OJ、不执行候选代码**。完整离线流程：
+> `export-prompts`（生成 prompts/run-manifest）→ 人工把 prompt 交给 Hy3 并取回
+> 原始响应 → `import-response` 逐条导入 → 未调用的轨迹 `mark-not-attempted` →
+> `report` 生成报告。
+
+### 8.5 Hy3 TokenHub 配置边界（Phase 2C）
+
+- 官方云端默认组合：Base URL `https://tokenhub.tencentmaas.com/v1`、model `hy3`、Bearer API Key；项目默认从 `TOKENHUB_API_KEY` 读取，也支持显式配置注入，任何诊断均不得回显 Key。Key 默认只允许发送到该 HTTPS origin；自定义 HTTPS gateway 必须显式 opt-in。
+- `Hy3ModelClient` 固定使用非流式 Chat Completions 与 JSON object 模式；模型内容仍逐字节交给 `PredictionImporter`，不会绕过严格 JSON/schema/语义校验。
+- 生产 transport 在 Windows 使用系统 WinHTTP，在 Linux 使用系统 libcurl；默认只接受官方 TokenHub HTTPS origin，验证 TLS，禁重定向和自动重试，并设置明确 connect/total timeout。offline/manual 流程继续可用。
+- `call-hy3` 仅从 `TOKENHUB_API_KEY` 环境变量读取凭证，并在发送前原子创建 `model-calls/<trace_id>.json`。任何既存 sidecar/raw/prediction 都会在网络前拒绝重复调用；不得把 `hy3-preview` 或旧平台 `hunyuan-turbos-latest` 当作正式 `hy3`。
+
+### 8.6 本地交互诊断 Demo
+
+```powershell
+$env:TOKENHUB_API_KEY = [Environment]::GetEnvironmentVariable(
+    'TOKENHUB_API_KEY', 'User')
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release --target hy3_algotrace_demo
+.\build\Release\hy3_algotrace_demo.exe --host 127.0.0.1 --port 8080
+```
+
+Linux 或单配置生成器的可执行文件通常位于 `build/hy3_algotrace_demo`。启动后打开
+`http://127.0.0.1:8080/`。服务默认且仅允许 loopback，浏览器不会接触 API Key；每次
+提交最多调用一次且不自动重试。交互 Prompt、请求/响应契约、长度限制、审计目录和安全
+边界见 `docs/interactive-diagnosis-demo.md`。
+
+零费用网页验收请使用该文档的 `interactive_server_tests --serve-fake` 流程；顶部明确标注 Mock/Fake，不能将预设结果当作模型质量证据。
+
+> Demo 当前只支持贪心题，C++ 代码只做模型静态语义审查，既不编译运行，也不代表形式化
+> 证明。一次真实 CF 160A smoke 的传输与严格解析成功，但模型漏判了 `>=` 的严格边界错误；
+> 该质量失败已如实记录于 `docs/journal/interactive-diagnosis-demo.md`，未重试或修改 raw。

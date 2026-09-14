@@ -9,6 +9,20 @@ build/
 out/
 _build/
 
+# Local Phase 2 experiment runs can contain paid model responses and audit
+# metadata. They remain local unless a later explicit publication decision is
+# made.
+experiments/phase-02/runs/
+
+# Local interactive diagnosis requests contain user input, prompts, and raw
+# model responses. They are private runtime artifacts, never source material.
+experiments/interactive/runs/
+
+# Local credentials. The committed example contains names only.
+.env
+.env.*
+!.env.example
+
 # Compiled object / intermediate files
 *.obj
 *.o

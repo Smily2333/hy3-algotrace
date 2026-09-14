@@ -1,0 +1,59 @@
+{
+  "schema_version": "formal-freeze-manifest-v1",
+  "experiment_id": "formal-hy3-greedy-v2-20260909",
+  "status": "frozen",
+  "frozen_at": "2026-09-09",
+  "frozen_by": "Smily2333",
+  "runner_implementation_commit": "c3c4221e07add60d55dc72193d643862d4549968",
+  "runner_ci": "https://github.com/Smily2333/hy3-algotrace/actions/runs/34311290599",
+  "dataset_version": "formal-projection-v1-20260909",
+  "formal_dataset_sha256": "a70c6e9d1ca1dd7a87ff6629fa9360f05e49f9709221bb00e80c5198d2482dd3",
+  "source_datasets": [
+    {"path":"evaluation/materials/dataset.json","canonical_sha256":"f9fa185011a0a903ccae8348b80215b901531b242ebf90e862c3b59165ce9dc6"},
+    {"path":"evaluation/expansion-20260828/dataset.json","canonical_sha256":"b5a89c1e21074bb303dfbb40b8cc181edc0ca34fac9322616f068d90f6a1c1d1"}
+  ],
+  "sample_ids": ["s004","s005","s006","s010","s011","s012","s023","s024","s037"],
+  "selection_frozen_before_model_output": true,
+  "selection_rationale": "Nine never-tuned holdout candidates: three basic, three medium and three hard. They cover correct and incorrect processes plus problem misunderstanding, boundary, wrong greedy choice, code logic, complexity and invalid proof. s024 and s037 pass fixed tests despite process defects. A twelve-sample cohort cannot fit the remaining global allowance under the conservative per-request bound.",
+  "excluded_from_formal_metrics": {
+    "development_samples": ["s001","s002","s003","s007","s008","s009","s026","s027","s028","s032","s033","s034"],
+    "unselected_holdout_samples": ["s013","s014","s015","s016","s017","s018","s019","s020","s021","s022","s025","s029","s030","s031","s035","s036"],
+    "rule": "Only sample_ids are in the fixed denominator. Exclusions are based on grouped split, coverage and the pre-call budget, never model output."
+  },
+  "evaluation_version": "greedy-evaluation-v2",
+  "prompt_template_path": "prompts/hy3-greedy-evaluation-v2.md",
+  "prompt_template_sha256": "a9041f59c05e547030d846cf9b4c4608e9c9d6b851aa4d44ccf1b06383c80b4a",
+  "model_name": "hy3",
+  "model_version": null,
+  "temperature": "provider_default",
+  "response_format": "json_object",
+  "output_token_limit": 13312,
+  "input_envelope_margin": 1024,
+  "attempt_prefix": "f20260909-",
+  "request_policy": {
+    "at_most_once_per_sample": true,
+    "automatic_retry": false,
+    "preserve_all_failures_in_denominator": true,
+    "development_call_slots_used": 6,
+    "global_call_limit": 38,
+    "global_token_limit": 300000
+  },
+  "budget_method": {
+    "formula": "UTF-8 prompt bytes + max_tokens + 1024 fixed-envelope margin",
+    "reason": "UTF-8 byte count conservatively dominates prompt token count for the supplied text; the extra margin covers the one-message API envelope. TokenHub documents max_tokens as the response-token ceiling and completion_tokens as including reasoning tokens.",
+    "provider_documentation": "https://cloud.tencent.com/document/product/1823/135872"
+  },
+  "material_review_path": "evaluation/reviews/formal-material-review-20260909.json",
+  "material_review_sha256": "d38f1a3b4f562b3f2283e3ab4d24fa0180998b6b4336fa7757ce6befc2dd3aa1",
+  "all_material_review_records": [
+    {"path":"evaluation/reviews/materials-original-25-20260909.json","canonical_sha256":"f754043741b4b921046a96119772e4e90b4e9364e8171f24ecacc91ed8a10ccd"},
+    {"path":"evaluation/reviews/materials-expansion-12-20260909.json","canonical_sha256":"5e06f146d217a60b2c0be01014c272b47dbb57ee5d3388186d08d77d24d8a816"}
+  ],
+  "answer_evidence_sources": [
+    {"path":"evaluation/results/fixed-answer-evidence.json","canonical_sha256":"7b920ab9d44c234c466f14b47d31af59f0a48f8de2650178d3802f8957d7558e"},
+    {"path":"evaluation/expansion-20260828/answer-evidence.json","canonical_sha256":"a6928bbeac9f9abb21a1179339cdf948938a5bccc08a2417f6fd6798ec88c85d"}
+  ],
+  "gold_change_policy": "No changes based on Hy3 output; corrections require a versioned erratum before freeze.",
+  "localization_rule": "A hit requires an evaluable incorrect prediction whose category matches gold and whose 1-based LF-normalized line range overlaps the predeclared gold range. Text-only first errors have no fabricated code range.",
+  "metrics_rule": "All nine samples remain in overall denominators; parsing, schema, transport, missing-code and unreviewed outcomes are explicit failures or unverified states according to docs/evaluation-v2.md."
+}

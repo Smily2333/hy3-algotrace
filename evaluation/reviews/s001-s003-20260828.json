@@ -1,0 +1,49 @@
+{
+  "schema_version": "human-gold-review-v1",
+  "reviewer": "project_owner",
+  "recorded_on": "2026-08-28",
+  "reviewed_at": null,
+  "source": "User supplied independent review of problem, candidate code, gold, actual request and raw response",
+  "dataset_version": "m2-draft-20260827",
+  "dataset_sha256_canonical_json": "f9fa185011a0a903ccae8348b80215b901531b242ebf90e862c3b59165ce9dc6",
+  "scope_limit": "Only s001-s003 gold and pilot response observations; not all 25 candidates or model solution correctness",
+  "gold_changed": false,
+  "entries": [
+    {
+      "sample_id": "s001",
+      "decision": "gold_confirmed",
+      "process_status": "correct",
+      "primary_category": null,
+      "first_error_line": null,
+      "independent_basis": "最大的k项之和不小于任意k项之和；降序前缀首次严格超过总和一半，得到最少项数。"
+    },
+    {
+      "sample_id": "s002",
+      "decision": "gold_confirmed",
+      "process_status": "incorrect",
+      "primary_category": "boundary_omission",
+      "first_error_line": 9,
+      "independent_basis": "输入2 / 5 5应选两项；2*s>=sum在一项时提前停止，输出1。",
+      "candidate_behavior_basis": "human_static_analysis"
+    },
+    {
+      "sample_id": "s003",
+      "decision": "gold_confirmed",
+      "process_status": "incorrect",
+      "primary_category": "wrong_greedy_choice",
+      "first_error_line": 8,
+      "independent_basis": "输入3 / 8 1 1，只选8即可；升序累加会选满三项。",
+      "candidate_behavior_basis": "human_static_analysis"
+    }
+  ],
+  "pilot_response_review": {
+    "all_three_legal_json": true,
+    "all_three_raw_hashes_match": true,
+    "all_three_parse_status": "schema_invalid",
+    "decoded_snippets_checked": 8,
+    "decoded_snippets_matching_declared_lines": 8,
+    "previous_escaping_error_claim": "retracted",
+    "qualitative_observation": "s002/s003 mention relevant root causes, but neither is a contract-valid successful diagnosis",
+    "failure_root_cause": "undetermined; prompt contract ambiguity is a design risk, not established causation"
+  }
+}

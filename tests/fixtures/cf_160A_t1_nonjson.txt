@@ -1,0 +1,2 @@
+The model declined to answer in JSON. This trace looks mostly correct but I
+cannot produce the required structured output.

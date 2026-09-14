@@ -1,0 +1,404 @@
+{
+  "schema_version": "greedy-dataset-v1",
+  "version": "expansion-draft-20260828",
+  "frozen": false,
+  "provenance": "Agent-authored original Chinese statements, code, tests and labels; algorithm concepts linked to public teaching sources. Not human reviewed. Separate from the 25-sample baseline.",
+  "source_registry": "evaluation/expansion-20260828/sources.json",
+  "split_policy": "Provisional, grouped by problem family; no calls on this expansion; not a frozen holdout.",
+  "problems": [
+    {
+      "id": "p09",
+      "title": "最少并行工位",
+      "statement": "输入n（1<=n<=100000），随后n行整数s e（0<=s<e<=1000000000）。每项任务占用半开区间[s,e)，必须全部安排；一个工位同一时刻只能运行一项。结束与开始相等允许共用。输出最少工位数。",
+      "difficulty": "medium",
+      "difficulty_basis": "调度下界或相邻交换；与旧题目标不同",
+      "split": "development",
+      "source": "princeton_greedy_2020",
+      "reference_code": "#include <algorithm>\n#include <functional>\n#include <iostream>\n#include <queue>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;sort(a.begin(),a.end());\npriority_queue<long long,vector<long long>,greater<long long>> q;size_t peak=0;\nfor(auto v:a){\nwhile(!q.empty()&&q.top()<=v.first)q.pop();\nq.push(v.second);peak=max(peak,q.size());\n}\ncout<<peak<<'\\n';}\n",
+      "correctness": "最优值是同时活动任务数的峰值；按开始时间处理、释放已结束任务即可构造达到该下界的安排。",
+      "complexity": "O(n log n)时间、O(n)空间；同刻结束先释放。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "2\n0 2\n2 4\n",
+          "expected_output": "1\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "4\n0 5\n1 4\n2 3\n8 9\n",
+          "expected_output": "3\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "1\n0 1\n",
+          "expected_output": "1\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t4",
+          "input": "4\n5 9\n0 10\n2 7\n10 11\n",
+          "expected_output": "3\n",
+          "oracle": "pending_independent_check"
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "title": "最小最大延迟",
+      "statement": "输入n（1<=n<=100000），随后n行正整数t d（均<=1000000000），分别表示时长和截止时间。单机从0开始，所有任务均须完整执行且不可抢占，可重排顺序。完成时刻C的延迟为max(0,C-d)。输出可能的最小最大延迟，使用64位整数。",
+      "difficulty": "medium",
+      "difficulty_basis": "调度下界或相邻交换；与旧题目标不同",
+      "split": "holdout",
+      "source": "princeton_greedy_2020",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.second>>v.first;\n// Pair fields: deadline, duration.\nsort(a.begin(),a.end());\nlong long elapsed=0,answer=0;\nfor(auto v:a){elapsed+=v.second;\nanswer=max(answer,elapsed-v.first);\n}\ncout<<answer<<'\\n';}\n",
+      "correctness": "相邻截止时间逆序时交换：较早截止任务提前完成，另一任务完成时间虽变晚但截止时间更晚，最大延迟不增。消除全部逆序得到最优排序。",
+      "complexity": "O(n log n)时间、O(n)空间；累积时长需64位。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "2\n6 6\n1 100\n",
+          "expected_output": "0\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "2\n2 1\n2 1\n",
+          "expected_output": "3\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "1\n1 9\n",
+          "expected_output": "0\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t4",
+          "input": "3\n1000000000 1\n1000000000 1\n1000000000 1\n",
+          "expected_output": "2999999999\n",
+          "oracle": "pending_independent_check"
+        }
+      ]
+    },
+    {
+      "id": "p11",
+      "title": "区间检查点",
+      "statement": "输入n（1<=n<=100000），随后n行整数l r（0<=l<=r<=1000000000），表示闭区间[l,r]。在整数坐标选尽可能少的检查点，使每个区间至少包含一个点。输出最少点数；端点包含在区间内，重复区间和单点区间均允许。",
+      "difficulty": "basic",
+      "difficulty_basis": "单次排序加闭端点交换论证",
+      "split": "development",
+      "source": "williams_assignment_2019",
+      "reference_code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;\nsort(a.begin(),a.end(),[](auto x,auto y){return x.second<y.second;});\nlong long point=-1;int count=0;\nfor(auto v:a){\nif(v.first>point){\n++count;\npoint=v.second;\n}}\ncout<<count<<'\\n';}\n",
+      "correctness": "最早右端点r所在区间必须被覆盖；可把覆盖它的最优点右移到r，仍覆盖所有原来被该点覆盖且右端点不早于r的区间。删去覆盖区间后归纳。",
+      "complexity": "O(n log n)时间、O(n)空间；闭区间端点相等时不增加点。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "2\n1 3\n3 5\n",
+          "expected_output": "1\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "2\n1 4\n2 5\n",
+          "expected_output": "1\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "3\n0 0\n0 0\n2 2\n",
+          "expected_output": "2\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t4",
+          "input": "4\n8 9\n0 1\n2 7\n3 6\n",
+          "expected_output": "3\n",
+          "oracle": "pending_independent_check"
+        }
+      ]
+    },
+    {
+      "id": "p12",
+      "title": "离线缓存装载",
+      "statement": "输入n k（1<=n<=100000，1<=k<=100000），再输入n个请求页号（1..100000）。缓存初始为空，最多容纳k个不同页面。请求命中不装载；缺页必须装入该页，满时先淘汰一个已缓存页。禁止预取，完整请求序列提前已知。输出最少装载次数，初次装载也计数。",
+      "difficulty": "hard",
+      "difficulty_basis": "离线未来信息与缓存状态交换不变量",
+      "split": "holdout",
+      "source": "princeton_greedy_2020",
+      "reference_code": "#include <iostream>\n#include <iterator>\n#include <set>\n#include <vector>\nusing namespace std;\nint main(){int n,k;cin>>n>>k;vector<int>a(n),next(n),last(100001,n);\nfor(int &x:a)cin>>x;\nfor(int i=n-1;i>=0;--i){next[i]=last[a[i]];last[a[i]]=i;}\nset<pair<int,int>> cache;int misses=0;\nfor(int i=0;i<n;++i){int x=a[i];\nif(cache.erase({i,x})==0){++misses;\nif(cache.size()==static_cast<size_t>(k))cache.erase(prev(cache.end()));\n}\ncache.insert({next[i],x});\n}\ncout<<misses<<'\\n';}\n",
+      "correctness": "满缓存缺页时淘汰下一次使用最晚的页。交换论证需跟踪两种缓存状态：在较早被请求的保留页到来前，不会因被淘汰的更晚页增加缺页；首次状态重新合流后沿用原最优策略。不能把局部更晚使用直接当作无需证明的全局结论。",
+      "complexity": "逆序预处理next，有序集合更新缓存，O(n log(min(n,k)+1)+100000)时间、O(n+100000)空间。",
+      "test_cases": [
+        {
+          "id": "t1",
+          "input": "6 2\n1 2 3 1 2 3\n",
+          "expected_output": "4\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t2",
+          "input": "4 1\n7 7 8 7\n",
+          "expected_output": "3\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t3",
+          "input": "4 4\n1 2 1 3\n",
+          "expected_output": "3\n",
+          "oracle": "pending_independent_check"
+        },
+        {
+          "id": "t4",
+          "input": "1 1\n9\n",
+          "expected_output": "1\n",
+          "oracle": "pending_independent_check"
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "id": "s026",
+      "problem_id": "p09",
+      "code": "#include <algorithm>\n#include <functional>\n#include <iostream>\n#include <queue>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;sort(a.begin(),a.end());\npriority_queue<long long,vector<long long>,greater<long long>> q;size_t peak=0;\nfor(auto v:a){\nwhile(!q.empty()&&q.top()<=v.first)q.pop();\nq.push(v.second);peak=max(peak,q.size());\n}\ncout<<peak<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "最优值是同时活动任务数的峰值；按开始时间处理、释放已结束任务即可构造达到该下界的安排。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      }
+    },
+    {
+      "id": "s027",
+      "problem_id": "p09",
+      "code": "#include <algorithm>\n#include <functional>\n#include <iostream>\n#include <queue>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;sort(a.begin(),a.end());\npriority_queue<long long,vector<long long>,greater<long long>> q;size_t peak=0;\nfor(auto v:a){\nwhile(!q.empty()&&q.top()<v.first)q.pop();\nq.push(v.second);peak=max(peak,q.size());\n}\ncout<<peak<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t1中两项相接本可共用，但旧任务未及时释放，会计成2。",
+          "start_line": 11,
+          "end_line": 11
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t1中两项相接本可共用，但旧任务未及时释放，会计成2。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t1"
+    },
+    {
+      "id": "s028",
+      "problem_id": "p09",
+      "code": "#include <algorithm>\n#include <functional>\n#include <iostream>\n#include <queue>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;sort(a.begin(),a.end());\npriority_queue<long long,vector<long long>,greater<long long>> q;size_t peak=0;\nfor(auto v:a){\nwhile(!q.empty()&&q.top()<=v.first)q.pop();\nq.push(v.second);peak=max(peak,q.size());\n}\ncout<<q.size()<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "code_logic_error",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t2峰值为3，最后活动数为1；输出最后值不是峰值。",
+          "start_line": 14,
+          "end_line": 14
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t2峰值为3，最后活动数为1；输出最后值不是峰值。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t2"
+    },
+    {
+      "id": "s029",
+      "problem_id": "p10",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.second>>v.first;\n// Pair fields: deadline, duration.\nsort(a.begin(),a.end());\nlong long elapsed=0,answer=0;\nfor(auto v:a){elapsed+=v.second;\nanswer=max(answer,elapsed-v.first);\n}\ncout<<answer<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "相邻截止时间逆序时交换：较早截止任务提前完成，另一任务完成时间虽变晚但截止时间更晚，最大延迟不增。消除全部逆序得到最优排序。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      }
+    },
+    {
+      "id": "s030",
+      "problem_id": "p10",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.second>>v.first;\n// Pair fields: deadline, duration.\nsort(a.begin(),a.end(),[](auto x,auto y){return x.second<y.second;});\nlong long elapsed=0,answer=0;\nfor(auto v:a){elapsed+=v.second;\nanswer=max(answer,elapsed-v.first);\n}\ncout<<answer<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t1先做短任务会使紧急长任务迟1，先做长任务可以全部按期。",
+          "start_line": 8,
+          "end_line": 8
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t1先做短任务会使紧急长任务迟1，先做长任务可以全部按期。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t1"
+    },
+    {
+      "id": "s031",
+      "problem_id": "p10",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.second>>v.first;\n// Pair fields: deadline, duration.\nsort(a.begin(),a.end());\nlong long elapsed=0,answer=0;\nfor(auto v:a){elapsed+=v.second;\nanswer+=max(0LL,elapsed-v.first);\n}\ncout<<answer<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "code_logic_error",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t2延迟为1和3，求和4而非最大值3。",
+          "start_line": 11,
+          "end_line": 11
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t2延迟为1和3，求和4而非最大值3。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t2"
+    },
+    {
+      "id": "s032",
+      "problem_id": "p11",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;\nsort(a.begin(),a.end(),[](auto x,auto y){return x.second<y.second;});\nlong long point=-1;int count=0;\nfor(auto v:a){\nif(v.first>point){\n++count;\npoint=v.second;\n}}\ncout<<count<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "最早右端点r所在区间必须被覆盖；可把覆盖它的最优点右移到r，仍覆盖所有原来被该点覆盖且右端点不早于r的区间。删去覆盖区间后归纳。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      }
+    },
+    {
+      "id": "s033",
+      "problem_id": "p11",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;\nsort(a.begin(),a.end(),[](auto x,auto y){return x.second<y.second;});\nlong long point=-1;int count=0;\nfor(auto v:a){\nif(v.first>=point){\n++count;\npoint=v.second;\n}}\ncout<<count<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "boundary_omission",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t1检查点3同时覆盖两个闭区间；错误条件新增第二个点。",
+          "start_line": 10,
+          "end_line": 10
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t1检查点3同时覆盖两个闭区间；错误条件新增第二个点。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t1"
+    },
+    {
+      "id": "s034",
+      "problem_id": "p11",
+      "code": "#include <algorithm>\n#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){int n;cin>>n;vector<pair<long long,long long>> a(n);\nfor(auto &v:a)cin>>v.first>>v.second;\nsort(a.begin(),a.end(),[](auto x,auto y){return x.second<y.second;});\nlong long point=-1;int count=0;\nfor(auto v:a){\nif(v.first>point){\n++count;\npoint=v.first;\n}}\ncout<<count<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t2选1后还需新点，选4一个点即可。",
+          "start_line": 12,
+          "end_line": 12
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t2选1后还需新点，选4一个点即可。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t2"
+    },
+    {
+      "id": "s035",
+      "problem_id": "p12",
+      "code": "#include <iostream>\n#include <iterator>\n#include <set>\n#include <vector>\nusing namespace std;\nint main(){int n,k;cin>>n>>k;vector<int>a(n),next(n),last(100001,n);\nfor(int &x:a)cin>>x;\nfor(int i=n-1;i>=0;--i){next[i]=last[a[i]];last[a[i]]=i;}\nset<pair<int,int>> cache;int misses=0;\nfor(int i=0;i<n;++i){int x=a[i];\nif(cache.erase({i,x})==0){++misses;\nif(cache.size()==static_cast<size_t>(k))cache.erase(prev(cache.end()));\n}\ncache.insert({next[i],x});\n}\ncout<<misses<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "reference_implementation",
+      "gold": {
+        "process_status": "correct",
+        "primary_category": null,
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "满缓存缺页时淘汰下一次使用最晚的页。交换论证需跟踪两种缓存状态：在较早被请求的保留页到来前，不会因被淘汰的更晚页增加缺页；首次状态重新合流后沿用原最优策略。不能把局部更晚使用直接当作无需证明的全局结论。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      }
+    },
+    {
+      "id": "s036",
+      "problem_id": "p12",
+      "code": "#include <iostream>\n#include <iterator>\n#include <set>\n#include <vector>\nusing namespace std;\nint main(){int n,k;cin>>n>>k;vector<int>a(n),next(n),last(100001,n);\nfor(int &x:a)cin>>x;\nfor(int i=n-1;i>=0;--i){next[i]=last[a[i]];last[a[i]]=i;}\nset<pair<int,int>> cache;int misses=0;\nfor(int i=0;i<n;++i){int x=a[i];\nif(cache.erase({i,x})==0){++misses;\nif(cache.size()==static_cast<size_t>(k))cache.erase(cache.begin());\n}\ncache.insert({next[i],x});\n}\ncout<<misses<<'\\n';}\n",
+      "reasoning": null,
+      "construction": "controlled_single_mutation",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "wrong_greedy_choice",
+        "additional_categories": [],
+        "first_error": {
+          "logical_error": "t1淘汰最近将使用的页使6次均缺页，最优只需4次。",
+          "start_line": 12,
+          "end_line": 12
+        },
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t1淘汰最近将使用的页使6次均缺页，最优只需4次。",
+        "dispute": "草案需人工复核；静态标签不是执行结果。"
+      },
+      "witness_test_id": "t1"
+    },
+    {
+      "id": "s037",
+      "problem_id": "p12",
+      "code": "#include <iostream>\n#include <iterator>\n#include <set>\n#include <vector>\nusing namespace std;\nint main(){int n,k;cin>>n>>k;vector<int>a(n),next(n),last(100001,n);\nfor(int &x:a)cin>>x;\nfor(int i=n-1;i>=0;--i){next[i]=last[a[i]];last[a[i]]=i;}\nset<pair<int,int>> cache;int misses=0;\nfor(int i=0;i<n;++i){int x=a[i];\nif(cache.erase({i,x})==0){++misses;\nif(cache.size()==static_cast<size_t>(k))cache.erase(prev(cache.end()));\n}\ncache.insert({next[i],x});\n}\ncout<<misses<<'\\n';}\n",
+      "reasoning": "代码采用下一次使用最晚优先淘汰。证明：任何淘汰顺序都有相同的装载次数，所以任意选择都全局最优。",
+      "construction": "correct_code_with_invalid_explicit_proof",
+      "gold": {
+        "process_status": "incorrect",
+        "primary_category": "invalid_greedy_proof",
+        "additional_categories": [],
+        "first_error": null,
+        "answer_status": "unverified",
+        "review_status": "agent_authored_pending_human",
+        "independent_basis": "t1不同淘汰策略缺页次数可为4或6，任意淘汰均最优的断言为假。",
+        "dispute": "错误在reasoning，不强配代码行；代码通过测试不代表附带证明成立。"
+      },
+      "witness_test_id": "t1"
+    }
+  ]
+}
